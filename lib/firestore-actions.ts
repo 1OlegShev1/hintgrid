@@ -246,7 +246,7 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     if (!room.exists()) throw new Error("Room not found");
     const data = room.data();
     if (data.ownerId !== playerId) throw new Error("Not room owner");
-    if (!data.gameStarted || data.gameOver) throw new Error("Invalid game state");
+    if (!data.gameStarted) throw new Error("Game not started");
 
     tx.update(roomRef, {
       gameStarted: false, gameOver: false, winner: null, currentClue: null,

@@ -377,7 +377,7 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
 
   const roomData = roomSnap.val() as RoomData;
   if (roomData.ownerId !== playerId) throw new Error("Not room owner");
-  if (!roomData.gameStarted || roomData.gameOver) throw new Error("Invalid game state");
+  if (!roomData.gameStarted) throw new Error("Game not started");
 
   // Reset player teams/roles
   const playersData = (playersSnap.val() || {}) as Record<string, PlayerData>;
