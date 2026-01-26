@@ -191,9 +191,15 @@ export async function updateDisconnectBehavior(
 
 /**
  * Check if the room owner is disconnected and reassign to another connected player.
- * Returns the new owner ID if reassigned, null otherwise.
+ * Returns the new owner's name if reassigned, null otherwise.
+ * 
+ * @param addMessage - Whether to add a system message. Set to false when called
+ *                     from listeners to avoid duplicate messages from race conditions.
  */
-export async function reassignOwnerIfNeeded(roomCode: string): Promise<string | null> {
+export async function reassignOwnerIfNeeded(
+  roomCode: string,
+  addMessage: boolean = false
+): Promise<string | null> {
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
   const playersRef = ref(db, `rooms/${roomCode}/players`);
@@ -218,16 +224,18 @@ export async function reassignOwnerIfNeeded(roomCode: string): Promise<string | 
   // Reassign ownership
   await update(roomRef, { ownerId: newOwnerId });
   
-  // Add system message
-  await push(ref(db, `rooms/${roomCode}/messages`), {
-    playerId: null,
-    playerName: "System",
-    message: `${newOwnerData.name} is now the room owner.`,
-    timestamp: serverTimestamp(),
-    type: "system",
-  });
+  // Only add message when explicitly requested (from leaveRoom, not from listeners)
+  if (addMessage) {
+    await push(ref(db, `rooms/${roomCode}/messages`), {
+      playerId: null,
+      playerName: "System",
+      message: `${newOwnerData.name} is now the room owner.`,
+      timestamp: serverTimestamp(),
+      type: "system",
+    });
+  }
   
-  return newOwnerId;
+  return newOwnerData.name;
 }
 
 /**
@@ -267,8 +275,8 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
     }
     await update(playerRef, { connected: false, lastSeen: serverTimestamp() });
     
-    // Reassign owner if the leaving player was the owner
-    await reassignOwnerIfNeeded(roomCode);
+    // Reassign owner if the leaving player was the owner (add message since this is explicit leave)
+    await reassignOwnerIfNeeded(roomCode, true);
   }
 }
 
