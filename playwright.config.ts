@@ -23,6 +23,9 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: 'html',
   
+  /* Clean up orphaned test rooms after all tests complete */
+  globalTeardown: './tests/global-teardown.ts',
+  
   use: {
     baseURL,
     trace: 'on-first-retry',
