@@ -1,6 +1,11 @@
 #!/usr/bin/env node
 /* eslint-disable no-console */
 
+/**
+ * Delete rooms older than X hours.
+ * Usage: npm run cleanup:rooms -- --hours 24 [--dry-run]
+ */
+
 const fs = require("fs");
 const path = require("path");
 const { initializeApp, applicationDefault } = require("firebase-admin/app");
@@ -19,7 +24,7 @@ function readDefaultProjectId() {
 
 function parseArgs() {
   const args = process.argv.slice(2);
-  const result = { hours: 4, dryRun: false };
+  const result = { hours: 24, dryRun: false };
   for (let i = 0; i < args.length; i += 1) {
     const arg = args[i];
     if (arg === "--hours" && args[i + 1]) {
@@ -54,7 +59,7 @@ async function deleteRoom(db, roomRef) {
 async function main() {
   const { hours, dryRun } = parseArgs();
   if (!Number.isFinite(hours) || hours <= 0) {
-    console.error("Invalid --hours value. Example: --hours 4");
+    console.error("Invalid --hours value. Example: --hours 24");
     process.exit(1);
   }
 
@@ -72,56 +77,33 @@ async function main() {
 
   let deleted = 0;
   let kept = 0;
-  let skipped = 0;
 
   for (const room of roomsSnap.docs) {
-    const roomRef = room.ref;
-    const playersSnap = await roomRef.collection("players").get();
+    const data = room.data();
+    const createdAt = data.createdAt?.toMillis?.();
 
-    if (playersSnap.empty) {
-      if (!dryRun) await deleteRoom(db, roomRef);
+    if (!createdAt) {
+      // No createdAt = legacy room, delete it
+      if (!dryRun) await deleteRoom(db, room.ref);
       deleted += 1;
-      console.log(`[delete] ${room.id} (no players)`);
+      console.log(`[delete] ${room.id} (no createdAt)`);
       continue;
     }
 
-    let allStale = true;
-    let hasUnknown = false;
-
-    for (const player of playersSnap.docs) {
-      const data = player.data();
-      const lastSeen = data.lastSeen?.toMillis?.();
-      if (!lastSeen) {
-        hasUnknown = true;
-        allStale = false;
-        break;
-      }
-      if (lastSeen >= cutoffMs) {
-        // Player is still within the cutoff window
-        allStale = false;
-        break;
-      }
-    }
-
-    if (allStale) {
-      if (!dryRun) await deleteRoom(db, roomRef);
+    if (createdAt < cutoffMs) {
+      if (!dryRun) await deleteRoom(db, room.ref);
       deleted += 1;
-      console.log(`[delete] ${room.id} (all players stale > ${hours}h)`);
+      console.log(`[delete] ${room.id} (created ${Math.round((Date.now() - createdAt) / 3600000)}h ago)`);
     } else {
       kept += 1;
-      if (hasUnknown) {
-        skipped += 1;
-        console.log(`[keep] ${room.id} (missing lastSeen)`);
-      } else {
-        console.log(`[keep] ${room.id}`);
-      }
+      console.log(`[keep] ${room.id} (created ${Math.round((Date.now() - createdAt) / 60000)}m ago)`);
     }
   }
 
   console.log(`\nRooms scanned: ${roomsSnap.size}`);
   console.log(`Deleted: ${deleted}`);
   console.log(`Kept: ${kept}`);
-  if (dryRun) console.log("Dry run only (no deletes).");
+  if (dryRun) console.log("(dry run - no actual deletes)");
 }
 
 main().catch((err) => {

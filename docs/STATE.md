@@ -21,22 +21,14 @@ rooms/{roomCode}
 
 ### Room Cleanup
 
-**Presence ping** (every 30s per connected player):
-- Updates own `lastSeen` timestamp
-- Marks other players as `connected: false` if their `lastSeen` > 2 minutes ago
-
-**Room deletion triggers**:
-1. Player explicitly leaves and is the last connected → room deleted
-
-**Known limitation**:
-- If all players close their tabs at the same time, no client is left to delete the room
-- Those rooms can remain until manually cleaned
+**Automatic (best-effort)**:
+- When a player explicitly leaves and is the last connected → room deleted
+- Unreliable because most users close tabs instead of clicking "Leave"
 
 **Manual cleanup**:
-Run `npm run cleanup:rooms -- --hours 4` to delete rooms where all players
-have `lastSeen` older than the cutoff. Add `--dry-run` to preview.
-Requires Firebase Admin credentials (e.g., `GOOGLE_APPLICATION_CREDENTIALS`
-or `gcloud auth application-default login`).
+Run `npm run cleanup:rooms -- --hours 24` to delete rooms older than 24 hours.
+Add `--dry-run` to preview. Default is 24 hours.
+Requires Firebase Admin credentials (`gcloud auth application-default login`).
 
 ### Turn Flow
 
