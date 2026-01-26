@@ -215,7 +215,9 @@ export function useRtdbRoom(roomCode: string, playerName: string): UseRtdbRoomRe
         lastConnectedCount = connected;
         actions.updateDisconnectBehavior(roomCode, playerId, connected).catch(() => {});
         // Check if owner needs to be reassigned (owner disconnected)
-        actions.reassignOwnerIfNeeded(roomCode).catch(() => {});
+        actions.reassignOwnerIfNeeded(roomCode).catch((err) => {
+          console.error("reassignOwnerIfNeeded error:", err);
+        });
       }
     });
 
@@ -241,8 +243,12 @@ export function useRtdbRoom(roomCode: string, playerName: string): UseRtdbRoomRe
       off(playersRef);
       off(messagesRef);
       // Explicitly leave room on navigation (onDisconnect only handles abnormal disconnects)
-      if (playerId) {
-        actions.leaveRoom(roomCode, playerId).catch(() => {});
+      // Use ref to get the latest playerId value
+      const pid = playerIdRef.current;
+      if (pid) {
+        actions.leaveRoom(roomCode, pid).catch((err) => {
+          console.error("leaveRoom error:", err);
+        });
       }
     };
   }, [roomCode, playerName]);
