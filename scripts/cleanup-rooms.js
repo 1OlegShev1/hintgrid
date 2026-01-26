@@ -51,7 +51,9 @@ function parseArgs() {
 function allPlayersDisconnected(roomData) {
   const players = roomData.players;
   if (!players || Object.keys(players).length === 0) return true;
-  return Object.values(players).every((p) => p.connected === false);
+  // Treat anything other than explicit `true` as disconnected
+  // This handles: false, undefined, missing field, etc.
+  return Object.values(players).every((p) => p.connected !== true);
 }
 
 async function main() {

@@ -158,6 +158,9 @@ export async function joinRoom(
  * Call this whenever the player list changes.
  * - If last connected player: onDisconnect deletes the entire room
  * - If others are connected: onDisconnect just marks this player disconnected
+ * 
+ * NOTE: We set up the new handler BEFORE cancelling old ones to avoid a race
+ * condition where the browser could close between cancel and setup.
  */
 export async function updateDisconnectBehavior(
   roomCode: string,
@@ -168,19 +171,19 @@ export async function updateDisconnectBehavior(
   const roomRef = ref(db, `rooms/${roomCode}`);
   const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
 
-  // Cancel any existing onDisconnect handlers
-  await onDisconnect(playerRef).cancel();
-  await onDisconnect(roomRef).cancel();
-
   if (connectedCount <= 1) {
     // I'm the last (or only) connected player - delete room on disconnect
+    // First set up room deletion, then cancel player-level handler
     await onDisconnect(roomRef).remove();
+    await onDisconnect(playerRef).cancel();
   } else {
     // Others are connected - just mark myself as disconnected
+    // First set up player disconnect, then cancel room-level handler
     await onDisconnect(playerRef).update({
       connected: false,
       lastSeen: serverTimestamp(),
     });
+    await onDisconnect(roomRef).cancel();
   }
 }
 
