@@ -190,6 +190,47 @@ export async function updateDisconnectBehavior(
 }
 
 /**
+ * Check if the room owner is disconnected and reassign to another connected player.
+ * Returns the new owner ID if reassigned, null otherwise.
+ */
+export async function reassignOwnerIfNeeded(roomCode: string): Promise<string | null> {
+  const db = getDb();
+  const roomRef = ref(db, `rooms/${roomCode}`);
+  const playersRef = ref(db, `rooms/${roomCode}/players`);
+
+  const [roomSnap, playersSnap] = await Promise.all([get(roomRef), get(playersRef)]);
+  if (!roomSnap.exists() || !playersSnap.exists()) return null;
+
+  const roomData = roomSnap.val() as RoomData;
+  const players = playersSnap.val() as Record<string, PlayerData>;
+  
+  // Check if current owner is disconnected
+  const currentOwner = players[roomData.ownerId];
+  if (currentOwner?.connected) return null; // Owner is still connected
+  
+  // Find first connected player to become new owner
+  const newOwnerEntry = Object.entries(players).find(([, p]) => p.connected);
+  if (!newOwnerEntry) return null; // No connected players
+  
+  const [newOwnerId, newOwnerData] = newOwnerEntry;
+  if (newOwnerId === roomData.ownerId) return null; // Already owner
+  
+  // Reassign ownership
+  await update(roomRef, { ownerId: newOwnerId });
+  
+  // Add system message
+  await push(ref(db, `rooms/${roomCode}/messages`), {
+    playerId: null,
+    playerName: "System",
+    message: `${newOwnerData.name} is now the room owner.`,
+    timestamp: serverTimestamp(),
+    type: "system",
+  });
+  
+  return newOwnerId;
+}
+
+/**
  * Leave room explicitly. Checks if last player and deletes room if so.
  */
 export async function leaveRoom(roomCode: string, playerId: string): Promise<void> {

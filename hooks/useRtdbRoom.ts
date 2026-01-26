@@ -214,6 +214,8 @@ export function useRtdbRoom(roomCode: string, playerName: string): UseRtdbRoomRe
       if (connected !== lastConnectedCount && playerId) {
         lastConnectedCount = connected;
         actions.updateDisconnectBehavior(roomCode, playerId, connected).catch(() => {});
+        // Check if owner needs to be reassigned (owner disconnected)
+        actions.reassignOwnerIfNeeded(roomCode).catch(() => {});
       }
     });
 
