@@ -50,20 +50,3 @@ export interface ChatMessage {
 }
 
 export type RoomClosedReason = "abandoned" | "allPlayersLeft" | "timeout";
-
-export type WebSocketMessage =
-  | { type: "join"; roomCode: string; playerName: string; playerId?: string }
-  | { type: "startGame" }
-  | { type: "setLobbyRole"; team: LobbyTeam; role: LobbyRole }
-  | { type: "randomizeTeams" }
-  | { type: "rematch" }
-  | { type: "endGame" }
-  | { type: "setTurnDuration"; duration: number }
-  | { type: "voteCard"; cardIndex: number }
-  | { type: "confirmReveal"; cardIndex: number }
-  | { type: "giveClue"; word: string; count: number }
-  | { type: "endTurn" }
-  | { type: "sendMessage"; message: string; messageType: "clue" | "chat" }
-  | { type: "stateUpdate"; state: GameState; messages: ChatMessage[]; selfPlayerId?: string }
-  | { type: "roomClosed"; reason: RoomClosedReason }
-  | { type: "playerCountUpdate"; connectedCount: number; totalPlayers: number };

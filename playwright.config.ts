@@ -3,9 +3,18 @@ import { defineConfig, devices } from '@playwright/test';
 /**
  * Playwright E2E test configuration.
  * 
- * Starts both Next.js and WebSocket server before running tests.
+ * Run against local dev server (default):
+ *   npm run test:e2e
+ * 
+ * Run against deployed Firebase app:
+ *   BASE_URL=https://clue-cards.web.app npm run test:e2e
+ * 
  * See https://playwright.dev/docs/test-configuration
  */
+
+const baseURL = process.env.BASE_URL || 'http://localhost:3000';
+const isDeployed = baseURL.startsWith('https://');
+
 export default defineConfig({
   testDir: './tests',
   fullyParallel: true,
@@ -15,7 +24,7 @@ export default defineConfig({
   reporter: 'html',
   
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
     trace: 'on-first-retry',
   },
 
@@ -26,21 +35,14 @@ export default defineConfig({
     },
   ],
 
-  /* Start both servers before tests */
-  webServer: [
-    {
-      command: 'npm run server',
-      port: 8080,
-      reuseExistingServer: !process.env.CI,
-      stdout: 'ignore',
-      stderr: 'pipe',
-    },
-    {
+  /* Start Next.js dev server before tests (skip if testing deployed app) */
+  ...(isDeployed ? {} : {
+    webServer: {
       command: 'npm run dev',
       url: 'http://localhost:3000',
       reuseExistingServer: !process.env.CI,
       stdout: 'ignore',
       stderr: 'pipe',
     },
-  ],
+  }),
 });

@@ -1,6 +1,6 @@
 ## Game State
 
-Core state lives in `shared/types.ts` and is maintained by the server.
+Core state lives in `shared/types.ts` and is stored in Firestore.
 
 ### Core Fields
 
@@ -16,11 +16,18 @@ Core state lives in `shared/types.ts` and is maintained by the server.
 - `turnStartTime` and `turnDuration`: used to compute timer.
 - `gameStarted`, `gameOver`, `winner`: game lifecycle flags.
 
-### Pause Fields
+### Firestore Data Model
 
-- `paused`: boolean indicating if game is currently paused.
-- `pauseReason`: why the game is paused (`teamDisconnected`, `spymasterDisconnected`, `noOperatives`, or `null`).
-- `pausedForTeam`: which team caused the pause (`red`, `blue`, or `null`).
+```
+rooms/{roomCode}
+  ├── (room document fields: ownerId, currentTeam, gameStarted, etc.)
+  ├── players/{playerId}
+  │     ├── name, team, role, connected, lastSeen
+  ├── board/{cardIndex}
+  │     ├── word, team, revealed, revealedBy, votes
+  └── messages/{messageId}
+        ├── playerId, playerName, message, timestamp, type
+```
 
 ## Turn Flow
 
@@ -34,27 +41,8 @@ Core state lives in `shared/types.ts` and is maintained by the server.
 
 ## Lifecycle
 
-- Rooms are created on first `join` with a room code.
+- Rooms are created on first join with a room code.
 - Game starts when owner calls `startGame` with 4+ players.
 - After game ends, owner can call `rematch` to start a new game.
 - Owner can call `endGame` to cancel an active game and return to lobby.
 - Player reconnection is supported via `playerId` stored in sessionStorage.
-
-## Pause/Resume Flow
-
-1. When a player disconnects during an active game, `checkAndUpdatePauseState()` runs.
-2. If the current team lacks a spymaster (before clue) or operatives (after clue), the game pauses.
-3. Server sets `paused: true`, `pauseReason`, and `pausedForTeam`.
-4. A system message is broadcast explaining the pause.
-5. Clients stop the timer and disable voting/clue actions.
-6. When a player reconnects, `checkAndUpdatePauseState()` runs again.
-7. If the missing role is restored, the game resumes with a fresh turn timer.
-8. A system message announces the resumption.
-
-## Room Closure Flow
-
-1. When all clients disconnect, a grace period timer starts.
-2. If no one reconnects within the grace period:
-   - Server broadcasts `roomClosed` with reason.
-   - Room is deleted from memory.
-3. Any remaining connected clients display a "Room Closed" modal and redirect to home.

@@ -1,13 +1,13 @@
 "use client";
 
-import { useParams, useSearchParams, useRouter } from "next/navigation";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useMemo } from "react";
 import type { GameState } from "@/shared/types";
 import GameBoard from "@/components/GameBoard";
 import ChatLog from "@/components/ChatLog";
 import ClueHistory from "@/components/ClueHistory";
 import TransitionOverlay from "@/components/TransitionOverlay";
-import { useRoomConnection } from "@/hooks/useRoomConnection";
+import { useFirestoreRoom } from "@/hooks/useFirestoreRoom";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
 import {
@@ -21,14 +21,18 @@ import {
 } from "@/components/room";
 
 export default function RoomPage() {
-  const params = useParams();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
-  const roomCode = params.code as string;
+  // Extract room code from pathname: /room/ABC123 -> ABC123
+  const roomCode = pathname?.split("/room/")[1]?.split("/")[0] || "";
   const playerName = searchParams.get("name") || "";
 
+  // Debug logging
+  console.log("RoomClient:", { pathname, roomCode, playerName });
+
   // Custom hooks
-  const room = useRoomConnection(roomCode, playerName);
+  const room = useFirestoreRoom(roomCode, playerName);
   const timer = useGameTimer(room.gameState, room.handleEndTurn);
   const overlays = useTransitionOverlays(room.gameState);
 

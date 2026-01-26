@@ -7,24 +7,25 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "server": "tsx server/index.ts",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
     "test:run": "vitest run",
-    "test:server": "vitest run server shared",
     "test:build": "npm run typecheck && npm run build",
     "test:coverage": "vitest run --coverage",
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed --workers=1",
     "test:e2e:ui": "playwright test --ui",
-    "prepare": "husky"
+    "test:e2e:deployed": "BASE_URL=https://clue-cards.web.app playwright test",
+    "test:e2e:deployed:headed": "BASE_URL=https://clue-cards.web.app playwright test --headed --workers=1",
+    "prepare": "husky",
+    "firebase:emulators": "firebase emulators:start",
+    "deploy": "npm run build && firebase deploy",
+    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "deploy:rules": "firebase deploy --only firestore:rules"
   },
   "lint-staged": {
-    "server/**/*.ts": [
-      "npm run test:server --"
-    ],
     "shared/**/*.ts": [
-      "npm run test:server --"
+      "npm run test:run --"
     ],
     "{app,components,hooks,lib}/**/*.{ts,tsx}": [
       "bash -c 'npm run typecheck'"
@@ -34,8 +35,7 @@
     "firebase": "^12.8.0",
     "next": "^16.1.4",
     "react": "^19.2.3",
-    "react-dom": "^19.2.3",
-    "ws": "^8.19.0"
+    "react-dom": "^19.2.3"
   },
   "devDependencies": {
     "@playwright/test": "^1.58.0",
@@ -43,14 +43,12 @@
     "@types/node": "^25.0.10",
     "@types/react": "^19.2.9",
     "@types/react-dom": "^19.2.3",
-    "@types/ws": "^8.18.1",
     "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.23",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",
     "tailwindcss": "^4.1.18",
-    "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vitest": "^4.0.18"
   }

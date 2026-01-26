@@ -1,0 +1,36 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Room document
+    match /rooms/{roomCode} {
+      allow read: if true;
+      allow create: if true;
+      allow update: if true; // Client-side validation will enforce game rules
+      allow delete: if true;
+      
+      // Players subcollection
+      match /players/{playerId} {
+        allow read: if true;
+        allow create: if true;
+        allow update: if true; // Client validates player can only update themselves
+        allow delete: if true;
+      }
+      
+      // Board subcollection (cards)
+      match /board/{cardIndex} {
+        allow read: if true;
+        allow create: if true;
+        allow update: if true; // Client validates voting/reveal permissions
+        allow delete: if true;
+      }
+      
+      // Messages subcollection
+      match /messages/{messageId} {
+        allow read: if true;
+        allow create: if true;
+        allow update, delete: if false; // Messages are immutable
+      }
+    }
+  }
+}

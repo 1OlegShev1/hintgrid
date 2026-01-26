@@ -1,6 +1,6 @@
 # Clue Cards
 
-A multiplayer word guessing party game built with Next.js, TypeScript, and WebSockets.
+A multiplayer word guessing party game built with Next.js, TypeScript, and Firebase.
 
 > **Disclaimer**: This is an independent fan project inspired by word-based party games. It is not affiliated with, endorsed by, or connected to any commercial board game publisher. This project was created for educational and personal use.
 
@@ -8,7 +8,7 @@ A multiplayer word guessing party game built with Next.js, TypeScript, and WebSo
 
 - Anonymous player names (no authentication required)
 - Room-based multiplayer with room codes
-- Real-time game synchronization via WebSocket
+- Real-time game synchronization via Firestore
 - Clue Giver and Guesser roles with different views
 - Turn-based gameplay with timer
 - Chat and clue logging
@@ -27,6 +27,7 @@ Two teams compete to find all their words on a 5x5 grid. Each team has a **Clue 
 ### Prerequisites
 
 - Node.js 18+ and npm
+- Firebase project (free tier works)
 
 ### Installation
 
@@ -40,21 +41,22 @@ npm install
 cp .env.example .env.local
 ```
 
+3. Configure Firebase (see Environment Configuration below)
+
 ### Running the Application
 
-You need to run two processes:
-
-1. **Start the WebSocket server** (in one terminal):
-```bash
-npm run server
-```
-
-2. **Start the Next.js dev server** (in another terminal):
+1. **Start the Next.js dev server**:
 ```bash
 npm run dev
 ```
 
-3. Open [http://localhost:3000](http://localhost:3000) in your browser
+2. Open [http://localhost:3000](http://localhost:3000) in your browser
+
+**For local development with Firebase emulators** (optional):
+```bash
+firebase emulators:start
+npm run dev
+```
 
 ### How to Play
 
@@ -71,25 +73,24 @@ npm run dev
 
 - `app/` - Next.js App Router pages and layouts
 - `components/` - React components (GameBoard, ChatLog)
-- `server/` - WebSocket server for real-time game state
+- `lib/` - Firebase configuration and Firestore actions
+- `hooks/` - React hooks for game state management
 - `shared/` - Shared TypeScript types and utilities
-- `docs/` - Architecture, protocol, rules, and environment notes
+- `docs/` - Architecture, rules, and documentation
 
 ## Testing
 
-### Unit Tests (Server)
+### Unit Tests
 ```bash
 npm run test          # Watch mode
-npm run test:run      # Single run (~200ms)
+npm run test:run      # Single run
 npm run test:coverage # With coverage report
 ```
-
-Server-side code has **178 tests** covering game logic, room management, and message handlers. Tests run automatically on commit via Husky when server/shared files are changed.
 
 ### E2E Tests (Playwright)
 ```bash
 npm run test:e2e         # Run E2E tests (headless)
-npm run test:e2e:headed  # Run with visible browser (watch tests run)
+npm run test:e2e:headed  # Run with visible browser
 npm run test:e2e:ui      # Run with Playwright debug UI
 ```
 
@@ -97,26 +98,36 @@ E2E tests cover the full game flow with 4 players - room creation, team selectio
 
 ### Build Verification
 ```bash
-npm run typecheck     # TypeScript check only (~2s)
+npm run typecheck     # TypeScript check only
 npm run test:build    # Full typecheck + build
 ```
 
-TypeScript check runs automatically on commit when frontend files are changed.
-
-See `docs/ARCHITECTURE.md` for detailed test documentation.
-
-## Development Notes
-
-- The WebSocket server runs on port 8080
-- Game state is managed server-side and synced to all clients
-- No persistent storage - rooms are in-memory only
-- Optimized for local development
-
 ## Environment Configuration
 
-- `NEXT_PUBLIC_WS_URL` - override the WebSocket URL used by the client
-- `WS_PORT` or `PORT` - port used by the WebSocket server
-- See `.env.example` for Firebase and emulator variables
+### Required Firebase Configuration
+
+Set these environment variables in `.env.local`:
+
+- `NEXT_PUBLIC_FIREBASE_API_KEY` - Firebase API key
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` - Firebase auth domain
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID` - Firebase project ID
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` - Firebase storage bucket
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` - Firebase messaging sender ID
+- `NEXT_PUBLIC_FIREBASE_APP_ID` - Firebase app ID
+
+### Optional: Firebase Emulators (for local development)
+
+- `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST` - Auth emulator host (e.g., `localhost:9099`)
+- `NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_HOST` - Firestore emulator host (e.g., `localhost:8080`)
+
+See `.env.example` for all available variables.
+
+### Firebase Setup
+
+1. Create a Firebase project at https://console.firebase.google.com
+2. Enable Firestore Database
+3. Deploy security rules: `firebase deploy --only firestore:rules`
+4. Copy your Firebase config to `.env.local`
 
 ## License
 

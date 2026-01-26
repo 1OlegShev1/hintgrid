@@ -12,12 +12,14 @@ export default function Home() {
   const handleCreateRoom = () => {
     if (!playerName.trim()) return;
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    router.push(`/room/${code}?name=${encodeURIComponent(playerName)}&create=true`);
+    // Use full page navigation for static export compatibility
+    window.location.href = `/room/${code}?name=${encodeURIComponent(playerName)}&create=true`;
   };
 
   const handleJoinRoom = () => {
     if (!playerName.trim() || !roomCode.trim()) return;
-    router.push(`/room/${roomCode.toUpperCase()}?name=${encodeURIComponent(playerName)}`);
+    // Use full page navigation for static export compatibility
+    window.location.href = `/room/${roomCode.toUpperCase()}?name=${encodeURIComponent(playerName)}`;
   };
 
   return (
