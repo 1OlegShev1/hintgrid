@@ -247,6 +247,23 @@ export default function RoomPage() {
           />
         )}
 
+        {/* Game Paused - Show Teams for Role Reassignment */}
+        {room.gameState.gameStarted && room.gameState.paused && !room.gameState.gameOver && (
+          <TeamLobby
+            players={room.players}
+            currentPlayer={room.currentPlayer}
+            isRoomOwner={isRoomOwner}
+            gameState={room.gameState}
+            onSetRole={room.handleSetLobbyRole}
+            onRandomize={room.handleRandomizeTeams}
+            onStartGame={room.handleStartGame}
+            onTurnDurationChange={room.handleTurnDurationChange}
+            onWordPackChange={room.handleWordPackChange}
+            onResumeGame={room.handleResumeGame}
+            showControls={true}
+          />
+        )}
+
         {/* Game Over - Show Full Teams for Rematch */}
         {room.gameState.gameStarted && room.gameState.gameOver && (
           <TeamLobby

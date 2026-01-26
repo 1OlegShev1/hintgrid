@@ -10,6 +10,7 @@ interface TeamLobbyProps {
   onStartGame: () => void;
   onTurnDurationChange: (duration: number) => void;
   onWordPackChange: (pack: WordPack) => void;
+  onResumeGame?: () => void;
   showControls?: boolean; // Hide start button in rematch mode
 }
 
@@ -34,11 +35,54 @@ export default function TeamLobby({
   onStartGame,
   onTurnDurationChange,
   onWordPackChange,
+  onResumeGame,
   showControls = true,
 }: TeamLobbyProps) {
+  // Check if game is paused (mid-game role reassignment mode)
+  const isPaused = gameState.gameStarted && gameState.paused && !gameState.gameOver;
+  
+  // Check if the paused team has required roles filled
+  const pausedTeam = gameState.pausedForTeam;
+  const pausedTeamPlayers = players.filter((p) => p.team === pausedTeam);
+  const hasClueGiver = pausedTeamPlayers.some((p) => p.role === "clueGiver");
+  const hasGuesser = pausedTeamPlayers.some((p) => p.role === "guesser");
+  const canResume = hasClueGiver && hasGuesser;
+
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-      {showControls && (
+      {/* Paused state header */}
+      {isPaused && (
+        <div className="mb-6">
+          <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
+            <div>
+              <h2 className="text-xl font-semibold">Game Paused - Assign Roles</h2>
+              <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                {gameState.pauseReason === "clueGiverDisconnected" && (
+                  <>The {pausedTeam} team needs a clue giver to continue</>
+                )}
+                {gameState.pauseReason === "noGuessers" && (
+                  <>The {pausedTeam} team needs at least one guesser to continue</>
+                )}
+                {gameState.pauseReason === "teamDisconnected" && (
+                  <>The {pausedTeam} team needs players to continue</>
+                )}
+              </p>
+            </div>
+            {isRoomOwner && onResumeGame && (
+              <button
+                onClick={onResumeGame}
+                disabled={!canResume}
+                className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+              >
+                Resume Game
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Normal lobby header */}
+      {showControls && !isPaused && (
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <h2 className="text-xl font-semibold">Teams ({players.length}/8)</h2>
           <div className="flex flex-wrap items-center gap-3">
@@ -110,7 +154,7 @@ export default function TeamLobby({
         </div>
       )}
 
-      {!showControls && (
+      {!showControls && !isPaused && (
         <h2 className="text-xl font-semibold mb-4">Teams - Ready for Rematch</h2>
       )}
 
@@ -235,7 +279,7 @@ export default function TeamLobby({
         })}
       </div>
 
-      {showControls && (
+      {(showControls || isPaused) && (
         <>
           <div className="mt-6 bg-white dark:bg-gray-800 rounded-xl p-4 border border-gray-200 dark:border-gray-700">
             <h3 className="text-lg font-semibold mb-3">All Players</h3>
@@ -260,19 +304,19 @@ export default function TeamLobby({
                   )}
                   {!player.team || !player.role ? (
                     <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      No team selected
+                      {isPaused ? "Spectator" : "No team selected"}
                     </div>
                   ) : null}
                 </div>
               ))}
             </div>
           </div>
-          {players.length < 4 && (
+          {!isPaused && players.length < 4 && (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
               Waiting for {4 - players.length} more player{4 - players.length !== 1 ? "s" : ""}...
             </p>
           )}
-          {players.length >= 4 && players.length % 2 !== 0 && (
+          {!isPaused && players.length >= 4 && players.length % 2 !== 0 && (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
               Need one more player for even teams.
             </p>
