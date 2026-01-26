@@ -8,53 +8,51 @@ Core state lives in `shared/types.ts` and is stored in Firestore.
 rooms/{roomCode}
   ├── ownerId, currentTeam, startingTeam, currentClue, remainingGuesses
   ├── turnStartTime, turnDuration, gameStarted, gameOver, winner
-  ├── paused, pauseReason, pausedForTeam, createdAt, lastActivity
+  ├── paused, pauseReason, pausedForTeam
+  ├── board[]   (25 cards: word, team, revealed, revealedBy, votes[])
+  ├── createdAt, lastActivity
   │
-  ├── players/{playerId}      (subcollection)
+  ├── players/{playerId}
   │     └── name, team, role, connected, lastSeen
   │
-  ├── board/{cardIndex}       (subcollection, 0-24)
-  │     └── word, team, revealed, revealedBy, votes[]
-  │
-  └── messages/{messageId}    (subcollection)
+  └── messages/{messageId}
         └── playerId, playerName, message, timestamp, type
 ```
 
-### Key Fields
+### Room Cleanup
 
-- **Room document**: Game settings and current turn state
-- **players subcollection**: Each player's team assignment, role, and connection status
-- **board subcollection**: 25 cards with votes stored per-card (not at room level)
-- **messages subcollection**: Chat and clue history
+**Presence ping** (every 30s per connected player):
+- Updates own `lastSeen` timestamp
+- Marks other players as `connected: false` if their `lastSeen` > 2 minutes ago
 
-## Turn Flow
+**Room deletion triggers**:
+1. Player explicitly leaves and is the last connected → room deleted
 
-1. `startGame` assigns teams/roles, sets `startingTeam` and `currentTeam`.
-2. Spymaster gives a clue (`giveClue`), setting `currentClue` and `remainingGuesses`.
-3. Operatives vote on cards (`voteCard`), then confirm reveal (`confirmReveal`) when threshold met.
-4. Wrong reveal switches `currentTeam` immediately.
-5. When guesses run out or `endTurn` is called, the turn passes and clue resets.
-6. Assassin ends the game; all cards of a team revealed wins.
-7. `rematch` resets board and reassigns teams while keeping players.
+**Known limitation**:
+- If all players close their tabs at the same time, no client is left to delete the room
+- Those rooms can remain until manually cleaned
 
-## Pause Mechanism
+**Manual cleanup**:
+Run `npm run cleanup:rooms -- --hours 4` to delete rooms where all players
+have `lastSeen` older than the cutoff. Add `--dry-run` to preview.
+Requires Firebase Admin credentials (e.g., `GOOGLE_APPLICATION_CREDENTIALS`
+or `gcloud auth application-default login`).
 
-At each turn transition (`confirmReveal` or `endTurn`), the game checks if the incoming team can play:
-- Needs at least one connected spymaster (to give clue)
-- Needs at least one connected operative (to guess)
+### Turn Flow
 
-If conditions aren't met:
-- `paused` → `true`
-- `pauseReason` → `"spymasterDisconnected"` | `"noOperatives"` | `"teamDisconnected"`
-- `pausedForTeam` → the team that's missing players
-- `turnStartTime` → `null` (stops timer)
+1. `startGame` generates board, sets starting team
+2. Spymaster gives clue → `currentClue` and `remainingGuesses` set
+3. Operatives vote and confirm reveals
+4. Wrong guess or out of guesses → switch teams
+5. Assassin → game over, other team wins
+6. All team cards revealed → team wins
 
-Owner calls `resumeGame` to unpause once conditions are resolved.
+### Pause Mechanism
 
-## Lifecycle
+At turn transitions, if the incoming team lacks players:
+- `paused: true`, `pauseReason` set, `turnStartTime: null`
+- Owner calls `resumeGame` when conditions resolve
 
-- Rooms are created on first join with a room code.
-- Game starts when owner calls `startGame` with 4+ players.
-- After game ends, owner can call `rematch` to start a new game.
-- Owner can call `endGame` to cancel an active game and return to lobby.
-- Player reconnection is supported via `playerId` stored in sessionStorage.
+### Real-time Subscriptions
+
+3 listeners per client: room document, players collection, messages collection.

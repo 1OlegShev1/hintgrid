@@ -1,463 +1,295 @@
 /**
- * Firestore actions for game operations.
- * All game state mutations go through these functions.
+ * Firestore actions for the game.
+ * Room cleanup is best-effort: delete when the last connected player leaves.
  */
 
 import {
-  doc,
-  collection,
-  getDoc,
-  getDocs,
-  setDoc,
-  updateDoc,
-  addDoc,
-  writeBatch,
-  serverTimestamp,
-  runTransaction,
-  arrayUnion,
-  arrayRemove,
+  doc, collection, getDoc, getDocs, deleteDoc, addDoc, serverTimestamp, runTransaction, Timestamp, writeBatch,
 } from "firebase/firestore";
 import { getFirestore } from "./firebase";
 import { generateBoard, assignTeams } from "@/shared/words";
 import { isValidClue, teamsAreReady, shufflePlayers, getRequiredVotes } from "@/shared/game-utils";
 import type { Player, Team, PauseReason } from "@/shared/types";
 
-const TURN_DURATIONS = [30, 60, 90] as const;
+const STALE_PLAYER_MS = 2 * 60 * 1000; // 2 minutes - player considered disconnected if no ping
 
-// Helper to get Firestore instance
+interface BoardCard {
+  word: string;
+  team: Team;
+  revealed: boolean;
+  revealedBy: string | null;
+  votes: string[];
+}
+
 function getDb() {
   const db = getFirestore();
-  if (!db) {
-    throw new Error("Firestore not initialized");
-  }
+  if (!db) throw new Error("Firestore not initialized");
   return db;
 }
 
-// ============================================================================
-// Pause Logic Helpers
-// ============================================================================
-
-interface PauseCheckResult {
-  shouldPause: boolean;
-  reason: PauseReason;
-  team: Team | null;
-}
-
-/**
- * Check if game should pause based on connected players for a team.
- * Called at turn transitions before the new turn begins.
- */
-function checkPauseConditions(
-  playersData: Array<{ team: string | null; role: string | null; connected: boolean }>,
-  currentTeam: "red" | "blue",
+// Check if team can play (for pause logic)
+function checkPause(
+  players: Array<{ team: string | null; role: string | null; connected: boolean }>,
+  team: "red" | "blue",
   hasClue: boolean
-): PauseCheckResult {
-  const teamPlayers = playersData.filter((p) => p.team === currentTeam);
-  const connectedSpymaster = teamPlayers.find(
-    (p) => p.role === "spymaster" && p.connected
-  );
-  const connectedOperatives = teamPlayers.filter(
-    (p) => p.role === "operative" && p.connected
-  );
-
-  // Check if entire team is disconnected
+): { paused: boolean; reason: PauseReason; team: Team | null } {
+  const teamPlayers = players.filter((p) => p.team === team);
+  const hasSpymaster = teamPlayers.some((p) => p.role === "spymaster" && p.connected);
+  const hasOperative = teamPlayers.some((p) => p.role === "operative" && p.connected);
   const anyConnected = teamPlayers.some((p) => p.connected);
-  if (!anyConnected) {
-    return { shouldPause: true, reason: "teamDisconnected", team: currentTeam };
-  }
 
-  // If no clue yet, spymaster must be connected
-  if (!hasClue && !connectedSpymaster) {
-    return { shouldPause: true, reason: "spymasterDisconnected", team: currentTeam };
-  }
+  if (!anyConnected) return { paused: true, reason: "teamDisconnected", team };
+  if (!hasClue && !hasSpymaster) return { paused: true, reason: "spymasterDisconnected", team };
+  if (hasClue && !hasOperative) return { paused: true, reason: "noOperatives", team };
+  return { paused: false, reason: null, team: null };
+}
 
-  // If clue given, at least one operative must be connected
-  if (hasClue && connectedOperatives.length === 0) {
-    return { shouldPause: true, reason: "noOperatives", team: currentTeam };
-  }
-
-  return { shouldPause: false, reason: null, team: null };
+// Delete a room and all subcollections
+async function deleteRoom(roomCode: string): Promise<void> {
+  const db = getDb();
+  const roomRef = doc(db, "rooms", roomCode);
+  
+  // Delete subcollections first
+  const [players, messages] = await Promise.all([
+    getDocs(collection(db, "rooms", roomCode, "players")),
+    getDocs(collection(db, "rooms", roomCode, "messages")),
+  ]);
+  
+  await Promise.all([
+    ...players.docs.map((d) => deleteDoc(d.ref)),
+    ...messages.docs.map((d) => deleteDoc(d.ref)),
+  ]);
+  
+  await deleteDoc(roomRef);
 }
 
 /**
- * Check if pause conditions are resolved (for resume validation).
+ * Presence ping - updates own lastSeen and marks stale players as disconnected.
  */
-function canResume(
-  playersData: Array<{ team: string | null; role: string | null; connected: boolean }>,
-  currentTeam: "red" | "blue"
-): boolean {
-  const teamPlayers = playersData.filter((p) => p.team === currentTeam);
-  const connectedSpymaster = teamPlayers.find(
-    (p) => p.role === "spymaster" && p.connected
-  );
-  const connectedOperatives = teamPlayers.filter(
-    (p) => p.role === "operative" && p.connected
-  );
+export async function presencePing(roomCode: string, playerId: string): Promise<void> {
+  const db = getDb();
+  const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
+  
+  if (playersSnap.empty) return;
+  
+  const now = Date.now();
+  const batch = writeBatch(db);
+  
+  for (const playerDoc of playersSnap.docs) {
+    const data = playerDoc.data();
+    const lastSeen = data.lastSeen as Timestamp | null;
+    const isStale = lastSeen && (now - lastSeen.toMillis() > STALE_PLAYER_MS);
+    
+    if (playerDoc.id === playerId) {
+      // Update own presence
+      batch.update(playerDoc.ref, { connected: true, lastSeen: serverTimestamp() });
+    } else if (data.connected && isStale) {
+      // Mark stale player as disconnected
+      batch.update(playerDoc.ref, { connected: false });
+    }
+  }
 
-  // Need at least spymaster and 1 operative connected
-  return Boolean(connectedSpymaster && connectedOperatives.length >= 1);
+  await batch.commit();
 }
 
 // ============================================================================
 // Room Management
 // ============================================================================
 
-/**
- * Join a room as a player
- * Uses transaction to atomically handle room creation and owner assignment
- */
-export async function joinRoom(
-  roomCode: string,
-  playerId: string,
-  playerName: string
-): Promise<void> {
+export async function joinRoom(roomCode: string, playerId: string, playerName: string): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
   const playerRef = doc(db, "rooms", roomCode, "players", playerId);
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    const playerSnap = await transaction.get(playerRef);
+  return runTransaction(db, async (tx) => {
+    const roomSnap = await tx.get(roomRef);
+    const playerSnap = await tx.get(playerRef);
 
     if (!roomSnap.exists()) {
-      // Create new room with this player as owner
       const startingTeam: Team = Math.random() < 0.5 ? "red" : "blue";
-      transaction.set(roomRef, {
-        ownerId: playerId,
-        currentTeam: startingTeam,
-        startingTeam,
-        currentClue: null,
-        remainingGuesses: null,
-        turnStartTime: null,
-        turnDuration: 60,
-        gameStarted: false,
-        gameOver: false,
-        winner: null,
-        paused: false,
-        pauseReason: null,
-        pausedForTeam: null,
-        createdAt: serverTimestamp(),
-        lastActivity: serverTimestamp(),
+      tx.set(roomRef, {
+        ownerId: playerId, currentTeam: startingTeam, startingTeam,
+        currentClue: null, remainingGuesses: null, turnStartTime: null, turnDuration: 60,
+        gameStarted: false, gameOver: false, winner: null,
+        paused: false, pauseReason: null, pausedForTeam: null,
+        board: [],
+        createdAt: serverTimestamp(), lastActivity: serverTimestamp(),
       });
     } else {
-      // Room exists, update lastActivity
-      transaction.update(roomRef, {
-        lastActivity: serverTimestamp(),
-      });
+      tx.update(roomRef, { lastActivity: serverTimestamp() });
     }
 
     if (playerSnap.exists()) {
-      // Update existing player (reconnecting)
-      transaction.update(playerRef, {
-        name: playerName,
-        connected: true,
-        lastSeen: serverTimestamp(),
-      });
+      tx.update(playerRef, { name: playerName, connected: true, lastSeen: serverTimestamp() });
     } else {
-      // Create new player
-      transaction.set(playerRef, {
-        name: playerName,
-        team: null,
-        role: null,
-        connected: true,
-        lastSeen: serverTimestamp(),
-      });
-
-      // If room already existed but has no owner, set this player as owner
+      tx.set(playerRef, { name: playerName, team: null, role: null, connected: true, lastSeen: serverTimestamp() });
       if (roomSnap.exists() && !roomSnap.data().ownerId) {
-        transaction.update(roomRef, {
-          ownerId: playerId,
-        });
+        tx.update(roomRef, { ownerId: playerId });
       }
     }
   });
 }
 
-/**
- * Leave a room (mark player as disconnected)
- */
 export async function leaveRoom(roomCode: string, playerId: string): Promise<void> {
   const db = getDb();
+  const roomRef = doc(db, "rooms", roomCode);
   const playerRef = doc(db, "rooms", roomCode, "players", playerId);
 
-  // Clear votes from this player
-  const boardSnap = await getDocs(collection(db, "rooms", roomCode, "board"));
-  const batch = writeBatch(db);
+  // Get all players to check if this is the last one
+  const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
+  const connectedCount = playersSnap.docs.filter(
+    (d) => d.id !== playerId && d.data().connected
+  ).length;
 
-  boardSnap.docs.forEach((cardDoc) => {
-    const cardData = cardDoc.data();
-    if (cardData.votes && Array.isArray(cardData.votes) && cardData.votes.includes(playerId)) {
-      const newVotes = cardData.votes.filter((id: string) => id !== playerId);
-      batch.update(cardDoc.ref, { votes: newVotes });
+  if (connectedCount === 0) {
+    // Last player leaving - delete the room
+    await deleteRoom(roomCode);
+    return;
+  }
+
+  // Not the last player - just mark as disconnected and clear votes
+  return runTransaction(db, async (tx) => {
+    const roomSnap = await tx.get(roomRef);
+    if (roomSnap.exists()) {
+      const board: BoardCard[] = roomSnap.data().board || [];
+      const updatedBoard = board.map((c) => ({ ...c, votes: c.votes.filter((id) => id !== playerId) }));
+      tx.update(roomRef, { board: updatedBoard, lastActivity: serverTimestamp() });
     }
+    tx.update(playerRef, { connected: false, lastSeen: serverTimestamp() });
   });
-
-  // Mark player as disconnected
-  batch.update(playerRef, {
-    connected: false,
-    lastSeen: serverTimestamp(),
-  });
-
-  await batch.commit();
 }
 
 // ============================================================================
 // Game Lifecycle
 // ============================================================================
 
-/**
- * Start the game
- */
 export async function startGame(roomCode: string, playerId: string): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
 
-  // Read collections BEFORE transaction (collections can't be locked in transactions)
   const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-  const players: Player[] = playersSnap.docs
-    .map((docSnap) => ({
-      id: docSnap.id,
-      name: docSnap.data().name,
-      team: docSnap.data().team,
-      role: docSnap.data().role,
-    }))
+  const players = playersSnap.docs
+    .map((d) => ({ id: d.id, name: d.data().name, team: d.data().team, role: d.data().role }))
     .filter((p) => p.team && p.role) as Player[];
 
   if (!teamsAreReady(players)) throw new Error("Teams not ready");
 
-  // Get existing board document IDs to delete
-  const existingBoardSnap = await getDocs(collection(db, "rooms", roomCode, "board"));
-  const existingCardIds = existingBoardSnap.docs.map((docSnap) => docSnap.id);
-
-  // Generate new board
   const boardWords = generateBoard();
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (data.ownerId !== playerId) throw new Error("Not room owner");
+    if (data.gameStarted) throw new Error("Game already started");
 
-    const roomData = roomSnap.data();
-    if (roomData.ownerId !== playerId) throw new Error("Not room owner");
-    if (roomData.gameStarted) throw new Error("Game already started");
+    const startingTeam = data.startingTeam as "red" | "blue";
+    const board = assignTeams(boardWords, startingTeam).map((c) => ({
+      word: c.word, team: c.team, revealed: false, revealedBy: null, votes: [],
+    }));
 
-    const startingTeam = roomData.startingTeam as "red" | "blue";
-    const cards = assignTeams(boardWords, startingTeam);
-
-    // Update room state
-    transaction.update(roomRef, {
-      gameStarted: true,
-      currentTeam: startingTeam,
-      turnStartTime: serverTimestamp(),
-      currentClue: null,
-      remainingGuesses: null,
-      gameOver: false,
-      winner: null,
-      paused: false,
-      pauseReason: null,
-      pausedForTeam: null,
+    tx.update(roomRef, {
+      gameStarted: true, currentTeam: startingTeam, turnStartTime: serverTimestamp(),
+      currentClue: null, remainingGuesses: null, gameOver: false, winner: null,
+      paused: false, pauseReason: null, pausedForTeam: null, board,
       lastActivity: serverTimestamp(),
-    });
-
-    // Clear existing board
-    existingCardIds.forEach((cardId) => {
-      transaction.delete(doc(db, "rooms", roomCode, "board", cardId));
-    });
-
-    // Create new board
-    cards.forEach((card, index) => {
-      const cardRef = doc(db, "rooms", roomCode, "board", index.toString());
-      transaction.set(cardRef, {
-        word: card.word,
-        team: card.team,
-        revealed: false,
-        revealedBy: null,
-        votes: [],
-      });
     });
   });
 }
 
-/**
- * Start a rematch
- */
 export async function rematch(roomCode: string, playerId: string): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
 
-  // Read collections BEFORE transaction
   const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-  const players: Player[] = playersSnap.docs
-    .map((docSnap) => ({
-      id: docSnap.id,
-      name: docSnap.data().name,
-      team: docSnap.data().team,
-      role: docSnap.data().role,
-    }))
+  const players = playersSnap.docs
+    .map((d) => ({ id: d.id, name: d.data().name, team: d.data().team, role: d.data().role }))
     .filter((p) => p.team && p.role) as Player[];
 
   if (!teamsAreReady(players)) throw new Error("Teams not ready");
 
-  // Get existing board and message IDs to delete
-  const existingBoardSnap = await getDocs(collection(db, "rooms", roomCode, "board"));
-  const existingCardIds = existingBoardSnap.docs.map((docSnap) => docSnap.id);
   const messagesSnap = await getDocs(collection(db, "rooms", roomCode, "messages"));
-  const messageIds = messagesSnap.docs.map((docSnap) => docSnap.id);
-
-  // Generate new board
   const boardWords = generateBoard();
   const startingTeam: Team = Math.random() < 0.5 ? "red" : "blue";
-  const cards = assignTeams(boardWords, startingTeam);
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (data.ownerId !== playerId) throw new Error("Not room owner");
+    if (!data.gameOver) throw new Error("Game not over");
 
-    const roomData = roomSnap.data();
-    if (roomData.ownerId !== playerId) throw new Error("Not room owner");
-    if (!roomData.gameOver) throw new Error("Game not over");
+    const board = assignTeams(boardWords, startingTeam).map((c) => ({
+      word: c.word, team: c.team, revealed: false, revealedBy: null, votes: [],
+    }));
 
-    // Update room state
-    transaction.update(roomRef, {
-      gameStarted: true,
-      currentTeam: startingTeam,
-      startingTeam,
-      turnStartTime: serverTimestamp(),
-      currentClue: null,
-      remainingGuesses: null,
-      gameOver: false,
-      winner: null,
-      paused: false,
-      pauseReason: null,
-      pausedForTeam: null,
+    tx.update(roomRef, {
+      gameStarted: true, currentTeam: startingTeam, startingTeam, turnStartTime: serverTimestamp(),
+      currentClue: null, remainingGuesses: null, gameOver: false, winner: null,
+      paused: false, pauseReason: null, pausedForTeam: null, board,
       lastActivity: serverTimestamp(),
     });
 
-    // Clear existing board
-    existingCardIds.forEach((cardId) => {
-      transaction.delete(doc(db, "rooms", roomCode, "board", cardId));
-    });
-
-    // Create new board
-    cards.forEach((card, index) => {
-      const cardRef = doc(db, "rooms", roomCode, "board", index.toString());
-      transaction.set(cardRef, {
-        word: card.word,
-        team: card.team,
-        revealed: false,
-        revealedBy: null,
-        votes: [],
-      });
-    });
-
-    // Clear messages
-    messageIds.forEach((msgId) => {
-      transaction.delete(doc(db, "rooms", roomCode, "messages", msgId));
-    });
+    messagesSnap.docs.forEach((d) => tx.delete(d.ref));
   });
 }
 
-/**
- * End the game and return to lobby
- */
 export async function endGame(roomCode: string, playerId: string): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
-
-  // Read players BEFORE transaction
   const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-  const playerIds = playersSnap.docs.map((docSnap) => docSnap.id);
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (data.ownerId !== playerId) throw new Error("Not room owner");
+    if (!data.gameStarted || data.gameOver) throw new Error("Invalid game state");
 
-    const roomData = roomSnap.data();
-    if (roomData.ownerId !== playerId) throw new Error("Not room owner");
-    if (!roomData.gameStarted || roomData.gameOver) throw new Error("Invalid game state");
-
-    // Update room state
-    transaction.update(roomRef, {
-      gameStarted: false,
-      gameOver: false,
-      winner: null,
-      currentClue: null,
-      remainingGuesses: null,
-      turnStartTime: null,
-      paused: false,
-      pauseReason: null,
-      pausedForTeam: null,
-      lastActivity: serverTimestamp(),
+    tx.update(roomRef, {
+      gameStarted: false, gameOver: false, winner: null, currentClue: null,
+      remainingGuesses: null, turnStartTime: null, paused: false, pauseReason: null,
+      pausedForTeam: null, board: [], lastActivity: serverTimestamp(),
     });
 
-    // Clear team/role assignments
-    playerIds.forEach((pId) => {
-      transaction.update(doc(db, "rooms", roomCode, "players", pId), {
-        team: null,
-        role: null,
-      });
-    });
+    playersSnap.docs.forEach((d) => tx.update(d.ref, { team: null, role: null }));
 
-    // Add system message
-    const messagesRef = collection(db, "rooms", roomCode, "messages");
-    transaction.set(doc(messagesRef), {
-      playerId: null,
-      playerName: "System",
-      message: "Game ended by room owner. Players can now re-select teams.",
-      timestamp: serverTimestamp(),
-      type: "system",
+    tx.set(doc(collection(db, "rooms", roomCode, "messages")), {
+      playerId: null, playerName: "System",
+      message: "Game ended by room owner.",
+      timestamp: serverTimestamp(), type: "system",
     });
   });
 }
 
-/**
- * Resume a paused game (host only)
- * Validates that conditions are met before resuming
- */
 export async function resumeGame(roomCode: string, playerId: string): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
-
-  // Read players BEFORE transaction
   const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-  const playersData = playersSnap.docs.map((docSnap) => ({
-    team: docSnap.data().team,
-    role: docSnap.data().role,
-    connected: docSnap.data().connected,
+  const players = playersSnap.docs.map((d) => ({
+    team: d.data().team, role: d.data().role, connected: d.data().connected,
   }));
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (data.ownerId !== playerId) throw new Error("Not room owner");
+    if (!data.paused || !data.gameStarted || data.gameOver) throw new Error("Invalid game state");
 
-    const roomData = roomSnap.data();
-    if (roomData.ownerId !== playerId) throw new Error("Not room owner");
-    if (!roomData.paused) throw new Error("Game not paused");
-    if (!roomData.gameStarted || roomData.gameOver) throw new Error("Invalid game state");
+    const team = data.currentTeam as "red" | "blue";
+    const hasSpymaster = players.some((p) => p.team === team && p.role === "spymaster" && p.connected);
+    const hasOperative = players.some((p) => p.team === team && p.role === "operative" && p.connected);
+    if (!hasSpymaster || !hasOperative) throw new Error("Team needs spymaster and operative");
 
-    const currentTeam = roomData.currentTeam as "red" | "blue";
-
-    // Verify conditions are met to resume
-    if (!canResume(playersData, currentTeam)) {
-      throw new Error("Cannot resume: team needs connected spymaster and at least one operative");
-    }
-
-    // Resume game
-    transaction.update(roomRef, {
-      paused: false,
-      pauseReason: null,
-      pausedForTeam: null,
-      turnStartTime: serverTimestamp(),
-      lastActivity: serverTimestamp(),
+    tx.update(roomRef, {
+      paused: false, pauseReason: null, pausedForTeam: null,
+      turnStartTime: serverTimestamp(), lastActivity: serverTimestamp(),
     });
 
-    // Add system message
-    const messagesRef = collection(db, "rooms", roomCode, "messages");
-    transaction.set(doc(messagesRef), {
-      playerId: null,
-      playerName: "System",
-      message: "Game resumed by room owner.",
-      timestamp: serverTimestamp(),
-      type: "system",
+    tx.set(doc(collection(db, "rooms", roomCode, "messages")), {
+      playerId: null, playerName: "System",
+      message: "Game resumed.", timestamp: serverTimestamp(), type: "system",
     });
   });
 }
@@ -466,484 +298,252 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
 // Lobby Actions
 // ============================================================================
 
-/**
- * Set turn duration
- */
-export async function setTurnDuration(
-  roomCode: string,
-  playerId: string,
-  duration: number
-): Promise<void> {
-  if (!TURN_DURATIONS.includes(duration as any)) {
-    throw new Error("Invalid turn duration");
-  }
-
+export async function setTurnDuration(roomCode: string, playerId: string, duration: number): Promise<void> {
+  if (![30, 60, 90].includes(duration)) throw new Error("Invalid duration");
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
-
-    const roomData = roomSnap.data();
-    if (roomData.ownerId !== playerId) throw new Error("Not room owner");
-    if (roomData.gameStarted) throw new Error("Game already started");
-
-    transaction.update(roomRef, {
-      turnDuration: duration,
-      lastActivity: serverTimestamp(),
-    });
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (data.ownerId !== playerId) throw new Error("Not room owner");
+    if (data.gameStarted) throw new Error("Game already started");
+    tx.update(roomRef, { turnDuration: duration, lastActivity: serverTimestamp() });
   });
 }
 
-/**
- * Set player's lobby role
- */
 export async function setLobbyRole(
-  roomCode: string,
-  playerId: string,
-  team: "red" | "blue" | null,
-  role: "spymaster" | "operative" | null
+  roomCode: string, playerId: string, team: "red" | "blue" | null, role: "spymaster" | "operative" | null
 ): Promise<void> {
   const db = getDb();
-  const playerRef = doc(db, "rooms", roomCode, "players", playerId);
   const roomRef = doc(db, "rooms", roomCode);
+  const playerRef = doc(db, "rooms", roomCode, "players", playerId);
 
-  // Check for duplicate spymaster BEFORE transaction
+  // Check for duplicate spymaster
   if (role === "spymaster" && team) {
     const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-    const existingSpymaster = playersSnap.docs.find(
-      (docSnap) =>
-        docSnap.id !== playerId &&
-        docSnap.data().team === team &&
-        docSnap.data().role === "spymaster"
+    const existing = playersSnap.docs.find(
+      (d) => d.id !== playerId && d.data().team === team && d.data().role === "spymaster"
     );
-    if (existingSpymaster) {
-      throw new Error("Team already has a spymaster");
-    }
+    if (existing) throw new Error("Team already has a spymaster");
   }
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (data.gameStarted && !data.gameOver && !data.paused) throw new Error("Game in progress");
 
-    const roomData = roomSnap.data();
-    // Allow role changes in lobby, after game over, or when paused
-    if (roomData.gameStarted && !roomData.gameOver && !roomData.paused) {
-      throw new Error("Cannot change role during active game");
-    }
+    const player = await tx.get(playerRef);
+    if (!player.exists()) throw new Error("Player not found");
 
-    const playerSnap = await transaction.get(playerRef);
-    if (!playerSnap.exists()) throw new Error("Player not found");
-
-    if (!team || !role) {
-      // Clear assignment
-      transaction.update(playerRef, {
-        team: null,
-        role: null,
-      });
-      return;
-    }
-
-    transaction.update(playerRef, {
-      team,
-      role,
-    });
-
-    transaction.update(roomRef, {
-      lastActivity: serverTimestamp(),
-    });
+    tx.update(playerRef, { team: team || null, role: role || null });
+    tx.update(roomRef, { lastActivity: serverTimestamp() });
   });
 }
 
-/**
- * Randomize team assignments
- */
 export async function randomizeTeams(roomCode: string, playerId: string): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
-
-  // Get all players BEFORE transaction
   const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-  const players = playersSnap.docs.map((docSnap) => ({
-    id: docSnap.id,
-    name: docSnap.data().name,
-    team: docSnap.data().team,
-    role: docSnap.data().role,
+  const players = playersSnap.docs.map((d) => ({
+    id: d.id, name: d.data().name, team: d.data().team, role: d.data().role,
   }));
 
-  if (players.length < 4 || players.length % 2 !== 0) {
-    throw new Error("Need even number of players (4+)");
-  }
+  if (players.length < 4 || players.length % 2 !== 0) throw new Error("Need even number of players (4+)");
 
-  // Shuffle and assign teams
   const shuffled = shufflePlayers(players);
-  const teamSize = players.length / 2;
-  const redTeam = shuffled.slice(0, teamSize);
-  const blueTeam = shuffled.slice(teamSize);
+  const half = players.length / 2;
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (data.ownerId !== playerId) throw new Error("Not room owner");
+    if (data.gameStarted && !data.gameOver) throw new Error("Game in progress");
 
-    const roomData = roomSnap.data();
-    if (roomData.ownerId !== playerId) throw new Error("Not room owner");
-    if (roomData.gameStarted && !roomData.gameOver) {
-      throw new Error("Cannot randomize during active game");
-    }
-
-    redTeam.forEach((player, index) => {
-      const playerRef = doc(db, "rooms", roomCode, "players", player.id);
-      transaction.update(playerRef, {
-        team: "red",
-        role: index === 0 ? "spymaster" : "operative",
+    shuffled.forEach((p, i) => {
+      tx.update(doc(db, "rooms", roomCode, "players", p.id), {
+        team: i < half ? "red" : "blue",
+        role: i === 0 || i === half ? "spymaster" : "operative",
       });
     });
-
-    blueTeam.forEach((player, index) => {
-      const playerRef = doc(db, "rooms", roomCode, "players", player.id);
-      transaction.update(playerRef, {
-        team: "blue",
-        role: index === 0 ? "spymaster" : "operative",
-      });
-    });
-
-    transaction.update(roomRef, {
-      lastActivity: serverTimestamp(),
-    });
+    tx.update(roomRef, { lastActivity: serverTimestamp() });
   });
 }
 
 // ============================================================================
-// Gameplay Actions
+// Gameplay
 // ============================================================================
 
-/**
- * Give a clue (spymaster)
- */
-export async function giveClue(
-  roomCode: string,
-  playerId: string,
-  word: string,
-  count: number
-): Promise<void> {
+export async function giveClue(roomCode: string, playerId: string, word: string, count: number): Promise<void> {
+  const trimmed = word.trim();
+  if (!trimmed || !/^\S+$/.test(trimmed) || count < 0) throw new Error("Invalid clue");
+
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
 
-  // Validate clue format early
-  const trimmed = word.trim();
-  if (!trimmed || !Number.isFinite(count) || count < 0) {
-    throw new Error("Invalid clue");
-  }
-  if (/\s/.test(trimmed)) throw new Error("Clue must be single word");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (!data.gameStarted || data.gameOver || data.currentClue) throw new Error("Cannot give clue now");
 
-  // Get board words for validation BEFORE transaction
-  const boardSnap = await getDocs(collection(db, "rooms", roomCode, "board"));
-  const boardWords = boardSnap.docs.map((docSnap) => docSnap.data().word);
-  const cardIds = boardSnap.docs.map((docSnap) => docSnap.id);
-  
-  if (!isValidClue(trimmed, boardWords)) {
-    throw new Error("Invalid clue word");
-  }
+    const board: BoardCard[] = data.board || [];
+    if (!isValidClue(trimmed, board.map((c) => c.word))) throw new Error("Invalid clue word");
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+    const player = await tx.get(doc(db, "rooms", roomCode, "players", playerId));
+    if (!player.exists()) throw new Error("Player not found");
+    const pData = player.data();
+    if (pData.role !== "spymaster" || pData.team !== data.currentTeam) throw new Error("Not your turn");
 
-    const roomData = roomSnap.data();
-    if (!roomData.gameStarted || roomData.gameOver) throw new Error("Game not active");
-    if (roomData.currentClue) throw new Error("Clue already given");
-
-    // Get player
-    const playerRef = doc(db, "rooms", roomCode, "players", playerId);
-    const playerSnap = await transaction.get(playerRef);
-    if (!playerSnap.exists()) throw new Error("Player not found");
-
-    const playerData = playerSnap.data();
-    if (
-      playerData.role !== "spymaster" ||
-      playerData.team !== roomData.currentTeam
-    ) {
-      throw new Error("Not current team's spymaster");
-    }
-
-    // Update room state
-    transaction.update(roomRef, {
+    tx.update(roomRef, {
       currentClue: { word: trimmed.toUpperCase(), count },
       remainingGuesses: count + 1,
       turnStartTime: serverTimestamp(),
+      board: board.map((c) => ({ ...c, votes: [] })),
       lastActivity: serverTimestamp(),
     });
 
-    // Clear all votes
-    cardIds.forEach((cardId) => {
-      transaction.update(doc(db, "rooms", roomCode, "board", cardId), { votes: [] });
-    });
-
-    // Add clue message
-    const messagesRef = collection(db, "rooms", roomCode, "messages");
-    transaction.set(doc(messagesRef), {
-      playerId,
-      playerName: playerData.name,
-      message: `${trimmed} ${count}`,
-      timestamp: serverTimestamp(),
-      type: "clue",
+    tx.set(doc(collection(db, "rooms", roomCode, "messages")), {
+      playerId, playerName: pData.name, message: `${trimmed} ${count}`,
+      timestamp: serverTimestamp(), type: "clue",
     });
   });
 }
 
-/**
- * Vote for a card (operative)
- */
 export async function voteCard(roomCode: string, playerId: string, cardIndex: number): Promise<void> {
   const db = getDb();
-  const cardRef = doc(db, "rooms", roomCode, "board", cardIndex.toString());
   const roomRef = doc(db, "rooms", roomCode);
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
-
-    const roomData = roomSnap.data();
-    if (!roomData.gameStarted || roomData.gameOver) throw new Error("Game not active");
-    if (!roomData.currentClue || !roomData.remainingGuesses || roomData.remainingGuesses <= 0) {
-      throw new Error("No active clue");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (!data.gameStarted || data.gameOver || !data.currentClue || data.remainingGuesses <= 0) {
+      throw new Error("Cannot vote now");
     }
 
-    // Get player
-    const playerRef = doc(db, "rooms", roomCode, "players", playerId);
-    const playerSnap = await transaction.get(playerRef);
-    if (!playerSnap.exists()) throw new Error("Player not found");
+    const player = await tx.get(doc(db, "rooms", roomCode, "players", playerId));
+    if (!player.exists()) throw new Error("Player not found");
+    const pData = player.data();
+    if (pData.role !== "operative" || pData.team !== data.currentTeam) throw new Error("Not your turn");
 
-    const playerData = playerSnap.data();
-    if (
-      playerData.role !== "operative" ||
-      playerData.team !== roomData.currentTeam
-    ) {
-      throw new Error("Not current team's operative");
+    const board: BoardCard[] = data.board || [];
+    if (cardIndex < 0 || cardIndex >= board.length || board[cardIndex].revealed) {
+      throw new Error("Invalid card");
     }
 
-    // Get card
-    const cardSnap = await transaction.get(cardRef);
-    if (!cardSnap.exists()) throw new Error("Card not found");
+    const card = board[cardIndex];
+    const votes = card.votes.includes(playerId)
+      ? card.votes.filter((id) => id !== playerId)
+      : [...card.votes, playerId];
 
-    const cardData = cardSnap.data();
-    if (cardData.revealed) throw new Error("Card already revealed");
+    const updatedBoard = [...board];
+    updatedBoard[cardIndex] = { ...card, votes };
 
-    // Toggle vote
-    const votes = cardData.votes || [];
-    const existingIndex = votes.indexOf(playerId);
-    if (existingIndex >= 0) {
-      transaction.update(cardRef, {
-        votes: arrayRemove(playerId),
-      });
-    } else {
-      transaction.update(cardRef, {
-        votes: arrayUnion(playerId),
-      });
-    }
-
-    transaction.update(roomRef, {
-      lastActivity: serverTimestamp(),
-    });
+    tx.update(roomRef, { board: updatedBoard, lastActivity: serverTimestamp() });
   });
 }
 
-/**
- * Confirm card reveal after enough votes
- */
 export async function confirmReveal(roomCode: string, playerId: string, cardIndex: number): Promise<void> {
   const db = getDb();
-  const cardRef = doc(db, "rooms", roomCode, "board", cardIndex.toString());
   const roomRef = doc(db, "rooms", roomCode);
-
-  // Read collections BEFORE transaction
   const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-  const boardSnap = await getDocs(collection(db, "rooms", roomCode, "board"));
-  const cardIds = boardSnap.docs.map((docSnap) => docSnap.id);
-  const playersData = playersSnap.docs.map((docSnap) => ({
-    team: docSnap.data().team,
-    role: docSnap.data().role,
-    connected: docSnap.data().connected,
+  const players = playersSnap.docs.map((d) => ({
+    id: d.id, team: d.data().team, role: d.data().role, connected: d.data().connected,
   }));
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
-
-    const roomData = roomSnap.data();
-    if (!roomData.gameStarted || roomData.gameOver) throw new Error("Game not active");
-    if (!roomData.currentClue || !roomData.remainingGuesses || roomData.remainingGuesses <= 0) {
-      throw new Error("No active clue");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (!data.gameStarted || data.gameOver || !data.currentClue || data.remainingGuesses <= 0) {
+      throw new Error("Cannot reveal now");
     }
 
-    // Get player
-    const playerRef = doc(db, "rooms", roomCode, "players", playerId);
-    const playerSnap = await transaction.get(playerRef);
-    if (!playerSnap.exists()) throw new Error("Player not found");
+    const player = await tx.get(doc(db, "rooms", roomCode, "players", playerId));
+    if (!player.exists()) throw new Error("Player not found");
+    const pData = player.data();
+    if (pData.role !== "operative" || pData.team !== data.currentTeam) throw new Error("Not your turn");
 
-    const playerData = playerSnap.data();
-    if (
-      playerData.role !== "operative" ||
-      playerData.team !== roomData.currentTeam
-    ) {
-      throw new Error("Not current team's operative");
+    const board: BoardCard[] = data.board || [];
+    if (cardIndex < 0 || cardIndex >= board.length || board[cardIndex].revealed) {
+      throw new Error("Invalid card");
     }
 
-    // Get card
-    const cardSnap = await transaction.get(cardRef);
-    if (!cardSnap.exists()) throw new Error("Card not found");
+    const card = board[cardIndex];
+    const operatives = players.filter((p) => p.team === data.currentTeam && p.role === "operative" && p.connected);
+    const required = getRequiredVotes(operatives.length);
 
-    const cardData = cardSnap.data();
-    if (cardData.revealed) throw new Error("Card already revealed");
+    if (card.votes.length < required || !card.votes.includes(playerId)) {
+      throw new Error("Not enough votes");
+    }
 
-    // Check votes
-    const votes = cardData.votes || [];
-    
-    // Calculate required votes from pre-read players data
-    const operatives = playersSnap.docs.filter(
-      (docSnap) =>
-        docSnap.data().team === roomData.currentTeam &&
-        docSnap.data().role === "operative" &&
-        docSnap.data().connected
+    // Reveal and clear votes
+    const updatedBoard = board.map((c, i) => 
+      i === cardIndex 
+        ? { ...c, revealed: true, revealedBy: playerId, votes: [] }
+        : { ...c, votes: [] }
     );
-    const requiredVotes = getRequiredVotes(operatives.length);
 
-    if (votes.length < requiredVotes || !votes.includes(playerId)) {
-      throw new Error("Not enough votes or player didn't vote");
-    }
+    const isCorrect = card.team === data.currentTeam;
+    const isAssassin = card.team === "assassin";
+    const remainingTeamCards = updatedBoard.filter((c) => c.team === data.currentTeam && !c.revealed).length;
+    const newGuesses = data.remainingGuesses - 1;
 
-    // Reveal card
-    transaction.update(cardRef, {
-      revealed: true,
-      revealedBy: playerId,
-      votes: [],
-    });
-
-    const isCorrect = cardData.team === roomData.currentTeam;
-    const isAssassin = cardData.team === "assassin";
-
-    // Check for game over
     if (isAssassin) {
-      // Assassin - other team wins
-      transaction.update(roomRef, {
-        gameOver: true,
-        winner: roomData.currentTeam === "red" ? "blue" : "red",
-        currentClue: null,
-        remainingGuesses: null,
-        turnStartTime: null,
+      tx.update(roomRef, {
+        board: updatedBoard, gameOver: true, winner: data.currentTeam === "red" ? "blue" : "red",
+        currentClue: null, remainingGuesses: null, turnStartTime: null, lastActivity: serverTimestamp(),
+      });
+    } else if (!isCorrect || newGuesses === 0) {
+      const newTeam = data.currentTeam === "red" ? "blue" : "red";
+      const pause = checkPause(players, newTeam, false);
+      tx.update(roomRef, {
+        board: updatedBoard, currentTeam: newTeam, currentClue: null, remainingGuesses: null,
+        turnStartTime: pause.paused ? null : serverTimestamp(),
+        paused: pause.paused, pauseReason: pause.reason, pausedForTeam: pause.team,
         lastActivity: serverTimestamp(),
       });
-    } else if (!isCorrect) {
-      // Wrong team or neutral - end turn
-      const newTeam = roomData.currentTeam === "red" ? "blue" : "red";
-      const pauseCheck = checkPauseConditions(playersData, newTeam, false);
-      transaction.update(roomRef, {
-        currentTeam: newTeam,
-        turnStartTime: pauseCheck.shouldPause ? null : serverTimestamp(),
-        currentClue: null,
-        remainingGuesses: null,
-        paused: pauseCheck.shouldPause,
-        pauseReason: pauseCheck.reason,
-        pausedForTeam: pauseCheck.team,
-        lastActivity: serverTimestamp(),
+    } else if (remainingTeamCards === 0) {
+      tx.update(roomRef, {
+        board: updatedBoard, gameOver: true, winner: data.currentTeam,
+        currentClue: null, remainingGuesses: null, turnStartTime: null, lastActivity: serverTimestamp(),
       });
     } else {
-      // Correct - decrement guesses
-      const newRemainingGuesses = Math.max(0, roomData.remainingGuesses - 1);
-      
-      // Check if all team cards will be revealed (excluding current card being revealed)
-      const currentTeamCardsRemaining = boardSnap.docs.filter(
-        (docSnap) =>
-          docSnap.data().team === roomData.currentTeam && 
-          !docSnap.data().revealed &&
-          docSnap.id !== cardIndex.toString() // Exclude the card we're revealing
-      );
-
-      if (currentTeamCardsRemaining.length === 0) {
-        // Team wins (this was the last card)
-        transaction.update(roomRef, {
-          gameOver: true,
-          winner: roomData.currentTeam,
-          currentClue: null,
-          remainingGuesses: null,
-          turnStartTime: null,
-          lastActivity: serverTimestamp(),
-        });
-      } else if (newRemainingGuesses === 0) {
-        // Out of guesses - end turn
-        const newTeam = roomData.currentTeam === "red" ? "blue" : "red";
-        const pauseCheck = checkPauseConditions(playersData, newTeam, false);
-        transaction.update(roomRef, {
-          currentTeam: newTeam,
-          turnStartTime: pauseCheck.shouldPause ? null : serverTimestamp(),
-          currentClue: null,
-          remainingGuesses: null,
-          paused: pauseCheck.shouldPause,
-          pauseReason: pauseCheck.reason,
-          pausedForTeam: pauseCheck.team,
-          lastActivity: serverTimestamp(),
-        });
-      } else {
-        // Continue guessing
-        transaction.update(roomRef, {
-          remainingGuesses: newRemainingGuesses,
-          lastActivity: serverTimestamp(),
-        });
-      }
+      tx.update(roomRef, {
+        board: updatedBoard, remainingGuesses: newGuesses, lastActivity: serverTimestamp(),
+      });
     }
-
-    // Clear all votes
-    cardIds.forEach((cId) => {
-      transaction.update(doc(db, "rooms", roomCode, "board", cId), { votes: [] });
-    });
   });
 }
 
-/**
- * End the current turn
- */
 export async function endTurn(roomCode: string): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
-
-  // Get card IDs and players BEFORE transaction
-  const boardSnap = await getDocs(collection(db, "rooms", roomCode, "board"));
-  const cardIds = boardSnap.docs.map((docSnap) => docSnap.id);
   const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
-  const playersData = playersSnap.docs.map((docSnap) => ({
-    team: docSnap.data().team,
-    role: docSnap.data().role,
-    connected: docSnap.data().connected,
+  const players = playersSnap.docs.map((d) => ({
+    team: d.data().team, role: d.data().role, connected: d.data().connected,
   }));
 
-  return runTransaction(db, async (transaction) => {
-    const roomSnap = await transaction.get(roomRef);
-    if (!roomSnap.exists()) throw new Error("Room not found");
+  return runTransaction(db, async (tx) => {
+    const room = await tx.get(roomRef);
+    if (!room.exists()) throw new Error("Room not found");
+    const data = room.data();
+    if (!data.gameStarted || data.gameOver) throw new Error("Game not active");
 
-    const roomData = roomSnap.data();
-    if (!roomData.gameStarted || roomData.gameOver) throw new Error("Game not active");
+    const newTeam = data.currentTeam === "red" ? "blue" : "red";
+    const pause = checkPause(players, newTeam, false);
+    const board: BoardCard[] = data.board || [];
 
-    const newTeam = roomData.currentTeam === "red" ? "blue" : "red";
-
-    // Check if new team can play (no clue yet at turn start)
-    const pauseCheck = checkPauseConditions(playersData, newTeam, false);
-
-    // Switch teams (and possibly pause)
-    transaction.update(roomRef, {
-      currentTeam: newTeam,
-      turnStartTime: pauseCheck.shouldPause ? null : serverTimestamp(),
-      currentClue: null,
-      remainingGuesses: null,
-      paused: pauseCheck.shouldPause,
-      pauseReason: pauseCheck.reason,
-      pausedForTeam: pauseCheck.team,
+    tx.update(roomRef, {
+      board: board.map((c) => ({ ...c, votes: [] })),
+      currentTeam: newTeam, currentClue: null, remainingGuesses: null,
+      turnStartTime: pause.paused ? null : serverTimestamp(),
+      paused: pause.paused, pauseReason: pause.reason, pausedForTeam: pause.team,
       lastActivity: serverTimestamp(),
-    });
-
-    // Clear all votes
-    cardIds.forEach((cardId) => {
-      transaction.update(doc(db, "rooms", roomCode, "board", cardId), { votes: [] });
     });
   });
 }
@@ -952,29 +552,13 @@ export async function endTurn(roomCode: string): Promise<void> {
 // Chat
 // ============================================================================
 
-/**
- * Send a chat message
- */
-export async function sendMessage(
-  roomCode: string,
-  playerId: string,
-  message: string,
-  messageType: "clue" | "chat"
-): Promise<void> {
+export async function sendMessage(roomCode: string, playerId: string, message: string, type: "clue" | "chat"): Promise<void> {
   const db = getDb();
-  const playerRef = doc(db, "rooms", roomCode, "players", playerId);
-  const messagesRef = collection(db, "rooms", roomCode, "messages");
+  const player = await getDoc(doc(db, "rooms", roomCode, "players", playerId));
+  if (!player.exists()) throw new Error("Player not found");
 
-  const playerSnap = await getDoc(playerRef);
-  if (!playerSnap.exists()) throw new Error("Player not found");
-
-  const playerData = playerSnap.data();
-
-  await addDoc(messagesRef, {
-    playerId,
-    playerName: playerData.name,
-    message: message.trim(),
-    timestamp: serverTimestamp(),
-    type: messageType,
+  await addDoc(collection(db, "rooms", roomCode, "messages"), {
+    playerId, playerName: player.data().name, message: message.trim(),
+    timestamp: serverTimestamp(), type,
   });
 }
