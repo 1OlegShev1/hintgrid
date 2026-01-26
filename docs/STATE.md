@@ -29,7 +29,7 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
         "{playerId}": {
           "name": "...",
           "team": "red|blue",
-          "role": "spymaster|operative",
+          "role": "clueGiver|guesser",
           "connected": true,
           "lastSeen": 1234567890
         }
@@ -64,10 +64,10 @@ Requires Firebase Admin credentials (`gcloud auth application-default login`).
 ### Turn Flow
 
 1. `startGame` generates board, sets starting team
-2. Spymaster gives clue → `currentClue` and `remainingGuesses` set
-3. Operatives vote and confirm reveals
+2. Clue giver gives clue → `currentClue` and `remainingGuesses` set
+3. Guessers vote and confirm reveals
 4. Wrong guess or out of guesses → switch teams
-5. Assassin → game over, other team wins
+5. Trap → game over, other team wins
 6. All team cards revealed → team wins
 
 ### Pause Mechanism

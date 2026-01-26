@@ -22,8 +22,8 @@ test.describe('Smoke Tests', () => {
     await expect(page).toHaveURL(/\/room\/[A-Z0-9]+/);
     
     // Room should load with lobby visible - use data-testid for reliability
-    await expect(page.getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
-    await expect(page.getByTestId('lobby-join-blue-spymaster')).toBeVisible();
+    await expect(page.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('lobby-join-blue-clueGiver')).toBeVisible();
   });
 
   test('can join existing room with code', async ({ page, context }) => {
@@ -39,7 +39,7 @@ test.describe('Smoke Tests', () => {
     expect(roomCode).toBeTruthy();
     
     // Wait for lobby to load
-    await expect(page.getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
     
     // Second player joins with code
     const page2 = await context.newPage();
@@ -50,7 +50,7 @@ test.describe('Smoke Tests', () => {
     
     // Should be in same room (URL may have query params)
     await expect(page2).toHaveURL(new RegExp(`/room/${roomCode}`));
-    await expect(page2.getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+    await expect(page2.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
     
     // Player1 should see Player2 joined
     await expect(page.getByText('Player2')).toBeVisible({ timeout: 5000 });

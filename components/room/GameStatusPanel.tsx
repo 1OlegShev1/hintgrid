@@ -140,9 +140,9 @@ export default function GameStatusPanel({
         // Check if conditions are met to resume
         const pausedTeam = gameState.pausedForTeam;
         const teamPlayers = players.filter((p) => p.team === pausedTeam);
-        const hasSpymaster = teamPlayers.some((p) => p.role === "spymaster");
-        const hasOperative = teamPlayers.some((p) => p.role === "operative");
-        const canResume = hasSpymaster && hasOperative;
+        const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver");
+        const hasGuesser = teamPlayers.some((p) => p.role === "guesser");
+        const canResume = hasClueGiver && hasGuesser;
         
         return (
           <div className="bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400 dark:border-amber-600 rounded-lg p-4 text-center mb-4">
@@ -156,11 +156,11 @@ export default function GameStatusPanel({
               {gameState.pauseReason === "teamDisconnected" && (
                 <>{gameState.pausedForTeam?.toUpperCase()} team has no connected players. Waiting for reconnection...</>
               )}
-              {gameState.pauseReason === "spymasterDisconnected" && (
-                <>{gameState.pausedForTeam?.toUpperCase()} team spymaster disconnected. Waiting for reconnection...</>
+              {gameState.pauseReason === "clueGiverDisconnected" && (
+                <>{gameState.pausedForTeam?.toUpperCase()} team clue giver disconnected. Waiting for reconnection...</>
               )}
-              {gameState.pauseReason === "noOperatives" && (
-                <>{gameState.pausedForTeam?.toUpperCase()} team has no connected operatives. Waiting for reconnection...</>
+              {gameState.pauseReason === "noGuessers" && (
+                <>{gameState.pausedForTeam?.toUpperCase()} team has no connected guessers. Waiting for reconnection...</>
               )}
             </p>
             {isRoomOwner && (
@@ -174,7 +174,7 @@ export default function GameStatusPanel({
                   </button>
                 ) : (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Need {pausedTeam} team spymaster and at least one operative to resume
+                    Need {pausedTeam} team clue giver and at least one guesser to resume
                   </p>
                 )}
               </div>
@@ -194,7 +194,7 @@ export default function GameStatusPanel({
               ? "text-red-800 dark:text-red-200"
               : "text-blue-800 dark:text-blue-200"
           }`}>
-            ⏳ Waiting for {gameState.currentTeam} team spymaster to give a clue...
+            ⏳ Waiting for {gameState.currentTeam} team clue giver to give a clue...
           </p>
         </div>
       )}

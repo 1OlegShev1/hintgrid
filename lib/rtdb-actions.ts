@@ -44,7 +44,7 @@ interface RoomData {
 interface PlayerData {
   name: string;
   team: Team | null;
-  role: "spymaster" | "operative" | null;
+  role: "clueGiver" | "guesser" | null;
   connected: boolean;
   lastSeen: number;
 }
@@ -70,13 +70,13 @@ function checkPause(
   hasClue: boolean
 ): { paused: boolean; reason: PauseReason; team: Team | null } {
   const teamPlayers = Object.values(players).filter((p) => p.team === team);
-  const hasSpymaster = teamPlayers.some((p) => p.role === "spymaster" && p.connected);
-  const hasOperative = teamPlayers.some((p) => p.role === "operative" && p.connected);
+  const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver" && p.connected);
+  const hasGuesser = teamPlayers.some((p) => p.role === "guesser" && p.connected);
   const anyConnected = teamPlayers.some((p) => p.connected);
 
   if (!anyConnected) return { paused: true, reason: "teamDisconnected", team };
-  if (!hasClue && !hasSpymaster) return { paused: true, reason: "spymasterDisconnected", team };
-  if (hasClue && !hasOperative) return { paused: true, reason: "noOperatives", team };
+  if (!hasClue && !hasClueGiver) return { paused: true, reason: "clueGiverDisconnected", team };
+  if (hasClue && !hasGuesser) return { paused: true, reason: "noGuessers", team };
   return { paused: false, reason: null, team: null };
 }
 
@@ -387,7 +387,15 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     playerUpdates[`players/${id}/role`] = null;
   });
 
+  // Reassign owner to another connected player (if any)
+  const connectedOthers = Object.entries(playersData).filter(
+    ([id, p]) => id !== playerId && p.connected
+  );
+  const newOwnerId = connectedOthers.length > 0 ? connectedOthers[0][0] : playerId;
+  const newOwnerName = connectedOthers.length > 0 ? connectedOthers[0][1].name : null;
+
   await update(roomRef, {
+    ownerId: newOwnerId,
     gameStarted: false,
     gameOver: false,
     winner: null,
@@ -401,7 +409,7 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     ...playerUpdates,
   });
 
-  // Add system message
+  // Add system messages
   await push(ref(db, `rooms/${roomCode}/messages`), {
     playerId: null,
     playerName: "System",
@@ -409,6 +417,17 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     timestamp: serverTimestamp(),
     type: "system",
   });
+
+  // Notify about new owner if changed
+  if (newOwnerId !== playerId && newOwnerName) {
+    await push(ref(db, `rooms/${roomCode}/messages`), {
+      playerId: null,
+      playerName: "System",
+      message: `${newOwnerName} is now the room owner.`,
+      timestamp: serverTimestamp(),
+      type: "system",
+    });
+  }
 }
 
 export async function resumeGame(roomCode: string, playerId: string): Promise<void> {
@@ -425,14 +444,14 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
 
   const playersData = (playersSnap.val() || {}) as Record<string, PlayerData>;
   const team = roomData.currentTeam as "red" | "blue";
-  const hasSpymaster = Object.values(playersData).some(
-    (p) => p.team === team && p.role === "spymaster" && p.connected
+  const hasClueGiver = Object.values(playersData).some(
+    (p) => p.team === team && p.role === "clueGiver" && p.connected
   );
-  const hasOperative = Object.values(playersData).some(
-    (p) => p.team === team && p.role === "operative" && p.connected
+  const hasGuesser = Object.values(playersData).some(
+    (p) => p.team === team && p.role === "guesser" && p.connected
   );
 
-  if (!hasSpymaster || !hasOperative) throw new Error("Team needs spymaster and operative");
+  if (!hasClueGiver || !hasGuesser) throw new Error("Team needs clue giver and guesser");
 
   await update(roomRef, {
     paused: false,
@@ -488,7 +507,7 @@ export async function setLobbyRole(
   roomCode: string,
   playerId: string,
   team: "red" | "blue" | null,
-  role: "spymaster" | "operative" | null
+  role: "clueGiver" | "guesser" | null
 ): Promise<void> {
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
@@ -501,13 +520,13 @@ export async function setLobbyRole(
   const roomData = roomSnap.val() as RoomData;
   if (roomData.gameStarted && !roomData.gameOver && !roomData.paused) throw new Error("Game in progress");
 
-  // Check for duplicate spymaster
-  if (role === "spymaster" && team) {
+  // Check for duplicate clue giver
+  if (role === "clueGiver" && team) {
     const playersData = (playersSnap.val() || {}) as Record<string, PlayerData>;
     const existing = Object.entries(playersData).find(
-      ([id, p]) => id !== playerId && p.team === team && p.role === "spymaster"
+      ([id, p]) => id !== playerId && p.team === team && p.role === "clueGiver"
     );
-    if (existing) throw new Error("Team already has a spymaster");
+    if (existing) throw new Error("Team already has a clue giver");
   }
 
   await update(playerRef, { team: team || null, role: role || null });
@@ -541,7 +560,7 @@ export async function randomizeTeams(roomCode: string, playerId: string): Promis
   const updates: Record<string, any> = {};
   shuffled.forEach((p, i) => {
     updates[`players/${p.id}/team`] = i < half ? "red" : "blue";
-    updates[`players/${p.id}/role`] = i === 0 || i === half ? "spymaster" : "operative";
+    updates[`players/${p.id}/role`] = i === 0 || i === half ? "clueGiver" : "guesser";
   });
 
   await update(roomRef, updates);
@@ -567,7 +586,7 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
   const playerData = playerSnap.val() as PlayerData;
 
   if (!roomData.gameStarted || roomData.gameOver || roomData.currentClue) throw new Error("Cannot give clue now");
-  if (playerData.role !== "spymaster" || playerData.team !== roomData.currentTeam) throw new Error("Not your turn");
+  if (playerData.role !== "clueGiver" || playerData.team !== roomData.currentTeam) throw new Error("Not your turn");
 
   const board = roomData.board || [];
   if (!isValidClue(trimmed, board.map((c) => c.word))) throw new Error("Invalid clue word");
@@ -606,7 +625,7 @@ export async function voteCard(roomCode: string, playerId: string, cardIndex: nu
   if (!roomData.gameStarted || roomData.gameOver || !roomData.currentClue || (roomData.remainingGuesses ?? 0) <= 0) {
     throw new Error("Cannot vote now");
   }
-  if (playerData.role !== "operative" || playerData.team !== roomData.currentTeam) throw new Error("Not your turn");
+  if (playerData.role !== "guesser" || playerData.team !== roomData.currentTeam) throw new Error("Not your turn");
 
   const board = roomData.board || [];
   if (cardIndex < 0 || cardIndex >= board.length || board[cardIndex].revealed) {
@@ -648,7 +667,7 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
   if (!roomData.gameStarted || roomData.gameOver || !roomData.currentClue || (roomData.remainingGuesses ?? 0) <= 0) {
     throw new Error("Cannot reveal now");
   }
-  if (playerData.role !== "operative" || playerData.team !== roomData.currentTeam) throw new Error("Not your turn");
+  if (playerData.role !== "guesser" || playerData.team !== roomData.currentTeam) throw new Error("Not your turn");
 
   const board = roomData.board || [];
   if (cardIndex < 0 || cardIndex >= board.length || board[cardIndex].revealed) {
@@ -656,10 +675,10 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
   }
 
   const card = board[cardIndex];
-  const operatives = Object.values(playersData).filter(
-    (p) => p.team === roomData.currentTeam && p.role === "operative" && p.connected
+  const guessers = Object.values(playersData).filter(
+    (p) => p.team === roomData.currentTeam && p.role === "guesser" && p.connected
   );
-  const required = getRequiredVotes(operatives.length);
+  const required = getRequiredVotes(guessers.length);
   const voteCount = Object.keys(card.votes || {}).length;
 
   if (voteCount < required || !card.votes?.[playerId]) {
@@ -674,11 +693,11 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
   );
 
   const isCorrect = card.team === roomData.currentTeam;
-  const isAssassin = card.team === "assassin";
+  const isTrap = card.team === "trap";
   const remainingTeamCards = updatedBoard.filter((c) => c.team === roomData.currentTeam && !c.revealed).length;
   const newGuesses = (roomData.remainingGuesses ?? 1) - 1;
 
-  if (isAssassin) {
+  if (isTrap) {
     await update(roomRef, {
       board: updatedBoard,
       gameOver: true,

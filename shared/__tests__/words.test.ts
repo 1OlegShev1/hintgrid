@@ -151,10 +151,10 @@ describe('assignTeams', () => {
       expect(neutralCount).toBe(7);
     });
 
-    it('assigns exactly 1 assassin', () => {
+    it('assigns exactly 1 trap card', () => {
       const result = assignTeams(testBoard, 'red');
-      const assassinCount = result.filter((c) => c.team === 'assassin').length;
-      expect(assassinCount).toBe(1);
+      const trapCount = result.filter((c) => c.team === 'trap').length;
+      expect(trapCount).toBe(1);
     });
 
     it('total distribution is 9 + 8 + 7 + 1 = 25', () => {
@@ -162,13 +162,13 @@ describe('assignTeams', () => {
       const starting = result.filter((c) => c.team === 'red').length;
       const other = result.filter((c) => c.team === 'blue').length;
       const neutral = result.filter((c) => c.team === 'neutral').length;
-      const assassin = result.filter((c) => c.team === 'assassin').length;
+      const trap = result.filter((c) => c.team === 'trap').length;
 
-      expect(starting + other + neutral + assassin).toBe(25);
+      expect(starting + other + neutral + trap).toBe(25);
       expect(starting).toBe(9);
       expect(other).toBe(8);
       expect(neutral).toBe(7);
-      expect(assassin).toBe(1);
+      expect(trap).toBe(1);
     });
   });
 
@@ -189,7 +189,7 @@ describe('assignTeams', () => {
 
     it('each card has a team property', () => {
       const result = assignTeams(testBoard, 'red');
-      const validTeams = ['red', 'blue', 'neutral', 'assassin'];
+      const validTeams = ['red', 'blue', 'neutral', 'trap'];
       result.forEach((card) => {
         expect(validTeams).toContain(card.team);
       });
@@ -198,16 +198,16 @@ describe('assignTeams', () => {
 
   describe('randomness', () => {
     it('team assignments are randomized', () => {
-      // Run multiple times and check that assassin is not always in same position
-      const assassinPositions: number[] = [];
+      // Run multiple times and check that trap is not always in same position
+      const trapPositions: number[] = [];
       for (let i = 0; i < 20; i++) {
         const result = assignTeams(testBoard, 'red');
-        const assassinIndex = result.findIndex((c) => c.team === 'assassin');
-        assassinPositions.push(assassinIndex);
+        const trapIndex = result.findIndex((c) => c.team === 'trap');
+        trapPositions.push(trapIndex);
       }
 
-      // Check that assassin appears in different positions
-      const uniquePositions = new Set(assassinPositions);
+      // Check that trap appears in different positions
+      const uniquePositions = new Set(trapPositions);
       expect(uniquePositions.size).toBeGreaterThan(1);
     });
   });

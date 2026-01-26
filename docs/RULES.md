@@ -1,26 +1,26 @@
-## Official Rules Summary
+## Game Rules Summary
 
-- Two teams (red and blue) with a spymaster and operatives.
-- 25 words in a 5x5 grid; one assassin, 7 neutral, 8 for one team, 9 for the starting team.
-- Spymaster gives a one-word clue plus a number.
+- Two teams (red and blue) with a clue giver and guessers.
+- 25 words in a 5x5 grid; one trap, 7 neutral, 8 for one team, 9 for the starting team.
+- Clue giver gives a one-word clue plus a number.
 - Clues cannot be any of the words currently on the board.
-- Operatives guess up to the clue number plus one extra guess.
+- Guessers guess up to the clue number plus one extra guess.
 - Turn ends immediately on guessing the opposing team or a neutral card.
-- Guessing the assassin ends the game immediately.
-- A team wins by revealing all of its agents.
+- Guessing the trap ends the game immediately (instant loss).
+- A team wins by revealing all of its cards.
 
 ## Implementation Notes
 
-This project aims to follow the official rules, with the following clarifications:
+This project follows standard word-guessing game rules, with the following clarifications:
 
-- A clue is required before operatives can guess.
+- A clue is required before guessers can guess.
 - Remaining guesses are tracked as `count + 1`.
-- A timer is enabled per turn (optional in the board game).
+- A timer is enabled per turn (optional in board games).
 - Clue validation blocks:
   - Exact matches with board words (case-insensitive)
   - Prefix/suffix relationships (e.g., "farm" blocked if "farmer" on board, but "war" allowed even if "dwarf" on board)
   - Simple plural variants (adding/removing S/ES)
-- Operatives vote on a card first; a teammate must confirm once votes meet a threshold.
+- Guessers vote on a card first; a teammate must confirm once votes meet a threshold.
 - Room owner can start rematch after game ends, keeping all players.
 - Teams are balanced: the game starts only with an even number of players (4+).
 - Players choose a lobby team and role before start; owner can randomize assignments and override choices.
@@ -30,8 +30,8 @@ This project aims to follow the official rules, with the following clarification
 ## Pause and Disconnection Handling
 
 The game pauses automatically at **turn transitions** if the incoming team lacks required players:
-- The team's spymaster is disconnected (needed to give clue).
-- The team has no connected operatives (needed to guess).
+- The team's clue giver is disconnected (needed to give clue).
+- The team has no connected guessers (needed to guess).
 - The entire team is disconnected.
 
 **When paused:**
@@ -41,7 +41,7 @@ The game pauses automatically at **turn transitions** if the incoming team lacks
 - The room owner sees a "Resume Game" button when conditions are met.
 
 **Resuming:**
-- The room owner clicks "Resume Game" once the paused team has at least one spymaster and one operative connected.
+- The room owner clicks "Resume Game" once the paused team has at least one clue giver and one guesser connected.
 - The turn timer resets and the game continues.
 
 **Player disconnection:**

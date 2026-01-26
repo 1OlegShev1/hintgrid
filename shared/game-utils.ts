@@ -23,16 +23,16 @@ export function teamsAreReady(players: Player[]): boolean {
   if (redTeam.length !== blueTeam.length) return false;
   if (redTeam.length + blueTeam.length !== players.length) return false;
 
-  const redSpymasters = redTeam.filter((player) => player.role === "spymaster").length;
-  const blueSpymasters = blueTeam.filter((player) => player.role === "spymaster").length;
+  const redClueGivers = redTeam.filter((player) => player.role === "clueGiver").length;
+  const blueClueGivers = blueTeam.filter((player) => player.role === "clueGiver").length;
 
-  return redSpymasters === 1 && blueSpymasters === 1;
+  return redClueGivers === 1 && blueClueGivers === 1;
 }
 
 /** Calculate required votes to reveal a card */
-export function getRequiredVotes(operativeCount: number): number {
-  if (operativeCount <= 1) return 1;
-  return Math.min(3, Math.ceil(operativeCount / 2));
+export function getRequiredVotes(guesserCount: number): number {
+  if (guesserCount <= 1) return 1;
+  return Math.min(3, Math.ceil(guesserCount / 2));
 }
 
 // ============================================================================

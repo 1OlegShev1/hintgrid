@@ -1,10 +1,10 @@
-export type Team = "red" | "blue" | "neutral" | "assassin";
+export type Team = "red" | "blue" | "neutral" | "trap";
 
 export type WordPack = "classic" | "kahoot";
 
-export type Role = "spymaster" | "operative";
+export type Role = "clueGiver" | "guesser";
 export type LobbyTeam = "red" | "blue" | null;
-export type LobbyRole = "spymaster" | "operative" | null;
+export type LobbyRole = "clueGiver" | "guesser" | null;
 
 export interface Card {
   word: string;
@@ -20,7 +20,7 @@ export interface Player {
   role: Role | null;
 }
 
-export type PauseReason = "teamDisconnected" | "spymasterDisconnected" | "noOperatives" | null;
+export type PauseReason = "teamDisconnected" | "clueGiverDisconnected" | "noGuessers" | null;
 
 export interface GameState {
   roomCode: string;

@@ -20,7 +20,7 @@
   --blue-team: #2563eb;
   --blue-team-light: #eff6ff;
   --neutral-card: #fef3c7;
-  --assassin: #0f172a;
+  --trap: #0f172a;
 }
 
 /* Dark theme */
@@ -39,7 +39,7 @@
   --blue-team: #3b82f6;
   --blue-team-light: rgba(59, 130, 246, 0.15);
   --neutral-card: #78716c;
-  --assassin: #18181b;
+  --trap: #18181b;
 }
 
 body {
@@ -154,7 +154,7 @@ body {
   animation: clue-pop 0.4s ease-out forwards;
 }
 
-/* Subtle pulse for spymaster clue input */
+/* Subtle pulse for clue giver input */
 @keyframes pulse-subtle {
   0%, 100% {
     box-shadow: 0 10px 15px -3px rgb(251 191 36 / 0.3), 0 4px 6px -4px rgb(251 191 36 / 0.2), 0 0 0 0 rgb(251 191 36 / 0.4);

@@ -34,13 +34,13 @@ function checkPause(
   hasClue: boolean
 ): { paused: boolean; reason: PauseReason; team: Team | null } {
   const teamPlayers = players.filter((p) => p.team === team);
-  const hasSpymaster = teamPlayers.some((p) => p.role === "spymaster" && p.connected);
-  const hasOperative = teamPlayers.some((p) => p.role === "operative" && p.connected);
+  const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver" && p.connected);
+  const hasGuesser = teamPlayers.some((p) => p.role === "guesser" && p.connected);
   const anyConnected = teamPlayers.some((p) => p.connected);
 
   if (!anyConnected) return { paused: true, reason: "teamDisconnected", team };
-  if (!hasClue && !hasSpymaster) return { paused: true, reason: "spymasterDisconnected", team };
-  if (hasClue && !hasOperative) return { paused: true, reason: "noOperatives", team };
+  if (!hasClue && !hasClueGiver) return { paused: true, reason: "clueGiverDisconnected", team };
+  if (hasClue && !hasGuesser) return { paused: true, reason: "noGuessers", team };
   return { paused: false, reason: null, team: null };
 }
 
@@ -280,9 +280,9 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
     if (!data.paused || !data.gameStarted || data.gameOver) throw new Error("Invalid game state");
 
     const team = data.currentTeam as "red" | "blue";
-    const hasSpymaster = players.some((p) => p.team === team && p.role === "spymaster" && p.connected);
-    const hasOperative = players.some((p) => p.team === team && p.role === "operative" && p.connected);
-    if (!hasSpymaster || !hasOperative) throw new Error("Team needs spymaster and operative");
+    const hasClueGiver = players.some((p) => p.team === team && p.role === "clueGiver" && p.connected);
+    const hasGuesser = players.some((p) => p.team === team && p.role === "guesser" && p.connected);
+    if (!hasClueGiver || !hasGuesser) throw new Error("Team needs clue giver and guesser");
 
     tx.update(roomRef, {
       paused: false, pauseReason: null, pausedForTeam: null,
@@ -331,19 +331,19 @@ export async function setWordPack(roomCode: string, playerId: string, pack: Word
 }
 
 export async function setLobbyRole(
-  roomCode: string, playerId: string, team: "red" | "blue" | null, role: "spymaster" | "operative" | null
+  roomCode: string, playerId: string, team: "red" | "blue" | null, role: "clueGiver" | "guesser" | null
 ): Promise<void> {
   const db = getDb();
   const roomRef = doc(db, "rooms", roomCode);
   const playerRef = doc(db, "rooms", roomCode, "players", playerId);
 
-  // Check for duplicate spymaster
-  if (role === "spymaster" && team) {
+  // Check for duplicate clue giver
+  if (role === "clueGiver" && team) {
     const playersSnap = await getDocs(collection(db, "rooms", roomCode, "players"));
     const existing = playersSnap.docs.find(
-      (d) => d.id !== playerId && d.data().team === team && d.data().role === "spymaster"
+      (d) => d.id !== playerId && d.data().team === team && d.data().role === "clueGiver"
     );
-    if (existing) throw new Error("Team already has a spymaster");
+    if (existing) throw new Error("Team already has a clue giver");
   }
 
   return runTransaction(db, async (tx) => {
@@ -383,7 +383,7 @@ export async function randomizeTeams(roomCode: string, playerId: string): Promis
     shuffled.forEach((p, i) => {
       tx.update(doc(db, "rooms", roomCode, "players", p.id), {
         team: i < half ? "red" : "blue",
-        role: i === 0 || i === half ? "spymaster" : "operative",
+        role: i === 0 || i === half ? "clueGiver" : "guesser",
       });
     });
     tx.update(roomRef, { lastActivity: serverTimestamp() });
@@ -413,7 +413,7 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
     const player = await tx.get(doc(db, "rooms", roomCode, "players", playerId));
     if (!player.exists()) throw new Error("Player not found");
     const pData = player.data();
-    if (pData.role !== "spymaster" || pData.team !== data.currentTeam) throw new Error("Not your turn");
+    if (pData.role !== "clueGiver" || pData.team !== data.currentTeam) throw new Error("Not your turn");
 
     tx.update(roomRef, {
       currentClue: { word: trimmed.toUpperCase(), count },
@@ -445,7 +445,7 @@ export async function voteCard(roomCode: string, playerId: string, cardIndex: nu
     const player = await tx.get(doc(db, "rooms", roomCode, "players", playerId));
     if (!player.exists()) throw new Error("Player not found");
     const pData = player.data();
-    if (pData.role !== "operative" || pData.team !== data.currentTeam) throw new Error("Not your turn");
+    if (pData.role !== "guesser" || pData.team !== data.currentTeam) throw new Error("Not your turn");
 
     const board: BoardCard[] = data.board || [];
     if (cardIndex < 0 || cardIndex >= board.length || board[cardIndex].revealed) {
@@ -483,7 +483,7 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     const player = await tx.get(doc(db, "rooms", roomCode, "players", playerId));
     if (!player.exists()) throw new Error("Player not found");
     const pData = player.data();
-    if (pData.role !== "operative" || pData.team !== data.currentTeam) throw new Error("Not your turn");
+    if (pData.role !== "guesser" || pData.team !== data.currentTeam) throw new Error("Not your turn");
 
     const board: BoardCard[] = data.board || [];
     if (cardIndex < 0 || cardIndex >= board.length || board[cardIndex].revealed) {
@@ -491,8 +491,8 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     }
 
     const card = board[cardIndex];
-    const operatives = players.filter((p) => p.team === data.currentTeam && p.role === "operative" && p.connected);
-    const required = getRequiredVotes(operatives.length);
+    const guessers = players.filter((p) => p.team === data.currentTeam && p.role === "guesser" && p.connected);
+    const required = getRequiredVotes(guessers.length);
 
     if (card.votes.length < required || !card.votes.includes(playerId)) {
       throw new Error("Not enough votes");
@@ -506,11 +506,11 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     );
 
     const isCorrect = card.team === data.currentTeam;
-    const isAssassin = card.team === "assassin";
+    const isTrap = card.team === "trap";
     const remainingTeamCards = updatedBoard.filter((c) => c.team === data.currentTeam && !c.revealed).length;
     const newGuesses = data.remainingGuesses - 1;
 
-    if (isAssassin) {
+    if (isTrap) {
       tx.update(roomRef, {
         board: updatedBoard, gameOver: true, winner: data.currentTeam === "red" ? "blue" : "red",
         currentClue: null, remainingGuesses: null, turnStartTime: null, lastActivity: serverTimestamp(),

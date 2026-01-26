@@ -5,7 +5,7 @@ interface TeamLobbyProps {
   currentPlayer: Player | null;
   isRoomOwner: boolean;
   gameState: GameState;
-  onSetRole: (team: "red" | "blue" | null, role: "spymaster" | "operative" | null) => void;
+  onSetRole: (team: "red" | "blue" | null, role: "clueGiver" | "guesser" | null) => void;
   onRandomize: () => void;
   onStartGame: () => void;
   onTurnDurationChange: (duration: number) => void;
@@ -116,11 +116,11 @@ export default function TeamLobby({
 
       <div className="grid md:grid-cols-2 gap-6">
         {(["red", "blue"] as const).map((team) => {
-          const spymaster = players.find(
-            (player) => player.team === team && player.role === "spymaster"
+          const clueGiver = players.find(
+            (player) => player.team === team && player.role === "clueGiver"
           );
-          const operatives = players.filter(
-            (player) => player.team === team && player.role === "operative"
+          const guessers = players.filter(
+            (player) => player.team === team && player.role === "guesser"
           );
 
           return (
@@ -145,15 +145,15 @@ export default function TeamLobby({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span className="font-semibold">Spymaster</span>
+                    <span className="font-semibold">Clue Giver</span>
                   </div>
                   {showControls && (
                     <button
-                      onClick={() => onSetRole(team, "spymaster")}
-                      disabled={Boolean(spymaster) && spymaster?.id !== currentPlayer?.id}
-                      data-testid={`lobby-join-${team}-spymaster`}
+                      onClick={() => onSetRole(team, "clueGiver")}
+                      disabled={Boolean(clueGiver) && clueGiver?.id !== currentPlayer?.id}
+                      data-testid={`lobby-join-${team}-clueGiver`}
                       className={`px-2 py-1 rounded text-xs font-semibold ${
-                        spymaster?.id === currentPlayer?.id
+                        clueGiver?.id === currentPlayer?.id
                           ? "bg-gray-800 text-white"
                           : team === "red"
                             ? "bg-red-600 text-white hover:bg-red-700"
@@ -166,8 +166,8 @@ export default function TeamLobby({
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 ml-6">Sees all cards • Gives one-word clues</p>
                 <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-3 text-sm border border-gray-200 dark:border-gray-700">
-                  {spymaster ? (
-                    <div className="font-medium">{spymaster.name}</div>
+                  {clueGiver ? (
+                    <div className="font-medium">{clueGiver.name}</div>
                   ) : (
                     <span className="text-gray-500 dark:text-gray-400">Open</span>
                   )}
@@ -180,12 +180,12 @@ export default function TeamLobby({
                     <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    <span className="font-semibold">Operatives</span>
+                    <span className="font-semibold">Guessers</span>
                   </div>
                   {showControls && (
                     <button
-                      onClick={() => onSetRole(team, "operative")}
-                      data-testid={`lobby-join-${team}-operative`}
+                      onClick={() => onSetRole(team, "guesser")}
+                      data-testid={`lobby-join-${team}-guesser`}
                       className={`px-2 py-1 rounded text-xs font-semibold ${
                         team === "red"
                           ? "bg-red-100 text-red-800 hover:bg-red-200"
@@ -198,10 +198,10 @@ export default function TeamLobby({
                 </div>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mb-2 ml-6">Guess words based on clues</p>
                 <div className="space-y-2">
-                  {operatives.length === 0 ? (
-                    <div className="text-sm text-gray-500 dark:text-gray-400">No operatives yet</div>
+                  {guessers.length === 0 ? (
+                    <div className="text-sm text-gray-500 dark:text-gray-400">No guessers yet</div>
                   ) : (
-                    operatives.map((player) => (
+                    guessers.map((player) => (
                       <div key={player.id} className="bg-gray-50 dark:bg-gray-800 rounded-lg px-3 py-2 text-sm border border-gray-200 dark:border-gray-700">
                         {player.name}
                       </div>

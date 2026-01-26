@@ -7,21 +7,21 @@ import { test, expect, Page } from '@playwright/test';
  * 1. 4 players join a room
  * 2. Players select teams (or use randomize)
  * 3. Owner starts the game
- * 4. Spymaster gives a clue
- * 5. Operative votes and reveals a card
+ * 4. Clue giver gives a clue
+ * 5. Guesser votes and reveals a card
  * 6. Turn changes appropriately
  */
 
 /**
- * Helper: Get card indices by team from spymaster's view
- * Spymaster cards have distinctive border colors
+ * Helper: Get card indices by team from clue giver's view
+ * Clue giver cards have distinctive border colors
  */
-async function getTeamCards(spymasterPage: Page, team: 'red' | 'blue'): Promise<number[]> {
+async function getTeamCards(clueGiverPage: Page, team: 'red' | 'blue'): Promise<number[]> {
   const borderClass = team === 'red' ? 'border-red-500' : 'border-blue-500';
   
   const indices: number[] = [];
   for (let i = 0; i < 25; i++) {
-    const card = spymasterPage.getByTestId(`board-card-${i}`);
+    const card = clueGiverPage.getByTestId(`board-card-${i}`);
     const classes = await card.getAttribute('class');
     if (classes?.includes(borderClass)) {
       indices.push(i);
@@ -56,7 +56,7 @@ test.describe('Full Game Flow', () => {
       context.newPage(),
     ]);
 
-    const playerNames = ['RedSpy', 'RedOp', 'BlueSpy', 'BlueOp'];
+    const playerNames = ['RedClue', 'RedGuess', 'BlueClue', 'BlueGuess'];
 
     // ========================================
     // Step 1: First player creates room
@@ -72,7 +72,7 @@ test.describe('Full Game Flow', () => {
     expect(roomCode).toBeTruthy();
 
     // Wait for lobby to load
-    await expect(pages[0].getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+    await expect(pages[0].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
 
     // ========================================
     // Step 2: Other 3 players join the room
@@ -84,7 +84,7 @@ test.describe('Full Game Flow', () => {
       await pages[i].getByTestId('home-join-btn').click();
 
       // Wait for room to load
-      await expect(pages[i].getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+      await expect(pages[i].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
     }
 
     // Verify all players see each other (check on first page)
@@ -96,17 +96,17 @@ test.describe('Full Game Flow', () => {
     // ========================================
     // Step 3: Assign teams manually
     // ========================================
-    // Player 0 (RedSpy) - joins red spymaster
-    await pages[0].getByTestId('lobby-join-red-spymaster').click();
+    // Player 0 (RedClue) - joins red clue giver
+    await pages[0].getByTestId('lobby-join-red-clueGiver').click();
     
-    // Player 1 (RedOp) - joins red operative
-    await pages[1].getByTestId('lobby-join-red-operative').click();
+    // Player 1 (RedGuess) - joins red guesser
+    await pages[1].getByTestId('lobby-join-red-guesser').click();
     
-    // Player 2 (BlueSpy) - joins blue spymaster
-    await pages[2].getByTestId('lobby-join-blue-spymaster').click();
+    // Player 2 (BlueClue) - joins blue clue giver
+    await pages[2].getByTestId('lobby-join-blue-clueGiver').click();
     
-    // Player 3 (BlueOp) - joins blue operative
-    await pages[3].getByTestId('lobby-join-blue-operative').click();
+    // Player 3 (BlueGuess) - joins blue guesser
+    await pages[3].getByTestId('lobby-join-blue-guesser').click();
 
     // Wait for all assignments to propagate
     await pages[0].waitForTimeout(500);
@@ -130,52 +130,52 @@ test.describe('Full Game Flow', () => {
     // Step 5: Determine current team and give clue
     // ========================================
     // Check which team goes first by looking at the clue input visibility
-    // The spymaster of the current team should see the clue input
-    let spymasterPage: Page;
-    let operativePage: Page;
+    // The clue giver of the current team should see the clue input
+    let clueGiverPage: Page;
+    let guesserPage: Page;
 
-    // Try red spymaster first
-    const redSpyClueInput = pages[0].getByTestId('game-clue-input');
-    const isRedTurn = await redSpyClueInput.isVisible().catch(() => false);
+    // Try red clue giver first
+    const redClueInput = pages[0].getByTestId('game-clue-input');
+    const isRedTurn = await redClueInput.isVisible().catch(() => false);
 
     if (isRedTurn) {
-      spymasterPage = pages[0]; // RedSpy
-      operativePage = pages[1]; // RedOp
+      clueGiverPage = pages[0]; // RedClue
+      guesserPage = pages[1]; // RedGuess
     } else {
-      spymasterPage = pages[2]; // BlueSpy
-      operativePage = pages[3]; // BlueOp
+      clueGiverPage = pages[2]; // BlueClue
+      guesserPage = pages[3]; // BlueGuess
     }
 
-    // Spymaster fills in clue (use a word unlikely to be on board)
-    const clueInput = spymasterPage.getByTestId('game-clue-input');
+    // Clue giver fills in clue (use a word unlikely to be on board)
+    const clueInput = clueGiverPage.getByTestId('game-clue-input');
     await expect(clueInput).toBeVisible({ timeout: 5000 });
     await clueInput.fill('TESTING');
     
-    const clueCountInput = spymasterPage.getByTestId('game-clue-count');
+    const clueCountInput = clueGiverPage.getByTestId('game-clue-count');
     await clueCountInput.fill('2');
     
-    await spymasterPage.getByTestId('game-clue-btn').click();
+    await clueGiverPage.getByTestId('game-clue-btn').click();
 
     // Wait for clue to be processed
-    await spymasterPage.waitForTimeout(500);
+    await clueGiverPage.waitForTimeout(500);
 
     // ========================================
-    // Step 6: Operative votes and reveals a card
+    // Step 6: Guesser votes and reveals a card
     // ========================================
-    // Operative clicks on a card to vote
-    const cardToClick = operativePage.getByTestId('board-card-12'); // Middle card
+    // Guesser clicks on a card to vote
+    const cardToClick = guesserPage.getByTestId('board-card-12'); // Middle card
     await cardToClick.click();
 
     // Wait for vote to register
-    await operativePage.waitForTimeout(300);
+    await guesserPage.waitForTimeout(300);
 
-    // With 1 operative, 1 vote is enough - reveal button should appear
-    const revealButton = operativePage.getByTestId('board-reveal-12');
+    // With 1 guesser, 1 vote is enough - reveal button should appear
+    const revealButton = guesserPage.getByTestId('board-reveal-12');
     await expect(revealButton).toBeVisible({ timeout: 3000 });
     await revealButton.click();
 
     // Wait for reveal to process
-    await operativePage.waitForTimeout(500);
+    await guesserPage.waitForTimeout(500);
 
     // ========================================
     // Step 7: Verify card was revealed
@@ -216,7 +216,7 @@ test.describe('Full Game Flow', () => {
     const roomCode = url.match(/\/room\/([A-Z0-9]+)/)?.[1];
     expect(roomCode).toBeTruthy();
 
-    await expect(pages[0].getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+    await expect(pages[0].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
 
     // Other players join
     for (let i = 1; i < 4; i++) {
@@ -224,7 +224,7 @@ test.describe('Full Game Flow', () => {
       await pages[i].getByTestId('home-name-input').fill(`Player${i + 1}`);
       await pages[i].getByTestId('home-code-input').fill(roomCode!);
       await pages[i].getByTestId('home-join-btn').click();
-      await expect(pages[i].getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+      await expect(pages[i].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
     }
 
     // Wait for all players to be visible
@@ -259,7 +259,7 @@ test.describe('Full Game Flow', () => {
       context.newPage(),
     ]);
 
-    const playerNames = ['RedSpy', 'RedOp', 'BlueSpy', 'BlueOp'];
+    const playerNames = ['RedClue', 'RedGuess', 'BlueClue', 'BlueGuess'];
 
     // ========================================
     // Setup: Create room and join all players
@@ -272,7 +272,7 @@ test.describe('Full Game Flow', () => {
     const url = pages[0].url();
     const roomCode = url.match(/\/room\/([A-Z0-9]+)/)?.[1];
     expect(roomCode).toBeTruthy();
-    await expect(pages[0].getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+    await expect(pages[0].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
 
     // Other players join
     for (let i = 1; i < 4; i++) {
@@ -280,16 +280,16 @@ test.describe('Full Game Flow', () => {
       await pages[i].getByTestId('home-name-input').fill(playerNames[i]);
       await pages[i].getByTestId('home-code-input').fill(roomCode!);
       await pages[i].getByTestId('home-join-btn').click();
-      await expect(pages[i].getByTestId('lobby-join-red-spymaster')).toBeVisible({ timeout: 10000 });
+      await expect(pages[i].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
     }
 
     // ========================================
     // Assign teams
     // ========================================
-    await pages[0].getByTestId('lobby-join-red-spymaster').click();
-    await pages[1].getByTestId('lobby-join-red-operative').click();
-    await pages[2].getByTestId('lobby-join-blue-spymaster').click();
-    await pages[3].getByTestId('lobby-join-blue-operative').click();
+    await pages[0].getByTestId('lobby-join-red-clueGiver').click();
+    await pages[1].getByTestId('lobby-join-red-guesser').click();
+    await pages[2].getByTestId('lobby-join-blue-clueGiver').click();
+    await pages[3].getByTestId('lobby-join-blue-guesser').click();
     await pages[0].waitForTimeout(500);
 
     // ========================================
@@ -303,35 +303,35 @@ test.describe('Full Game Flow', () => {
     // ========================================
     // Determine first team and get card info
     // ========================================
-    const redSpyPage = pages[0];
-    const redOpPage = pages[1];
-    const blueSpyPage = pages[2];
-    const blueOpPage = pages[3];
+    const redCluePage = pages[0];
+    const redGuessPage = pages[1];
+    const blueCluePage = pages[2];
+    const blueGuessPage = pages[3];
 
     // Check who goes first by seeing who has clue input
-    const isRedFirst = await redSpyPage.getByTestId('game-clue-input').isVisible().catch(() => false);
+    const isRedFirst = await redCluePage.getByTestId('game-clue-input').isVisible().catch(() => false);
 
-    let firstSpymaster: Page, firstOperative: Page, firstTeam: 'red' | 'blue';
-    let secondSpymaster: Page, secondOperative: Page, secondTeam: 'red' | 'blue';
+    let firstClueGiver: Page, firstGuesser: Page, firstTeam: 'red' | 'blue';
+    let secondClueGiver: Page, secondGuesser: Page, secondTeam: 'red' | 'blue';
 
     if (isRedFirst) {
-      firstSpymaster = redSpyPage;
-      firstOperative = redOpPage;
+      firstClueGiver = redCluePage;
+      firstGuesser = redGuessPage;
       firstTeam = 'red';
-      secondSpymaster = blueSpyPage;
-      secondOperative = blueOpPage;
+      secondClueGiver = blueCluePage;
+      secondGuesser = blueGuessPage;
       secondTeam = 'blue';
     } else {
-      firstSpymaster = blueSpyPage;
-      firstOperative = blueOpPage;
+      firstClueGiver = blueCluePage;
+      firstGuesser = blueGuessPage;
       firstTeam = 'blue';
-      secondSpymaster = redSpyPage;
-      secondOperative = redOpPage;
+      secondClueGiver = redCluePage;
+      secondGuesser = redGuessPage;
       secondTeam = 'red';
     }
 
     // Get second team's cards (they will win)
-    const winningTeamCards = await getTeamCards(secondSpymaster, secondTeam);
+    const winningTeamCards = await getTeamCards(secondClueGiver, secondTeam);
     console.log(`${secondTeam} team has ${winningTeamCards.length} cards: ${winningTeamCards.join(', ')}`);
 
     // ========================================
@@ -339,35 +339,35 @@ test.describe('Full Game Flow', () => {
     // ========================================
     console.log(`Turn 1: ${firstTeam} team's turn`);
     
-    await expect(firstSpymaster.getByTestId('game-clue-input')).toBeVisible({ timeout: 5000 });
-    await firstSpymaster.getByTestId('game-clue-input').fill('RANDOM');
-    await firstSpymaster.getByTestId('game-clue-count').fill('1');
-    await firstSpymaster.getByTestId('game-clue-btn').click();
-    await firstSpymaster.waitForTimeout(500);
+    await expect(firstClueGiver.getByTestId('game-clue-input')).toBeVisible({ timeout: 5000 });
+    await firstClueGiver.getByTestId('game-clue-input').fill('RANDOM');
+    await firstClueGiver.getByTestId('game-clue-count').fill('1');
+    await firstClueGiver.getByTestId('game-clue-btn').click();
+    await firstClueGiver.waitForTimeout(500);
 
-    // First operative ends turn without guessing (to give second team their turn)
-    await expect(firstOperative.getByTestId('game-end-turn-btn')).toBeVisible({ timeout: 5000 });
-    await firstOperative.getByTestId('game-end-turn-btn').click();
-    await firstOperative.waitForTimeout(500);
+    // First guesser ends turn without guessing (to give second team their turn)
+    await expect(firstGuesser.getByTestId('game-end-turn-btn')).toBeVisible({ timeout: 5000 });
+    await firstGuesser.getByTestId('game-end-turn-btn').click();
+    await firstGuesser.waitForTimeout(500);
 
     // ========================================
     // Turn 2: Second team gives clue for ALL their cards
     // ========================================
     console.log(`Turn 2: ${secondTeam} team's turn - going for the win!`);
     
-    await expect(secondSpymaster.getByTestId('game-clue-input')).toBeVisible({ timeout: 5000 });
-    await secondSpymaster.getByTestId('game-clue-input').fill('WINNING');
-    await secondSpymaster.getByTestId('game-clue-count').fill(String(winningTeamCards.length));
-    await secondSpymaster.getByTestId('game-clue-btn').click();
-    await secondSpymaster.waitForTimeout(500);
+    await expect(secondClueGiver.getByTestId('game-clue-input')).toBeVisible({ timeout: 5000 });
+    await secondClueGiver.getByTestId('game-clue-input').fill('WINNING');
+    await secondClueGiver.getByTestId('game-clue-count').fill(String(winningTeamCards.length));
+    await secondClueGiver.getByTestId('game-clue-btn').click();
+    await secondClueGiver.waitForTimeout(500);
 
-    // Second operative guesses ALL their team's cards
+    // Second guesser guesses ALL their team's cards
     for (let i = 0; i < winningTeamCards.length; i++) {
       const cardIndex = winningTeamCards[i];
       console.log(`  Guessing card ${i + 1}/${winningTeamCards.length}: index ${cardIndex}`);
 
       // Vote for the card
-      const card = secondOperative.getByTestId(`board-card-${cardIndex}`);
+      const card = secondGuesser.getByTestId(`board-card-${cardIndex}`);
       
       // Check if card is already revealed (shouldn't be, but safety check)
       const classes = await card.getAttribute('class');
@@ -377,16 +377,16 @@ test.describe('Full Game Flow', () => {
       }
 
       await card.click();
-      await secondOperative.waitForTimeout(300);
+      await secondGuesser.waitForTimeout(300);
 
       // Reveal it
-      const revealBtn = secondOperative.getByTestId(`board-reveal-${cardIndex}`);
+      const revealBtn = secondGuesser.getByTestId(`board-reveal-${cardIndex}`);
       await expect(revealBtn).toBeVisible({ timeout: 3000 });
       await revealBtn.click();
-      await secondOperative.waitForTimeout(500);
+      await secondGuesser.waitForTimeout(500);
 
       // Check if game is over (after each reveal)
-      const gameOverText = secondOperative.getByText(/Game Over/i);
+      const gameOverText = secondGuesser.getByText(/Game Over/i);
       const isGameOver = await gameOverText.isVisible().catch(() => false);
       
       if (isGameOver) {

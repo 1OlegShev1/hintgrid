@@ -23,7 +23,7 @@ export interface UseRtdbRoomReturn {
   chatInput: string;
   setChatInput: (value: string) => void;
   handleStartGame: () => void;
-  handleSetLobbyRole: (team: "red" | "blue" | null, role: "spymaster" | "operative" | null) => void;
+  handleSetLobbyRole: (team: "red" | "blue" | null, role: "clueGiver" | "guesser" | null) => void;
   handleRandomizeTeams: () => void;
   handleRematch: () => void;
   handleEndGame: () => void;
@@ -267,7 +267,7 @@ export function useRtdbRoom(roomCode: string, playerName: string): UseRtdbRoomRe
     if (pid()) actions.startGame(roomCode, pid()!).catch(err);
   }, [roomCode]);
 
-  const handleSetLobbyRole = useCallback((t: "red" | "blue" | null, r: "spymaster" | "operative" | null) => {
+  const handleSetLobbyRole = useCallback((t: "red" | "blue" | null, r: "clueGiver" | "guesser" | null) => {
     if (pid()) actions.setLobbyRole(roomCode, pid()!, t, r).catch(() => {});
   }, [roomCode]);
 

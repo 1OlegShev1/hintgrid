@@ -7,7 +7,8 @@ interface ChatLogProps {
 }
 
 export default function ChatLog({ messages }: ChatLogProps) {
-  const chatMessages = messages.filter((msg) => msg.type === "chat");
+  // Show both chat and system messages
+  const chatMessages = messages.filter((msg) => msg.type === "chat" || msg.type === "system");
 
   return (
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4 h-64 overflow-y-auto">
@@ -17,9 +18,24 @@ export default function ChatLog({ messages }: ChatLogProps) {
           <p className="text-gray-500 dark:text-gray-400 text-sm">No messages yet</p>
         ) : (
           chatMessages.map((msg) => (
-            <div key={msg.id} className="text-sm">
-              <span className="font-semibold">{msg.playerName}:</span>{" "}
-              <span>{msg.message}</span>
+            <div
+              key={msg.id}
+              className={`text-sm ${
+                msg.type === "system"
+                  ? "bg-amber-100 dark:bg-amber-900/30 border-l-2 border-amber-500 pl-2 py-1 -mx-1 rounded-r"
+                  : ""
+              }`}
+            >
+              {msg.type === "system" ? (
+                <span className="text-amber-700 dark:text-amber-300 italic">
+                  {msg.message}
+                </span>
+              ) : (
+                <>
+                  <span className="font-semibold">{msg.playerName}:</span>{" "}
+                  <span>{msg.message}</span>
+                </>
+              )}
               <span className="text-gray-400 text-xs ml-2">
                 {new Date(msg.timestamp).toLocaleTimeString()}
               </span>

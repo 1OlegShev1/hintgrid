@@ -20,7 +20,7 @@ Two teams compete to find all their words on a 5x5 grid. Each team has a **Clue 
 
 - The Clue Giver gives a one-word clue and a number indicating how many words relate to that clue
 - Guessers discuss and vote on which words to reveal
-- First team to find all their words wins - but watch out for the instant-loss card!
+- First team to find all their words wins - but watch out for the trap card!
 
 ## Getting Started
 
@@ -67,7 +67,7 @@ npm run dev
 5. Players are assigned to Red and Blue teams with Clue Giver and Guesser roles
 6. Clue Givers can see all card colors and give clues
 7. Guessers vote on cards to reveal during their team's turn
-8. First team to reveal all their cards wins (but avoid the instant-loss card!)
+8. First team to reveal all their cards wins (but avoid the trap card!)
 
 ## Project Structure
 

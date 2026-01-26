@@ -40,7 +40,7 @@ export default function RoomPage() {
     return Boolean(
       room.gameState?.gameStarted &&
       room.currentPlayer?.team === room.gameState.currentTeam &&
-      room.currentPlayer?.role === "operative"
+      room.currentPlayer?.role === "guesser"
     );
   }, [room.gameState, room.currentPlayer]);
 
@@ -63,22 +63,22 @@ export default function RoomPage() {
       room.gameState?.gameStarted &&
       !room.gameState?.gameOver &&
       !room.gameState?.paused &&
-      room.currentPlayer?.role === "spymaster" &&
+      room.currentPlayer?.role === "clueGiver" &&
       room.currentPlayer?.team === room.gameState?.currentTeam &&
       !room.gameState?.currentClue
     );
   }, [room.gameState, room.currentPlayer]);
 
-  const operativeCount = useMemo(() => {
+  const guesserCount = useMemo(() => {
     if (!room.gameState) return 0;
     return room.players.filter(
-      (player) => player.team === room.gameState?.currentTeam && player.role === "operative"
+      (player) => player.team === room.gameState?.currentTeam && player.role === "guesser"
     ).length;
   }, [room.gameState, room.players]);
 
   const requiredVotes = useMemo(() => {
-    return operativeCount <= 1 ? 1 : Math.min(3, Math.ceil(operativeCount / 2));
-  }, [operativeCount]);
+    return guesserCount <= 1 ? 1 : Math.min(3, Math.ceil(guesserCount / 2));
+  }, [guesserCount]);
 
   const turnGlowClass = useMemo(() => {
     return room.gameState?.currentTeam === "red"
@@ -186,7 +186,7 @@ export default function RoomPage() {
                         <span className={`font-bold text-lg ${
                           room.currentPlayer.team === "red" ? "text-red-700 dark:text-red-200" : "text-blue-700 dark:text-blue-200"
                         }`}>
-                          {room.currentPlayer.team.toUpperCase()} {room.currentPlayer.role === "spymaster" ? "Spymaster" : "Operative"}
+                          {room.currentPlayer.team.toUpperCase()} {room.currentPlayer.role === "clueGiver" ? "Clue Giver" : "Guesser"}
                         </span>
                         <span className={`text-sm ${
                           room.currentPlayer.team === "red" ? "text-red-600 dark:text-red-300" : "text-blue-600 dark:text-blue-300"

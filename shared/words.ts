@@ -2,7 +2,7 @@
 
 export type WordPack = "classic" | "kahoot";
 
-// Classic Codenames-style words
+// Classic party game words
 export const CLASSIC_WORDS = [
   "AFRICA", "AGENT", "AIR", "ALIEN", "ALPS", "AMAZON", "AMBULANCE", "AMERICA", "ANGEL", "ANTARCTICA",
   "APPLE", "ARM", "ATLANTIS", "AUSTRALIA", "AZTEC", "BACK", "BALL", "BAND", "BANK", "BAR",
@@ -87,17 +87,17 @@ export function generateBoard(pack: WordPack = "classic"): string[] {
 export function assignTeams(
   board: string[],
   startingTeam: "red" | "blue"
-): { word: string; team: "red" | "blue" | "neutral" | "assassin" }[] {
+): { word: string; team: "red" | "blue" | "neutral" | "trap" }[] {
   const startingCount = 9;
   const otherCount = 8;
   const neutralCount = 7;
   const otherTeam = startingTeam === "red" ? "blue" : "red";
 
-  const teams: ("red" | "blue" | "neutral" | "assassin")[] = [
+  const teams: ("red" | "blue" | "neutral" | "trap")[] = [
     ...Array(startingCount).fill(startingTeam),
     ...Array(otherCount).fill(otherTeam),
     ...Array(neutralCount).fill("neutral"),
-    "assassin",
+    "trap",
   ];
   
   const shuffledTeams = teams.sort(() => Math.random() - 0.5);

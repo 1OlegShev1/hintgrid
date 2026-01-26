@@ -12,11 +12,11 @@ export default function CompactTeams({ players }: CompactTeamsProps) {
       </div>
       <div className="grid grid-cols-2 gap-4">
         {(["red", "blue"] as const).map((team) => {
-          const spymaster = players.find(
-            (player) => player.team === team && player.role === "spymaster"
+          const clueGiver = players.find(
+            (player) => player.team === team && player.role === "clueGiver"
           );
-          const operatives = players.filter(
-            (player) => player.team === team && player.role === "operative"
+          const guessers = players.filter(
+            (player) => player.team === team && player.role === "guesser"
           );
 
           return (
@@ -39,12 +39,12 @@ export default function CompactTeams({ players }: CompactTeamsProps) {
                     team === "red" ? "bg-red-500" : "bg-blue-500"
                   }`}></span>
                   <span className="font-medium text-gray-800 dark:text-gray-200">
-                    {spymaster?.name || "—"}
+                    {clueGiver?.name || "—"}
                   </span>
-                  <span className="text-gray-500 dark:text-gray-400">(Spymaster)</span>
+                  <span className="text-gray-500 dark:text-gray-400">(Clue Giver)</span>
                 </div>
                 <div className="text-xs text-gray-600 dark:text-gray-400 pl-3.5">
-                  Operatives: {operatives.map(p => p.name).join(", ") || "—"}
+                  Guessers: {guessers.map(p => p.name).join(", ") || "—"}
                 </div>
               </div>
             </div>

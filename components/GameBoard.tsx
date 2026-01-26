@@ -24,7 +24,7 @@ export default function GameBoard({
   onVoteCard,
   onConfirmReveal,
 }: GameBoardProps) {
-  const isSpymaster = currentPlayer?.role === "spymaster";
+  const isClueGiver = currentPlayer?.role === "clueGiver";
   
   // Track which cards are animating (for the flip effect)
   const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
@@ -102,7 +102,7 @@ export default function GameBoard({
   }, [cardVotes]);
 
   const getCardColor = (card: Card) => {
-    if (!card.revealed && !isSpymaster) {
+    if (!card.revealed && !isClueGiver) {
       return "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100";
     }
 
@@ -112,20 +112,20 @@ export default function GameBoard({
           return "bg-red-600 text-white";
         case "blue":
           return "bg-blue-600 text-white";
-        case "assassin":
+        case "trap":
           return "bg-gray-900 text-white";
         default:
           return "bg-yellow-200 dark:bg-yellow-700 text-yellow-900 dark:text-yellow-100";
       }
     }
 
-    // Spymaster view (unrevealed)
+    // Clue giver view (unrevealed)
     switch (card.team) {
       case "red":
         return "bg-red-100 dark:bg-red-900 border-2 border-red-500 text-red-900 dark:text-red-100";
       case "blue":
         return "bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 text-blue-900 dark:text-blue-100";
-      case "assassin":
+      case "trap":
         return "bg-gray-800 border-2 border-gray-600 text-white";
       default:
         return "bg-yellow-50 dark:bg-yellow-900 border-2 border-yellow-400 text-yellow-900 dark:text-yellow-100";
