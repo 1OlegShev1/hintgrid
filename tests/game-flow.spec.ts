@@ -47,6 +47,7 @@ async function getUnrevealedFromList(page: Page, cardIndices: number[]): Promise
 
 test.describe('Full Game Flow', () => {
   test('complete game flow with 4 players', async ({ context }) => {
+    test.setTimeout(90000); // 90 seconds for multi-player test
     // Create 4 browser pages for 4 players
     const pages = await Promise.all([
       context.newPage(),
@@ -195,6 +196,7 @@ test.describe('Full Game Flow', () => {
   });
 
   test('randomize teams and start game', async ({ context }) => {
+    test.setTimeout(90000); // 90 seconds for multi-player test
     // Create 4 browser pages
     const pages = await Promise.all([
       context.newPage(),
@@ -248,6 +250,7 @@ test.describe('Full Game Flow', () => {
   });
 
   test('play full game until one team wins', async ({ context }) => {
+    test.setTimeout(120000); // 2 minutes for full game test
     // Create 4 browser pages for 4 players
     const pages = await Promise.all([
       context.newPage(),
