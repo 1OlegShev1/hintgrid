@@ -8,7 +8,7 @@ A multiplayer word guessing party game built with Next.js, TypeScript, and Fireb
 
 - Anonymous player names (no authentication required)
 - Room-based multiplayer with room codes
-- Real-time game synchronization via Firestore
+- Real-time game synchronization via Firebase Realtime Database
 - Clue Giver and Guesser roles with different views
 - Turn-based gameplay with timer
 - Chat and clue logging
@@ -73,7 +73,7 @@ npm run dev
 
 - `app/` - Next.js App Router pages and layouts
 - `components/` - React components (GameBoard, ChatLog)
-- `lib/` - Firebase configuration and Firestore actions
+- `lib/` - Firebase configuration and Realtime Database actions
 - `hooks/` - React hooks for game state management
 - `shared/` - Shared TypeScript types and utilities
 - `docs/` - Architecture, rules, and documentation
@@ -110,6 +110,7 @@ Set these environment variables in `.env.local`:
 
 - `NEXT_PUBLIC_FIREBASE_API_KEY` - Firebase API key
 - `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN` - Firebase auth domain
+- `NEXT_PUBLIC_FIREBASE_DATABASE_URL` - Realtime Database URL (e.g., `https://your-project-default-rtdb.firebaseio.com`)
 - `NEXT_PUBLIC_FIREBASE_PROJECT_ID` - Firebase project ID
 - `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET` - Firebase storage bucket
 - `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID` - Firebase messaging sender ID
@@ -118,16 +119,16 @@ Set these environment variables in `.env.local`:
 ### Optional: Firebase Emulators (for local development)
 
 - `NEXT_PUBLIC_FIREBASE_AUTH_EMULATOR_HOST` - Auth emulator host (e.g., `localhost:9099`)
-- `NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_HOST` - Firestore emulator host (e.g., `localhost:8080`)
+- `NEXT_PUBLIC_FIREBASE_DATABASE_EMULATOR_HOST` - Realtime Database emulator host (e.g., `localhost:9000`)
 
 See `.env.example` for all available variables.
 
 ### Firebase Setup
 
 1. Create a Firebase project at https://console.firebase.google.com
-2. Enable Firestore Database
-3. Deploy security rules: `firebase deploy --only firestore:rules`
-4. Copy your Firebase config to `.env.local`
+2. Enable Realtime Database (Build → Realtime Database → Create Database)
+3. Deploy security rules: `firebase deploy --only database`
+4. Copy your Firebase config to `.env.local` (include the `databaseURL`)
 
 ## License
 
