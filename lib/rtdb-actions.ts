@@ -387,15 +387,8 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     playerUpdates[`players/${id}/role`] = null;
   });
 
-  // Reassign owner to another connected player (if any)
-  const connectedOthers = Object.entries(playersData).filter(
-    ([id, p]) => id !== playerId && p.connected
-  );
-  const newOwnerId = connectedOthers.length > 0 ? connectedOthers[0][0] : playerId;
-  const newOwnerName = connectedOthers.length > 0 ? connectedOthers[0][1].name : null;
-
+  // Owner stays the same - they're just ending the game, not leaving
   await update(roomRef, {
-    ownerId: newOwnerId,
     gameStarted: false,
     gameOver: false,
     winner: null,
@@ -409,7 +402,7 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     ...playerUpdates,
   });
 
-  // Add system messages
+  // Add system message
   await push(ref(db, `rooms/${roomCode}/messages`), {
     playerId: null,
     playerName: "System",
@@ -417,17 +410,6 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     timestamp: serverTimestamp(),
     type: "system",
   });
-
-  // Notify about new owner if changed
-  if (newOwnerId !== playerId && newOwnerName) {
-    await push(ref(db, `rooms/${roomCode}/messages`), {
-      playerId: null,
-      playerName: "System",
-      message: `${newOwnerName} is now the room owner.`,
-      timestamp: serverTimestamp(),
-      type: "system",
-    });
-  }
 }
 
 export async function resumeGame(roomCode: string, playerId: string): Promise<void> {
