@@ -545,15 +545,17 @@ export async function randomizeTeams(roomCode: string, playerId: string): Promis
     role: p.role,
   }));
 
-  if (players.length < 4 || players.length % 2 !== 0) throw new Error("Need even number of players (4+)");
+  if (players.length < 4) throw new Error("Need at least 4 players");
 
   const shuffled = shufflePlayers(players);
-  const half = players.length / 2;
+  const half = Math.ceil(players.length / 2); // Red team gets extra player if odd
 
   const updates: Record<string, any> = {};
   shuffled.forEach((p, i) => {
-    updates[`players/${p.id}/team`] = i < half ? "red" : "blue";
-    updates[`players/${p.id}/role`] = i === 0 || i === half ? "clueGiver" : "guesser";
+    const isRedTeam = i < half;
+    const isFirstOfTeam = i === 0 || i === half;
+    updates[`players/${p.id}/team`] = isRedTeam ? "red" : "blue";
+    updates[`players/${p.id}/role`] = isFirstOfTeam ? "clueGiver" : "guesser";
   });
 
   await update(roomRef, updates);

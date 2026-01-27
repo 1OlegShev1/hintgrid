@@ -129,7 +129,7 @@ export default function TeamLobby({
             {isRoomOwner && (
               <button
                 onClick={onRandomize}
-                disabled={players.length < 4 || players.length % 2 !== 0}
+                disabled={players.length < 4}
                 data-testid="lobby-randomize-btn"
                 className="bg-gray-200 text-gray-800 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base"
               >
@@ -139,7 +139,7 @@ export default function TeamLobby({
             {isRoomOwner && showControls ? (
               <button
                 onClick={onStartGame}
-                disabled={!players.every((player) => player.team && player.role) || players.length < 4 || players.length % 2 !== 0}
+                disabled={!players.every((player) => player.team && player.role) || players.length < 4}
                 data-testid="lobby-start-btn"
                 className="bg-green-600 text-white px-4 py-1.5 sm:px-6 sm:py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base"
               >
@@ -314,11 +314,6 @@ export default function TeamLobby({
           {!isPaused && players.length < 4 && (
             <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
               Waiting for {4 - players.length} more player{4 - players.length !== 1 ? "s" : ""}...
-            </p>
-          )}
-          {!isPaused && players.length >= 4 && players.length % 2 !== 0 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
-              Need one more player for even teams.
             </p>
           )}
         </>
