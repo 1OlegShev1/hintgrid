@@ -73,8 +73,12 @@ export function useRtdbRoom(
   // Set up leaveRoom callback for Navbar
   useEffect(() => {
     const leaveRoomFn = async () => {
+      console.log("[Room] leaveRoom called", { uid: connection.uid, roomCode });
       if (connection.uid && roomCode) {
         await actions.leaveRoom(roomCode, connection.uid);
+        console.log("[Room] leaveRoom completed");
+      } else {
+        console.warn("[Room] leaveRoom skipped - missing uid or roomCode");
       }
     };
     setLeaveRoom(leaveRoomFn);

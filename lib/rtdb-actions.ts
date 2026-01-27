@@ -186,6 +186,13 @@ export async function updateDisconnectBehavior(
   playerId: string,
   connectedCount: number
 ): Promise<void> {
+  console.log("[updateDisconnectBehavior]", { 
+    roomCode, 
+    playerId: playerId.slice(0, 8), 
+    connectedCount,
+    action: connectedCount <= 1 ? "ROOM_DELETE" : "PLAYER_DISCONNECT"
+  });
+  
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
   const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
@@ -294,6 +301,7 @@ export async function reassignOwnerIfNeeded(
  * Leave room explicitly. Checks if last player and deletes room if so.
  */
 export async function leaveRoom(roomCode: string, playerId: string): Promise<void> {
+  console.log("[leaveRoom] Starting", { roomCode, playerId });
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
   const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
@@ -301,6 +309,7 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
 
   const playersSnap = await get(playersRef);
   if (!playersSnap.exists()) {
+    console.log("[leaveRoom] No players found, removing room");
     await remove(roomRef);
     return;
   }
@@ -310,12 +319,21 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
   const connectedCount = Object.entries(players).filter(
     ([id, p]) => id !== playerId && p.connected !== false
   ).length;
+  
+  console.log("[leaveRoom] Players state:", Object.entries(players).map(([id, p]) => ({
+    id: id.slice(0, 8),
+    connected: p.connected,
+    isLeaving: id === playerId
+  })));
+  console.log("[leaveRoom] Other connected count:", connectedCount);
 
   if (connectedCount === 0) {
     // Last player leaving - delete the room
+    console.log("[leaveRoom] Last player, deleting room");
     await remove(roomRef);
   } else {
     // Mark as disconnected and clear votes
+    console.log("[leaveRoom] Marking player as disconnected");
     const roomSnap = await get(roomRef);
     if (roomSnap.exists()) {
       const roomData = roomSnap.val() as RoomData;
@@ -327,6 +345,7 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
       await update(roomRef, { board: updatedBoard });
     }
     await update(playerRef, { connected: false, lastSeen: serverTimestamp() });
+    console.log("[leaveRoom] Player marked as disconnected");
     
     // Reassign owner if the leaving player was the owner (add message since this is explicit leave)
     // Skip grace period since this is an explicit leave action
