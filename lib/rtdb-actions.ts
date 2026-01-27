@@ -315,18 +315,20 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
     // Last player leaving - delete the room
     await remove(roomRef);
   } else {
-    // Mark as disconnected and clear votes
+    // Mark as disconnected
+    await update(playerRef, { connected: false, lastSeen: serverTimestamp() });
+    
+    // Clear this player's votes from all cards (they have permission to remove their own votes)
     const roomSnap = await get(roomRef);
     if (roomSnap.exists()) {
       const roomData = roomSnap.val() as RoomData;
       const board = roomData.board || [];
-      const updatedBoard = board.map((c) => ({
-        ...c,
-        votes: arrayToVotes(votesToArray(c.votes).filter((id) => id !== playerId)),
-      }));
-      await update(roomRef, { board: updatedBoard });
+      // Remove votes individually - player can only remove their own vote
+      const voteRemovals = board.map((_, index) => 
+        remove(ref(db, `rooms/${roomCode}/board/${index}/votes/${playerId}`))
+      );
+      await Promise.all(voteRemovals);
     }
-    await update(playerRef, { connected: false, lastSeen: serverTimestamp() });
     
     // Reassign owner if the leaving player was the owner (add message since this is explicit leave)
     // Skip grace period since this is an explicit leave action
