@@ -125,6 +125,14 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 
 **Note:** Keys are defined in `shared/constants.ts` (except theme which is in `ThemeProvider.tsx`). Music volume is derived from master volume (30%).
 
+### sessionStorage Keys
+
+| Key | Description |
+|-----|-------------|
+| `cluecards_audio_unlocked` | Tracks if user has interacted with the page (for browser autoplay policy). Persists across page reloads within same tab session. |
+
+**Note:** Key is defined in `SoundContext.tsx`. This enables music to autoplay after navigation (which uses full page reload via `window.location.href`).
+
 ### Game Configuration Constants
 
 Defined in `shared/constants.ts`:
