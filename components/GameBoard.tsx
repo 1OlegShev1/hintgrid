@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Card, Player } from "@/shared/types";
+import { MaskIcon, TrapIcon, TumbleweedIcon } from "@/components/icons/CardBackIcons";
 
 interface GameBoardProps {
   board: Card[];
@@ -132,6 +133,34 @@ export default function GameBoard({
     }
   };
 
+  // Get the icon color class for card backs (tone-on-tone effect)
+  const getCardBackIconColor = (card: Card) => {
+    switch (card.team) {
+      case "red":
+        return "text-red-800";
+      case "blue":
+        return "text-blue-800";
+      case "trap":
+        return "text-gray-700";
+      default:
+        return "text-yellow-600 dark:text-yellow-800";
+    }
+  };
+
+  // Render the appropriate icon for revealed card backs
+  const renderCardBackIcon = (card: Card) => {
+    const iconClass = `w-3/5 h-3/5 opacity-50 ${getCardBackIconColor(card)}`;
+    switch (card.team) {
+      case "red":
+      case "blue":
+        return <MaskIcon className={iconClass} />;
+      case "trap":
+        return <TrapIcon className={iconClass} />;
+      default:
+        return <TumbleweedIcon className={iconClass} />;
+    }
+  };
+
   return (
     <div className="grid grid-cols-5 gap-2 max-w-2xl mx-auto">
       {board.map((card, index) => {
@@ -155,13 +184,13 @@ export default function GameBoard({
                   ? "cursor-default"
                   : "cursor-pointer hover:scale-105 active:scale-95"
                 }
-                ${card.revealed ? "line-through opacity-75" : ""}
+                ${card.revealed && !isClueGiver ? "line-through opacity-75" : ""}
                 ${hasVoted ? "ring-2 ring-blue-500" : ""}
                 ${isAnimating ? "card-flip" : ""}
               `}
             >
               <div className="flex items-center justify-center h-full text-center">
-                {card.word}
+                {card.revealed && isClueGiver ? renderCardBackIcon(card) : card.word}
               </div>
             </button>
             {votes.length > 0 && !card.revealed && (

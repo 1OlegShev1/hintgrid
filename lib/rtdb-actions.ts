@@ -732,6 +732,17 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
   const remainingTeamCards = updatedBoard.filter((c) => c.team === roomData.currentTeam && !c.revealed).length;
   const newGuesses = (roomData.remainingGuesses ?? 1) - 1;
 
+  // Build system message for the reveal
+  const teamLabel = card.team === "red" ? "Red" 
+    : card.team === "blue" ? "Blue" 
+    : card.team === "trap" ? "Trap" 
+    : "Neutral";
+  const teamEmoji = card.team === "red" ? "🔴" 
+    : card.team === "blue" ? "🔵" 
+    : card.team === "trap" ? "⬛" 
+    : "🟡";
+  const revealMessage = `${teamEmoji} "${card.word}" revealed — ${teamLabel}`;
+
   if (isTrap) {
     await update(roomRef, {
       board: updatedBoard,
@@ -769,6 +780,15 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
       remainingGuesses: newGuesses,
     });
   }
+
+  // Add system message about the reveal (after board update)
+  await push(ref(db, `rooms/${roomCode}/messages`), {
+    playerId: null,
+    playerName: "System",
+    message: revealMessage,
+    timestamp: serverTimestamp(),
+    type: "system",
+  });
 }
 
 export async function endTurn(roomCode: string): Promise<void> {
