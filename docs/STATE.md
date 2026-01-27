@@ -60,6 +60,8 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
 **Automatic via onDisconnect**:
 - When a player joins, `onDisconnect()` is set to mark them as disconnected
 - Firebase server detects connection loss (tab close, network drop, etc.)
+- Only the room owner sets up room-level `onDisconnect` (for room deletion when they're the last player)
+- Non-owners only set up player-level disconnect handlers (permission requirement)
 - When last player leaves/disconnects, room is deleted
 
 This is **reliable** because it's server-side — no client cooperation needed.
@@ -74,6 +76,12 @@ This is **reliable** because it's server-side — no client cooperation needed.
 **Owner transfer**:
 - If the room owner disconnects for 30+ seconds, ownership transfers to another connected player
 - If the owner explicitly leaves, ownership transfers immediately
+
+**Explicit leave** (via navbar click or closing tab):
+- Player's `connected` is set to `false`, `lastSeen` updated
+- Player's votes are cleared from all cards (each vote removed individually for permission)
+- If player was owner, ownership transfers immediately
+- The `leaveRoom` callback uses refs to ensure it always has the latest uid/roomCode
 
 **Backup manual cleanup**:
 Run `npm run cleanup:rooms -- --hours 24` to delete rooms older than 24 hours.
@@ -98,8 +106,15 @@ At turn transitions, the game checks if the incoming team has **connected** play
 When paused:
 - `paused: true`, `pauseReason` set, `turnStartTime: null`
 - Owner can reassign roles from connected players or spectators
-- Owner can remove offline players from teams during pause
+- Owner can remove any player from their team/role
 - Owner calls `resumeGame` when team has connected clue giver + guesser
+
+**Player Removal (Owner Only):**
+- In lobby (before game starts): Owner can remove any player from their team
+- During paused game: Owner can remove any player from their team
+- Removing a player clears their team/role, making them a spectator
+- Spectators can rejoin a team or leave the room
+- Truly removing a player (kicking from room) is not implemented; they become spectators
 
 ### Real-time Subscriptions
 

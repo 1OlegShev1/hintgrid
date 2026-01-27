@@ -48,7 +48,18 @@ export default function TeamLobby({
   const hasClueGiver = pausedTeamPlayers.some((p) => p.role === "clueGiver" && p.connected !== false);
   const hasGuesser = pausedTeamPlayers.some((p) => p.role === "guesser" && p.connected !== false);
   const canResume = hasClueGiver && hasGuesser;
-  const canRemovePlayer = (playerId?: string) => isPaused && isRoomOwner && playerId && playerId !== currentPlayer?.id;
+  // Owner can remove players from their team/role when:
+  // 1. Game is paused (reassigning roles for the paused team)
+  // 2. In lobby (not started) - can remove anyone from teams
+  // Cannot remove yourself
+  const canRemovePlayer = (playerId?: string) => {
+    if (!isRoomOwner || !playerId || playerId === currentPlayer?.id) return false;
+    // During paused game, owner can remove anyone
+    if (isPaused) return true;
+    // In lobby (not started), owner can remove anyone from teams
+    if (!gameState.gameStarted) return true;
+    return false;
+  };
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
@@ -332,6 +343,15 @@ export default function TeamLobby({
                     <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
                     {player.connected === false && (
                       <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                    )}
+                    {canRemovePlayer(player.id) && player.team && player.role && (
+                      <button
+                        type="button"
+                        onClick={() => onSetRole(null, null, player.id)}
+                        className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
+                      >
+                        Remove
+                      </button>
                     )}
                   </div>
                   {player.team && player.role && (
