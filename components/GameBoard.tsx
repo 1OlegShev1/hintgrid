@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import type { Card, Player } from "@/shared/types";
-import { MaskIcon, TrapIcon, TumbleweedIcon } from "@/components/icons/CardBackIcons";
+import { MaskIcon, TrapIcon, DustCloudIcon } from "@/components/icons/CardBackIcons";
 
 interface GameBoardProps {
   board: Card[];
@@ -157,7 +157,7 @@ export default function GameBoard({
       case "trap":
         return <TrapIcon className={iconClass} />;
       default:
-        return <TumbleweedIcon className={iconClass} />;
+        return <DustCloudIcon className={iconClass} />;
     }
   };
 
