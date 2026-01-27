@@ -116,6 +116,9 @@ export default function TransitionOverlay({
           ${phase === "enter" ? "opacity-0" : phase === "exit" ? "opacity-0" : "opacity-100"}
         `}
       >
+        {/* Dark background to hide content behind */}
+        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
+        
         {/* Celebratory background particles */}
         <div className="absolute inset-0 overflow-hidden">
           {[...Array(20)].map((_, i) => (
