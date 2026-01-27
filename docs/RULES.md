@@ -15,12 +15,14 @@ This project follows standard word-guessing game rules, with the following clari
 
 - A clue is required before guessers can guess.
 - Remaining guesses are tracked as `count + 1`.
-- A timer is enabled per turn (optional in board games).
+- A timer is enabled per turn (configurable: 30s, 60s, or 90s).
+- Word packs available: "classic" (299 words) and "kahoot" (70 words). Owner selects before game start.
 - Clue validation blocks:
   - Exact matches with board words (case-insensitive)
   - Prefix/suffix relationships (e.g., "farm" blocked if "farmer" on board, but "war" allowed even if "dwarf" on board)
   - Simple plural variants (adding/removing S/ES)
 - Guessers vote on a card first; a teammate must confirm once votes meet a threshold.
+  - Vote threshold: `min(3, ceil(guesserCount / 2))` — requires 1 vote for 1-2 guessers, 2 for 3-4, 3 for 5+.
 - Room owner can start rematch after game ends. Players can reassign roles before rematch, or owner can randomize teams.
 - Minimum 4 players on teams required to start. Teams don't need to be equal size.
 - Players choose a lobby team and role before start; owner can randomize assignments and override choices.

@@ -55,6 +55,9 @@ export function useRoomConnection(
       return;
     }
 
+    // Use AbortController pattern to prevent operations after cleanup
+    let isCleanedUp = false;
+
     setIsConnecting(true);
     setConnectionError(null);
 
@@ -67,6 +70,7 @@ export function useRoomConnection(
     let roomExists = false;
 
     const rebuild = () => {
+      if (isCleanedUp) return;
       const playersList = toPlayers(playersDataRef.current);
       setPlayers(playersList);
       setCurrentPlayer(playersList.find((p) => p.id === playerId) || null);
@@ -75,6 +79,7 @@ export function useRoomConnection(
 
     // Room listener
     const unsubRoom = onValue(roomRef, (snap) => {
+      if (isCleanedUp) return;
       if (!snap.exists()) {
         if (roomExists) {
           setRoomClosedReason("allPlayersLeft");
@@ -87,6 +92,7 @@ export function useRoomConnection(
       roomDataRef.current = snap.val();
       rebuild();
     }, (err) => {
+      if (isCleanedUp) return;
       setConnectionError(err.message);
       setIsConnecting(false);
     });
@@ -94,6 +100,7 @@ export function useRoomConnection(
     // Players listener - also updates onDisconnect behavior based on player count
     let lastConnectedCount = -1;
     const unsubPlayers = onValue(playersRef, (snap) => {
+      if (isCleanedUp) return;
       const data = snap.val() as Record<string, PlayerData> | null;
       playersDataRef.current = data;
       
@@ -107,32 +114,52 @@ export function useRoomConnection(
       if (connected !== lastConnectedCount && playerId) {
         lastConnectedCount = connected;
         actions.updateDisconnectBehavior(roomCode, playerId, connected).catch(() => {});
-        actions.reassignOwnerIfNeeded(roomCode).catch(() => {});
+        
+        // Fix race condition: Only try to reassign owner if this player could become owner
+        // (i.e., they are the first connected player alphabetically by ID)
+        if (data) {
+          const connectedPlayerIds = Object.entries(data)
+            .filter(([, p]) => p.connected)
+            .map(([id]) => id)
+            .sort();
+          
+          // Only the first connected player (by ID order) should attempt reassignment
+          if (connectedPlayerIds[0] === playerId) {
+            actions.reassignOwnerIfNeeded(roomCode).catch(() => {});
+          }
+        }
       }
     });
 
     // Messages listener (limited to last 100)
     const messagesQuery = query(messagesRef, orderByChild("timestamp"), limitToLast(100));
     const unsubMessages = onValue(messagesQuery, (snap) => {
+      if (isCleanedUp) return;
       setMessages(toMessages(snap.val()));
     });
 
     // Join room and set up onDisconnect
     actions.joinRoom(roomCode, playerId, playerName, playerAvatar)
       .then(({ disconnectRef }) => {
+        if (isCleanedUp) return;
         disconnectRefRef.current = disconnectRef;
         setIsConnecting(false);
       })
       .catch((e) => {
+        if (isCleanedUp) return;
         setConnectionError(e.message || "Failed to join");
         setIsConnecting(false);
       });
 
     return () => {
+      // Mark as cleaned up to prevent any further state updates
+      isCleanedUp = true;
+      
       off(roomRef);
       off(playersRef);
       off(messagesRef);
-      // Explicitly leave room on navigation
+      
+      // Explicitly leave room on navigation (fire and forget)
       if (playerId) {
         actions.leaveRoom(roomCode, playerId).catch(() => {});
       }

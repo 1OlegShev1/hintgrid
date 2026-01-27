@@ -11,6 +11,19 @@ import { getDatabase } from "./firebase";
 import { generateBoard, assignTeams } from "@/shared/words";
 import { isValidClue, teamsAreReady, shufflePlayers, getRequiredVotes } from "@/shared/game-utils";
 import type { Player, Team, PauseReason, WordPack } from "@/shared/types";
+import {
+  TURN_DURATIONS,
+  DEFAULT_TURN_DURATION,
+  WORD_PACKS,
+  DEFAULT_WORD_PACK,
+  MIN_PLAYERS_TO_START,
+} from "@/shared/constants";
+import {
+  sanitizePlayerName,
+  sanitizeClue,
+  sanitizeChatMessage,
+  isValidClueFormat,
+} from "@/shared/validation";
 
 interface BoardCard {
   word: string;
@@ -113,6 +126,10 @@ export async function joinRoom(
   const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
   const playersRef = ref(db, `rooms/${roomCode}/players`);
 
+  // Sanitize player name
+  const sanitizedName = sanitizePlayerName(playerName);
+  if (!sanitizedName) throw new Error("Invalid player name");
+
   const roomSnap = await get(roomRef);
 
   if (!roomSnap.exists()) {
@@ -122,11 +139,11 @@ export async function joinRoom(
       ownerId: playerId,
       currentTeam: startingTeam,
       startingTeam,
-      wordPack: "classic" as WordPack,
+      wordPack: DEFAULT_WORD_PACK,
       currentClue: null,
       remainingGuesses: null,
       turnStartTime: null,
-      turnDuration: 60,
+      turnDuration: DEFAULT_TURN_DURATION,
       gameStarted: false,
       gameOver: false,
       winner: null,
@@ -143,7 +160,7 @@ export async function joinRoom(
     
     // Check if another connected player has the same name
     const duplicateName = Object.entries(players).find(
-      ([id, p]) => id !== playerId && p.name.toLowerCase() === playerName.toLowerCase() && p.connected
+      ([id, p]) => id !== playerId && p.name.toLowerCase() === sanitizedName.toLowerCase() && p.connected
     );
     if (duplicateName) {
       throw new Error("Name already taken");
@@ -156,7 +173,7 @@ export async function joinRoom(
   if (existingPlayerSnap.exists()) {
     // Rejoin - preserve team/role, update name/avatar and connection status
     await update(playerRef, {
-      name: playerName,
+      name: sanitizedName,
       avatar: playerAvatar,
       connected: true,
       lastSeen: serverTimestamp(),
@@ -164,7 +181,7 @@ export async function joinRoom(
   } else {
     // New player
     await set(playerRef, {
-      name: playerName,
+      name: sanitizedName,
       avatar: playerAvatar,
       team: null,
       role: null,
@@ -496,7 +513,7 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
 // ============================================================================
 
 export async function setTurnDuration(roomCode: string, playerId: string, duration: number): Promise<void> {
-  if (![30, 60, 90].includes(duration)) throw new Error("Invalid duration");
+  if (!TURN_DURATIONS.includes(duration as typeof TURN_DURATIONS[number])) throw new Error("Invalid duration");
   
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
@@ -511,7 +528,7 @@ export async function setTurnDuration(roomCode: string, playerId: string, durati
 }
 
 export async function setWordPack(roomCode: string, playerId: string, pack: WordPack): Promise<void> {
-  if (!["classic", "kahoot"].includes(pack)) throw new Error("Invalid word pack");
+  if (!WORD_PACKS.includes(pack)) throw new Error("Invalid word pack");
   
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
@@ -585,7 +602,7 @@ export async function randomizeTeams(roomCode: string, playerId: string): Promis
     role: p.role,
   }));
 
-  if (players.length < 4) throw new Error("Need at least 4 players");
+  if (players.length < MIN_PLAYERS_TO_START) throw new Error("Need at least 4 players");
 
   const shuffled = shufflePlayers(players);
   const half = Math.ceil(players.length / 2); // Red team gets extra player if odd
@@ -606,8 +623,8 @@ export async function randomizeTeams(roomCode: string, playerId: string): Promis
 // ============================================================================
 
 export async function giveClue(roomCode: string, playerId: string, word: string, count: number): Promise<void> {
-  const trimmed = word.trim();
-  if (!trimmed || !/^\S+$/.test(trimmed) || count < 0) throw new Error("Invalid clue");
+  const sanitized = sanitizeClue(word);
+  if (!isValidClueFormat(sanitized) || count < 0) throw new Error("Invalid clue");
 
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
@@ -624,13 +641,13 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
   if (playerData.role !== "clueGiver" || playerData.team !== roomData.currentTeam) throw new Error("Not your turn");
 
   const board = roomData.board || [];
-  if (!isValidClue(trimmed, board.map((c) => c.word))) throw new Error("Invalid clue word");
+  if (!isValidClue(sanitized, board.map((c) => c.word))) throw new Error("Invalid clue word");
 
   // Clear votes and set clue
   const updatedBoard = board.map((c) => ({ ...c, votes: {} }));
 
   await update(roomRef, {
-    currentClue: { word: trimmed.toUpperCase(), count },
+    currentClue: { word: sanitized.toUpperCase(), count },
     remainingGuesses: count + 1,
     turnStartTime: serverTimestamp(),
     board: updatedBoard,
@@ -639,7 +656,7 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
   await push(ref(db, `rooms/${roomCode}/messages`), {
     playerId,
     playerName: playerData.name,
-    message: `${trimmed} ${count}`,
+    message: `${sanitized} ${count}`,
     timestamp: serverTimestamp(),
     type: "clue",
   });
@@ -833,6 +850,9 @@ export async function sendMessage(
   message: string,
   type: "clue" | "chat"
 ): Promise<void> {
+  const sanitized = sanitizeChatMessage(message);
+  if (!sanitized) throw new Error("Message cannot be empty");
+
   const db = getDb();
   const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
   const playerSnap = await get(playerRef);
@@ -843,7 +863,7 @@ export async function sendMessage(
   await push(ref(db, `rooms/${roomCode}/messages`), {
     playerId,
     playerName: playerData.name,
-    message: message.trim(),
+    message: sanitized,
     timestamp: serverTimestamp(),
     type,
   });

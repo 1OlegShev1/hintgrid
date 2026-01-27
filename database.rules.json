@@ -2,44 +2,150 @@
   "rules": {
     "rooms": {
       "$roomCode": {
-        // Must be authenticated to read
+        // Must be authenticated to read entire room
         ".read": "auth != null",
         
-        // Room-level writes allowed for authenticated users
-        // Game logic validation is handled client-side
-        ".write": "auth != null",
+        // Allow room creation (when room doesn't exist)
+        ".write": "auth != null && !data.exists()",
         
-        "players": {
-          "$playerId": {
-            // Players can read all player data
-            ".read": "auth != null",
-            
-            // Players can only write their own player document
-            // Exception: room owner can modify others (for randomize, add spectator)
-            ".write": "auth != null && ($playerId === auth.uid || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid)"
-          }
-        },
-        
-        "messages": {
-          "$messageId": {
-            ".read": "auth != null",
-            ".write": "auth != null",
-            ".validate": "newData.hasChildren(['playerName', 'message', 'timestamp', 'type'])"
-          }
-        },
-
-        // Board can be modified by any authenticated player
-        "board": {
-          ".read": "auth != null",
-          ".write": "auth != null"
-        },
-
         // Owner ID can only be changed if:
         // - Creating room (no existing owner)
         // - Current owner is changing it (reassignment)
         "ownerId": {
-          ".read": "auth != null",
           ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
+        },
+        
+        // Game state fields: only room owner can modify
+        "gameStarted": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid"
+        },
+        "gameOver": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid"
+        },
+        "winner": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid"
+        },
+        "paused": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid"
+        },
+        "pauseReason": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid"
+        },
+        "pausedForTeam": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid"
+        },
+        
+        // Turn state: any authenticated player can modify (for turn flow)
+        "currentTeam": {
+          ".write": "auth != null"
+        },
+        "startingTeam": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid"
+        },
+        "turnStartTime": {
+          ".write": "auth != null"
+        },
+        "turnDuration": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid",
+          ".validate": "newData.isNumber() && (newData.val() === 30 || newData.val() === 60 || newData.val() === 90)"
+        },
+        
+        // Word pack: only owner can set, must be valid
+        "wordPack": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid",
+          ".validate": "newData.isString() && (newData.val() === 'classic' || newData.val() === 'kahoot')"
+        },
+        
+        // Clue: any authenticated player, with validation
+        "currentClue": {
+          ".write": "auth != null",
+          ".validate": "newData === null || (newData.child('word').isString() && newData.child('word').val().length > 0 && newData.child('word').val().length <= 30 && newData.child('count').isNumber() && newData.child('count').val() >= 0)"
+        },
+        "remainingGuesses": {
+          ".write": "auth != null",
+          ".validate": "newData === null || (newData.isNumber() && newData.val() >= 0)"
+        },
+        
+        // Room metadata
+        "createdAt": {
+          ".write": "auth != null && !data.exists()"
+        },
+        
+        // Board: granular control over cards
+        "board": {
+          ".write": "auth != null",
+          "$cardIndex": {
+            "word": {
+              ".validate": "newData.isString()"
+            },
+            "team": {
+              ".validate": "newData.isString() && (newData.val() === 'red' || newData.val() === 'blue' || newData.val() === 'neutral' || newData.val() === 'trap')"
+            },
+            "revealed": {
+              ".validate": "newData.isBoolean()"
+            },
+            "revealedBy": {
+              ".validate": "newData === null || newData.isString()"
+            },
+            "votes": {
+              "$oderId": {
+                // Players can only set/remove their own vote
+                ".write": "auth != null && $oderId === auth.uid",
+                ".validate": "newData.isBoolean() || !newData.exists()"
+              }
+            }
+          }
+        },
+        
+        // Players: self-write or owner can modify
+        "players": {
+          "$playerId": {
+            ".write": "auth != null && ($playerId === auth.uid || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid)",
+            ".validate": "newData.child('name').isString() && newData.child('name').val().length > 0 && newData.child('name').val().length <= 20",
+            
+            "name": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 20"
+            },
+            "avatar": {
+              ".validate": "newData.isString()"
+            },
+            "team": {
+              ".validate": "newData === null || newData.val() === 'red' || newData.val() === 'blue'"
+            },
+            "role": {
+              ".validate": "newData === null || newData.val() === 'clueGiver' || newData.val() === 'guesser'"
+            },
+            "connected": {
+              ".validate": "newData.isBoolean()"
+            },
+            "lastSeen": {
+              ".validate": "newData.isNumber()"
+            }
+          }
+        },
+        
+        // Messages: any authenticated player can send
+        "messages": {
+          "$messageId": {
+            ".write": "auth != null",
+            ".validate": "newData.hasChildren(['playerName', 'message', 'timestamp', 'type']) && newData.child('message').isString() && newData.child('message').val().length > 0 && newData.child('message').val().length <= 200",
+            
+            "playerId": {
+              ".validate": "newData === null || newData.isString()"
+            },
+            "playerName": {
+              ".validate": "newData.isString() && newData.val().length > 0"
+            },
+            "message": {
+              ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 200"
+            },
+            "timestamp": {
+              ".validate": "newData.isNumber()"
+            },
+            "type": {
+              ".validate": "newData.isString() && (newData.val() === 'clue' || newData.val() === 'chat' || newData.val() === 'system')"
+            }
+          }
         }
       }
     }
