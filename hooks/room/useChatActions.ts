@@ -6,6 +6,7 @@ import { useState, useCallback } from "react";
 import * as actions from "@/lib/rtdb-actions";
 import { useError } from "@/contexts/ErrorContext";
 import { withRetry, isRetryableError } from "@/lib/retry";
+import { sanitizeChatMessageWithCensor } from "@/shared/validation";
 
 export interface UseChatActionsReturn {
   chatInput: string;
@@ -26,7 +27,10 @@ export function useChatActions(
     e.preventDefault();
     if (!chatInput.trim() || !uid || isSending) return;
 
-    const messageToSend = chatInput.trim();
+    // Censor profanity in chat messages
+    const messageToSend = sanitizeChatMessageWithCensor(chatInput);
+    if (!messageToSend) return;
+    
     setIsSending(true);
     
     // Clear input optimistically for better UX

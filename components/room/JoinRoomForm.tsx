@@ -1,6 +1,7 @@
 import { useState, useEffect, FormEvent } from "react";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar } from "@/shared/constants";
+import { validatePlayerName } from "@/shared/validation";
 
 interface JoinRoomFormProps {
   roomCode: string;
@@ -10,6 +11,7 @@ interface JoinRoomFormProps {
 export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
   const [pendingName, setPendingName] = useState("");
   const [avatar, setAvatar] = useState("");
+  const [nameError, setNameError] = useState<string | null>(null);
 
   // Initialize avatar from localStorage or random on mount
   useEffect(() => {
@@ -22,10 +24,22 @@ export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
     localStorage.setItem(LOCAL_STORAGE_AVATAR_KEY, newAvatar);
   };
 
+  const handleNameChange = (value: string) => {
+    setPendingName(value);
+    setNameError(null); // Clear error on input
+  };
+
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     const trimmed = pendingName.trim();
     if (!trimmed) return;
+
+    const validation = validatePlayerName(trimmed);
+    if (!validation.valid) {
+      setNameError(validation.error || "Invalid name");
+      return;
+    }
+
     onJoin(trimmed, avatar);
   };
 
@@ -47,12 +61,19 @@ export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
                 id="roomName"
                 type="text"
                 value={pendingName}
-                onChange={(e) => setPendingName(e.target.value)}
+                onChange={(e) => handleNameChange(e.target.value)}
                 placeholder="Enter your name"
-                className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                className={`flex-1 px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white ${
+                  nameError
+                    ? "border-red-500 dark:border-red-500"
+                    : "border-gray-300 dark:border-gray-600"
+                }`}
                 autoFocus
               />
             </div>
+            {nameError && (
+              <p className="mt-1 text-sm text-red-600 dark:text-red-400">{nameError}</p>
+            )}
           </div>
           <button
             type="submit"

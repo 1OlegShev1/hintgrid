@@ -8,6 +8,7 @@ import {
   MAX_CLUE_LENGTH,
   MAX_CHAT_MESSAGE_LENGTH,
 } from "./constants";
+import { containsProfanity, censorProfanity } from "./profanity";
 
 /**
  * Sanitize player name: trim whitespace and enforce max length.
@@ -43,6 +44,61 @@ export function isNonEmpty(value: string): boolean {
 export function isValidPlayerName(name: string): boolean {
   const trimmed = name.trim();
   return trimmed.length > 0 && trimmed.length <= MAX_PLAYER_NAME_LENGTH;
+}
+
+/**
+ * Validation result with optional error message.
+ */
+export interface ValidationResult {
+  valid: boolean;
+  error?: string;
+}
+
+/**
+ * Validate player name with detailed error messages.
+ * Checks: non-empty, length limit, profanity.
+ */
+export function validatePlayerName(name: string): ValidationResult {
+  const trimmed = name.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: "Name is required" };
+  }
+  if (trimmed.length > MAX_PLAYER_NAME_LENGTH) {
+    return { valid: false, error: `Name must be ${MAX_PLAYER_NAME_LENGTH} characters or less` };
+  }
+  if (containsProfanity(trimmed)) {
+    return { valid: false, error: "Please choose a different name" };
+  }
+  return { valid: true };
+}
+
+/**
+ * Validate clue word with detailed error messages.
+ * Checks: non-empty, single word, length limit, profanity.
+ */
+export function validateClueWord(clue: string): ValidationResult {
+  const trimmed = clue.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: "Clue is required" };
+  }
+  if (!/^\S+$/.test(trimmed)) {
+    return { valid: false, error: "Clue must be a single word (no spaces)" };
+  }
+  if (trimmed.length > MAX_CLUE_LENGTH) {
+    return { valid: false, error: `Clue must be ${MAX_CLUE_LENGTH} characters or less` };
+  }
+  if (containsProfanity(trimmed)) {
+    return { valid: false, error: "Please choose a different clue" };
+  }
+  return { valid: true };
+}
+
+/**
+ * Sanitize chat message: trim, enforce length, and censor profanity.
+ */
+export function sanitizeChatMessageWithCensor(message: string): string {
+  const trimmed = message.trim().slice(0, MAX_CHAT_MESSAGE_LENGTH);
+  return censorProfanity(trimmed);
 }
 
 /**

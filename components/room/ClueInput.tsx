@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import type { GameState } from "@/shared/types";
+import { validateClueWord } from "@/shared/validation";
 
 interface ClueInputProps {
   gameState: GameState;
@@ -63,16 +64,17 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
     const trimmed = clueWord.trim();
     if (!trimmed || clueCount < 0) return;
     
-    // Check for spaces
-    if (/\s/.test(trimmed)) {
-      setClueError("Clue must be a single word (no spaces)");
+    // Validate format and profanity
+    const formatValidation = validateClueWord(trimmed);
+    if (!formatValidation.valid) {
+      setClueError(formatValidation.error || "Invalid clue");
       return;
     }
     
     // Validate against board words
-    const validationError = validateClue(trimmed, gameState);
-    if (validationError) {
-      setClueError(validationError);
+    const boardValidationError = validateClue(trimmed, gameState);
+    if (boardValidationError) {
+      setClueError(boardValidationError);
       return;
     }
     

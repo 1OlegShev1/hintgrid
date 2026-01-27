@@ -7,12 +7,16 @@ import {
   isValidPlayerName,
   isValidClueFormat,
   isValidChatMessage,
+  validatePlayerName,
+  validateClueWord,
+  sanitizeChatMessageWithCensor,
 } from "../validation";
 import {
   MAX_PLAYER_NAME_LENGTH,
   MAX_CLUE_LENGTH,
   MAX_CHAT_MESSAGE_LENGTH,
 } from "../constants";
+import { containsProfanity, censorProfanity } from "../profanity";
 
 describe("sanitizePlayerName", () => {
   it("trims whitespace", () => {
@@ -161,5 +165,135 @@ describe("isValidChatMessage", () => {
   it("returns true for messages at max length", () => {
     const maxMessage = "M".repeat(MAX_CHAT_MESSAGE_LENGTH);
     expect(isValidChatMessage(maxMessage)).toBe(true);
+  });
+});
+
+// Profanity filter tests
+describe("containsProfanity", () => {
+  it("detects obvious profanity", () => {
+    expect(containsProfanity("shit")).toBe(true);
+    expect(containsProfanity("fuck")).toBe(true);
+    expect(containsProfanity("ass")).toBe(true);
+  });
+
+  it("detects profanity in sentences", () => {
+    expect(containsProfanity("what the shit")).toBe(true);
+    expect(containsProfanity("this is fucking great")).toBe(true);
+  });
+
+  it("returns false for clean text", () => {
+    expect(containsProfanity("hello")).toBe(false);
+    expect(containsProfanity("good game")).toBe(false);
+    expect(containsProfanity("Player1")).toBe(false);
+    expect(containsProfanity("class")).toBe(false); // contains "ass" but is a valid word
+  });
+
+  it("is case insensitive", () => {
+    expect(containsProfanity("SHIT")).toBe(true);
+    expect(containsProfanity("Shit")).toBe(true);
+    expect(containsProfanity("FUCK")).toBe(true);
+  });
+});
+
+describe("censorProfanity", () => {
+  it("replaces profanity with asterisks", () => {
+    const result = censorProfanity("what the shit");
+    expect(result).not.toContain("shit");
+    expect(result).toContain("***");
+  });
+
+  it("preserves clean text", () => {
+    expect(censorProfanity("hello world")).toBe("hello world");
+  });
+
+  it("handles text with multiple profane words", () => {
+    const result = censorProfanity("shit and fuck");
+    expect(result).not.toContain("shit");
+    expect(result).not.toContain("fuck");
+  });
+});
+
+describe("validatePlayerName", () => {
+  it("returns valid for clean names", () => {
+    expect(validatePlayerName("Alice")).toEqual({ valid: true });
+    expect(validatePlayerName("Player 1")).toEqual({ valid: true });
+  });
+
+  it("returns error for empty names", () => {
+    const result = validatePlayerName("");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Name is required");
+  });
+
+  it("returns error for names exceeding max length", () => {
+    const longName = "A".repeat(MAX_PLAYER_NAME_LENGTH + 1);
+    const result = validatePlayerName(longName);
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("characters or less");
+  });
+
+  it("returns error for profane names", () => {
+    const result = validatePlayerName("shit");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Please choose a different name");
+  });
+
+  it("returns error for names containing profanity", () => {
+    const result = validatePlayerName("Mr Fuck");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Please choose a different name");
+  });
+});
+
+describe("validateClueWord", () => {
+  it("returns valid for clean clues", () => {
+    expect(validateClueWord("ANIMAL")).toEqual({ valid: true });
+    expect(validateClueWord("word")).toEqual({ valid: true });
+  });
+
+  it("returns error for empty clues", () => {
+    const result = validateClueWord("");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Clue is required");
+  });
+
+  it("returns error for clues with spaces", () => {
+    const result = validateClueWord("two words");
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("single word");
+  });
+
+  it("returns error for clues exceeding max length", () => {
+    const longClue = "A".repeat(MAX_CLUE_LENGTH + 1);
+    const result = validateClueWord(longClue);
+    expect(result.valid).toBe(false);
+    expect(result.error).toContain("characters or less");
+  });
+
+  it("returns error for profane clues", () => {
+    const result = validateClueWord("shit");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Please choose a different clue");
+  });
+});
+
+describe("sanitizeChatMessageWithCensor", () => {
+  it("censors profanity in messages", () => {
+    const result = sanitizeChatMessageWithCensor("that was shit");
+    expect(result).not.toContain("shit");
+    expect(result).toContain("***");
+  });
+
+  it("trims whitespace", () => {
+    expect(sanitizeChatMessageWithCensor("  hello  ")).toBe("hello");
+  });
+
+  it("truncates to max length", () => {
+    const longMessage = "M".repeat(MAX_CHAT_MESSAGE_LENGTH + 50);
+    expect(sanitizeChatMessageWithCensor(longMessage).length).toBeLessThanOrEqual(MAX_CHAT_MESSAGE_LENGTH);
+  });
+
+  it("preserves clean messages", () => {
+    expect(sanitizeChatMessageWithCensor("Good game!")).toBe("Good game!");
   });
 });
