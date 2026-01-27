@@ -10,7 +10,7 @@ import {
   LOCAL_STORAGE_MUSIC_ENABLED_KEY,
 } from "@/shared/constants";
 
-export type SoundName = "gameStart" | "turnChange" | "gameOver" | "tick" | "tickUrgent";
+export type SoundName = "gameStart" | "turnChange" | "gameOver" | "tick" | "tickUrgent" | "cardReveal";
 export type MusicTrack = "lobby" | "game-30s" | "game-60s" | "game-90s" | "victory" | null;
 
 // Music plays at 30% of master volume
@@ -65,6 +65,7 @@ const playFunctionsRef: { current: {
   playGameOver: () => void;
   playTick: () => void;
   playTickUrgent: () => void;
+  playCardReveal: () => void;
   stopTick: () => void;
   stopTickUrgent: () => void;
 } | null } = { current: null };
@@ -112,14 +113,20 @@ function PlayFunctionCapture({
     interrupt: true,
   });
 
+  // Card reveal - subtle flick sound
+  const [playCardReveal] = useSound("/sounds/card-reveal.mp3", { 
+    volume: volume * 0.3,
+    interrupt: true,
+  });
+
   // Update shared ref when play functions change
   useEffect(() => {
     playFunctionsRef.current = { 
       playGameStart, playTurnChange, playGameOver, 
-      playTick, playTickUrgent,
+      playTick, playTickUrgent, playCardReveal,
       stopTick, stopTickUrgent,
     };
-  }, [playGameStart, playTurnChange, playGameOver, playTick, playTickUrgent, stopTick, stopTickUrgent]);
+  }, [playGameStart, playTurnChange, playGameOver, playTick, playTickUrgent, playCardReveal, stopTick, stopTickUrgent]);
 
   return <>{children}</>;
 }
@@ -309,6 +316,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         break;
       case "tickUrgent":
         playFunctionsRef.current?.playTickUrgent();
+        break;
+      case "cardReveal":
+        playFunctionsRef.current?.playCardReveal();
         break;
     }
   }, [soundEnabled]);

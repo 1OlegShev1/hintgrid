@@ -11,6 +11,7 @@ Sound effects in this folder are sourced from free, royalty-free libraries.
 | `game-over.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Shouts and applause of teens |
 | `tick.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Thermostat click |
 | `tick-urgent.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Mechanical alarm clock tic-tac |
+| `card-reveal.mp3` | [Mixkit](https://mixkit.co) | Mixkit License | Page turn single |
 
 ## Background Music
 

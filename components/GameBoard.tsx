@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState, useCallback, useMemo, memo, KeyboardEvent } from "react";
 import type { Card, Player } from "@/shared/types";
 import { MaskIcon, TrapIcon, DustCloudIcon } from "@/components/icons/CardBackIcons";
+import { useSoundContextOptional } from "@/contexts/SoundContext";
 
 interface GameBoardProps {
   board: Card[];
@@ -29,6 +30,7 @@ export default function GameBoard({
   onConfirmReveal,
 }: GameBoardProps) {
   const isClueGiver = currentPlayer?.role === "clueGiver";
+  const soundContext = useSoundContextOptional();
   
   // Track which cards are animating (for the flip effect)
   const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
@@ -104,6 +106,8 @@ export default function GameBoard({
     });
     
     if (newlyRevealed.length > 0) {
+      newlyRevealed.forEach(() => soundContext?.playSound("cardReveal"));
+
       // Add to animating set
       setAnimatingCards(prev => {
         const next = new Set(prev);
@@ -122,7 +126,7 @@ export default function GameBoard({
     }
     
     prevRevealedRef.current = board.map(c => c.revealed);
-  }, [board]);
+  }, [board, soundContext]);
 
   // Detect vote changes for badge animation
   useEffect(() => {
