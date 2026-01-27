@@ -110,6 +110,7 @@ export function useRoomConnection(
 
     // Players listener - also updates onDisconnect behavior based on player count
     let lastConnectedCount = -1;
+    let latestConnectedCount = 0; // Persists across callbacks for timeout to use
     let disconnectBehaviorTimeout: NodeJS.Timeout | null = null;
     const unsubPlayers = onValue(playersRef, (snap) => {
       if (isCleanedUp) return;
@@ -130,6 +131,7 @@ export function useRoomConnection(
       const connected = data
         ? Object.values(data).filter((p) => p.connected !== false).length
         : 0;
+      latestConnectedCount = connected; // Always update the latest value
       setConnectedPlayerCount(connected);
       rebuild();
       
@@ -143,14 +145,16 @@ export function useRoomConnection(
           clearTimeout(disconnectBehaviorTimeout);
         }
         
-        // Delay slightly to let Firebase sync settle
+        // Delay to let Firebase sync settle, use latestConnectedCount (not connected)
+        // so the timeout uses the most recent value, not the stale value from schedule time
         disconnectBehaviorTimeout = setTimeout(() => {
           disconnectBehaviorTimeout = null;
-          actions.updateDisconnectBehavior(roomCode, playerId, connected).catch((err) => {
+          // Use latestConnectedCount which has the value from the most recent callback
+          actions.updateDisconnectBehavior(roomCode, playerId, latestConnectedCount).catch((err) => {
             // Log but don't show to user - this is a background operation
             console.warn("[Room] Failed to update disconnect behavior:", err.message);
           });
-        }, 100);
+        }, 200); // Increased to 200ms for more settling time
         
         // Fix race condition: Only try to reassign owner if this player could become owner
         // (i.e., they are the first connected player alphabetically by ID)
