@@ -48,7 +48,7 @@ function parseArgs() {
   return result;
 }
 
-function allPlayersDisconnected(roomData, staleMinutes = 5) {
+function allPlayersDisconnected(roomData, staleMinutes = 2) {
   const players = roomData.players;
   if (!players || Object.keys(players).length === 0) return true;
   
@@ -57,9 +57,11 @@ function allPlayersDisconnected(roomData, staleMinutes = 5) {
   return Object.values(players).every((p) => {
     // Explicit disconnection
     if (p.connected !== true) return true;
-    // Connected but lastSeen is stale (zombie player from race condition)
+    // Connected but lastSeen is stale (zombie player - onDisconnect didn't fire)
     if (p.lastSeen && p.lastSeen < staleThreshold) return true;
-    // Actually connected
+    // No lastSeen at all - can't verify, assume stale
+    if (!p.lastSeen) return true;
+    // Actually connected recently
     return false;
   });
 }

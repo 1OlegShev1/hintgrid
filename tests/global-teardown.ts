@@ -12,8 +12,8 @@ async function globalTeardown() {
   console.log('\n🧹 Cleaning up test rooms...');
   
   try {
-    // Run cleanup script with timeout (60 seconds max)
-    const result = execSync('npm run cleanup:rooms -- --disconnected', {
+    // Run cleanup script - delete rooms older than 5 minutes (test rooms should be done by then)
+    const result = execSync('npm run cleanup:rooms -- --hours 0.083', {
       cwd: process.cwd(),
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
