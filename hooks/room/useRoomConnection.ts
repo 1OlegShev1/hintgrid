@@ -109,23 +109,12 @@ export function useRoomConnection(
     });
 
     // Players listener - also updates onDisconnect behavior based on player count
-    console.log("[Room] Setting up players listener for", roomCode);
     let lastConnectedCount = -1;
     let latestConnectedCount = 0; // Persists across callbacks for timeout to use
     let disconnectBehaviorTimeout: NodeJS.Timeout | null = null;
     const unsubPlayers = onValue(playersRef, (snap) => {
       if (isCleanedUp) return;
       const data = snap.val() as Record<string, PlayerData> | null;
-      
-      // Debug: log when players data changes
-      console.log("[Room] Players listener fired", {
-        playerCount: data ? Object.keys(data).length : 0,
-        connectedStates: data ? Object.entries(data).map(([id, p]) => ({
-          id: id.slice(0, 8),
-          connected: p.connected
-        })) : []
-      });
-      
       playersDataRef.current = data;
       
       // connected !== false treats undefined as connected (backwards compatible)

@@ -84,18 +84,13 @@ export function useRtdbRoom(
   const leaveRoomCallback = useCallback(async () => {
     const uid = uidRef.current;
     const code = roomCodeRef.current;
-    console.log("[Room] leaveRoom called", { uid, roomCode: code });
     if (uid && code) {
       await actions.leaveRoom(code, uid);
-      console.log("[Room] leaveRoom completed");
-    } else {
-      console.warn("[Room] leaveRoom skipped - missing uid or roomCode", { uid, roomCode: code });
     }
   }, []);
   
   // Set up leaveRoom callback once on mount
   useEffect(() => {
-    console.log("[useRtdbRoom] Setting up leaveRoom callback");
     setLeaveRoom(leaveRoomCallback);
     // Don't clear on cleanup - the callback should always work via refs
   }, [setLeaveRoom, leaveRoomCallback]);
