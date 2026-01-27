@@ -89,35 +89,33 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
             </svg>
             <span>Spectators ({spectators.length})</span>
           </div>
-          <div className="flex flex-wrap gap-2">
+          <div className="flex flex-wrap gap-3">
             {spectators.map((p) => {
               const isMe = p.id === currentPlayerId;
               const canAddThis = (isRoomOwner || isMe) && onAddSpectator;
               return (
                 <div
                   key={p.id}
-                  className={`text-xs px-2 py-1 rounded-lg flex items-center gap-2 ${
+                  className={`text-sm px-3 py-2 rounded-lg ${
                     isMe
                       ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                   }`}
                 >
-                  <span>{p.name}{isMe ? " (you)" : ""}</span>
+                  <div className="font-medium mb-1">{p.name}{isMe ? " (you)" : ""}</div>
                   {canAddThis && (
-                    <div className="flex gap-1">
+                    <div className="flex gap-2">
                       <button
                         onClick={() => onAddSpectator("red", p.id)}
-                        className="px-1.5 py-0.5 rounded bg-red-200 dark:bg-red-800 text-red-700 dark:text-red-200 hover:bg-red-300 dark:hover:bg-red-700"
-                        title={isMe ? "Join Red team" : "Add to Red team"}
+                        className="px-2 py-1 rounded text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
                       >
-                        +R
+                        Join Red
                       </button>
                       <button
                         onClick={() => onAddSpectator("blue", p.id)}
-                        className="px-1.5 py-0.5 rounded bg-blue-200 dark:bg-blue-800 text-blue-700 dark:text-blue-200 hover:bg-blue-300 dark:hover:bg-blue-700"
-                        title={isMe ? "Join Blue team" : "Add to Blue team"}
+                        className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
                       >
-                        +B
+                        Join Blue
                       </button>
                     </div>
                   )}
