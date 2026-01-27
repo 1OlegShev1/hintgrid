@@ -110,6 +110,7 @@ export function useRoomConnection(
 
     // Players listener - also updates onDisconnect behavior based on player count
     let lastConnectedCount = -1;
+    let disconnectBehaviorTimeout: NodeJS.Timeout | null = null;
     const unsubPlayers = onValue(playersRef, (snap) => {
       if (isCleanedUp) return;
       const data = snap.val() as Record<string, PlayerData> | null;
@@ -122,13 +123,24 @@ export function useRoomConnection(
       setConnectedPlayerCount(connected);
       rebuild();
       
-      // Update onDisconnect behavior when connected count changes
+      // Debounce updateDisconnectBehavior to avoid race conditions
+      // When joining, Firebase may fire multiple times with partial data
       if (connected !== lastConnectedCount && playerId) {
         lastConnectedCount = connected;
-        actions.updateDisconnectBehavior(roomCode, playerId, connected).catch((err) => {
-          // Log but don't show to user - this is a background operation
-          console.warn("[Room] Failed to update disconnect behavior:", err.message);
-        });
+        
+        // Cancel any pending call - only the latest count matters
+        if (disconnectBehaviorTimeout) {
+          clearTimeout(disconnectBehaviorTimeout);
+        }
+        
+        // Delay slightly to let Firebase sync settle
+        disconnectBehaviorTimeout = setTimeout(() => {
+          disconnectBehaviorTimeout = null;
+          actions.updateDisconnectBehavior(roomCode, playerId, connected).catch((err) => {
+            // Log but don't show to user - this is a background operation
+            console.warn("[Room] Failed to update disconnect behavior:", err.message);
+          });
+        }, 100);
         
         // Fix race condition: Only try to reassign owner if this player could become owner
         // (i.e., they are the first connected player alphabetically by ID)
@@ -233,6 +245,11 @@ export function useRoomConnection(
       
       // Reset connection tracking ref
       wasConnectedRef.current = null;
+      
+      // Cancel any pending disconnect behavior update
+      if (disconnectBehaviorTimeout) {
+        clearTimeout(disconnectBehaviorTimeout);
+      }
       
       // Cancel any pending owner reassignment timeout
       if (ownerReassignTimeoutRef.current) {
