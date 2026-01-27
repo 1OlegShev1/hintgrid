@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useTheme } from "./ThemeProvider";
 import { useGameContext } from "./GameContext";
 import SoundToggle from "./SoundToggle";
@@ -38,6 +38,44 @@ export default function Navbar() {
   const { isLastPlayer, isActiveGame, leaveRoom } = useGameContext();
   const [showLeaveModal, setShowLeaveModal] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
+  
+  // Mobile auto-hide navbar on scroll
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+  const ticking = useRef(false);
+
+  useEffect(() => {
+    const handleScroll = () => {
+      if (ticking.current) return;
+      
+      ticking.current = true;
+      requestAnimationFrame(() => {
+        const currentScrollY = window.scrollY;
+        const scrollDelta = currentScrollY - lastScrollY.current;
+        
+        // Only hide/show on mobile (check if hover is not supported = touch device)
+        const isMobile = window.matchMedia("(hover: none)").matches;
+        
+        if (isMobile) {
+          // Hide when scrolling down past 50px, show when scrolling up
+          if (scrollDelta > 5 && currentScrollY > 50) {
+            setIsVisible(false);
+          } else if (scrollDelta < -5 || currentScrollY <= 50) {
+            setIsVisible(true);
+          }
+        } else {
+          // Always visible on desktop
+          setIsVisible(true);
+        }
+        
+        lastScrollY.current = currentScrollY;
+        ticking.current = false;
+      });
+    };
+
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, []);
 
   // Check if user is in a game room
   const isInRoom = pathname?.startsWith("/room/");
@@ -107,7 +145,13 @@ export default function Navbar() {
 
   return (
     <>
-      <nav className="bg-white/80 dark:bg-gray-900/80 backdrop-blur-md border-b border-gray-200 dark:border-gray-800">
+      <nav className={`
+        sticky top-0 z-40
+        bg-white/80 dark:bg-gray-900/80 backdrop-blur-md 
+        border-b border-gray-200 dark:border-gray-800
+        transition-transform duration-300 ease-in-out
+        ${isVisible ? "translate-y-0" : "-translate-y-full"}
+      `}>
         <div className="max-w-6xl mx-auto px-4 h-14 flex items-center justify-between">
           <Link
             href="/"
