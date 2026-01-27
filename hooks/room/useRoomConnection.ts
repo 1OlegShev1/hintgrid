@@ -44,6 +44,7 @@ export function useRoomConnection(
   const playersDataRef = useRef<Record<string, PlayerData> | null>(null);
   const disconnectRefRef = useRef<DatabaseReference | null>(null);
   const wasConnectedRef = useRef<boolean | null>(null);
+  const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Main effect: join room and set up listeners
   useEffect(() => {
@@ -55,6 +56,12 @@ export function useRoomConnection(
       setConnectionError("Database not initialized");
       setIsConnecting(false);
       return;
+    }
+
+    // Cancel any pending leave from a previous cleanup (handles component remount)
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current);
+      leaveTimeoutRef.current = null;
     }
 
     // Use AbortController pattern to prevent operations after cleanup
@@ -203,13 +210,18 @@ export function useRoomConnection(
       // Reset connection tracking ref
       wasConnectedRef.current = null;
       
-      // Explicitly leave room on navigation
-      // Log errors but don't block cleanup - user is already navigating away
-      if (playerId) {
-        actions.leaveRoom(roomCode, playerId).catch((err) => {
-          console.warn("[Room] Failed to leave room cleanly:", err.message);
-        });
-      }
+      // Delay leaveRoom to prevent false disconnections from component remounts
+      // (e.g., parent context changes causing tree recreation).
+      // If the component remounts quickly, the new effect will cancel this timeout.
+      // The onDisconnect handler will still mark the player disconnected if they truly leave.
+      leaveTimeoutRef.current = setTimeout(() => {
+        if (playerId) {
+          actions.leaveRoom(roomCode, playerId).catch((err) => {
+            console.warn("[Room] Failed to leave room cleanly:", err.message);
+          });
+        }
+        leaveTimeoutRef.current = null;
+      }, 200);
     };
   }, [roomCode, playerName, playerAvatar, uid, authLoading]);
 
