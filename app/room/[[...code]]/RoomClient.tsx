@@ -10,6 +10,7 @@ import TransitionOverlay from "@/components/TransitionOverlay";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
+import { useTimerSound } from "@/hooks/useTimerSound";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar } from "@/shared/constants";
 import {
   RoomHeader,
@@ -46,6 +47,12 @@ export default function RoomPage() {
   const room = useRtdbRoom(roomCode, playerName, playerAvatar || "");
   const timer = useGameTimer(room.gameState, room.handleEndTurn);
   const overlays = useTransitionOverlays(room.gameState);
+  
+  // Timer tick sounds
+  useTimerSound({
+    timeRemaining: timer.timeRemaining,
+    isPaused: room.gameState?.paused,
+  });
 
   // Derived state
   const isMyTurn = useMemo(() => {

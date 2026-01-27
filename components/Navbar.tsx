@@ -5,6 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useState } from "react";
 import { useTheme } from "./ThemeProvider";
 import { useGameContext } from "./GameContext";
+import SoundToggle from "./SoundToggle";
 
 function SunIcon({ className }: { className?: string }) {
   return (
@@ -122,7 +123,8 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1">
+            <SoundToggle />
             <button
               onClick={cycleTheme}
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"

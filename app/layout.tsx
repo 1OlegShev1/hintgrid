@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
 import { GameProvider } from "@/components/GameContext";
+import { SoundProvider } from "@/contexts/SoundContext";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
@@ -33,10 +34,12 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <GameProvider>
-            <Navbar />
-            {children}
-          </GameProvider>
+          <SoundProvider>
+            <GameProvider>
+              <Navbar />
+              {children}
+            </GameProvider>
+          </SoundProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -1,5 +1,7 @@
 export const LOCAL_STORAGE_PLAYER_ID_KEY = "cluecards_player_id";
 export const LOCAL_STORAGE_AVATAR_KEY = "cluecards_avatar";
+export const LOCAL_STORAGE_SOUND_VOLUME_KEY = "cluecards_sound_volume";
+export const LOCAL_STORAGE_SOUND_MUTED_KEY = "cluecards_sound_muted";
 
 export const AVATARS = [
   "🐱", "🐶", "🐻", "🦊", "🐼", "🦁", "🐯", "🐮",

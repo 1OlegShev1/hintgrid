@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef } from "react";
 import type { GameState } from "@/shared/types";
+import { useSoundContextOptional, SoundName } from "@/contexts/SoundContext";
 
 export interface UseTransitionOverlaysReturn {
   showGameStart: boolean;
@@ -15,6 +16,12 @@ export interface UseTransitionOverlaysReturn {
 export function useTransitionOverlays(
   gameState: GameState | null
 ): UseTransitionOverlaysReturn {
+  const soundContext = useSoundContextOptional();
+  
+  // Helper to play sound if available
+  const playSound = (name: SoundName) => {
+    soundContext?.playSound(name);
+  };
   const [showGameStart, setShowGameStart] = useState(false);
   const [showTurnChange, setShowTurnChange] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
@@ -37,6 +44,7 @@ export function useTransitionOverlays(
       if (team === "red" || team === "blue") {
         setTransitionTeam(team);
         setShowGameStart(true);
+        playSound("gameStart");
       }
     }
     
@@ -52,6 +60,7 @@ export function useTransitionOverlays(
       if (team === "red" || team === "blue") {
         setTransitionTeam(team);
         setShowTurnChange(true);
+        playSound("turnChange");
       }
     }
     
@@ -61,6 +70,7 @@ export function useTransitionOverlays(
       if (winner === "red" || winner === "blue") {
         setTransitionTeam(winner);
         setShowGameOver(true);
+        playSound("gameOver");
       }
     }
     
