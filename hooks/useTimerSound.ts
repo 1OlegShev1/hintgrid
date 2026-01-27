@@ -22,6 +22,7 @@ interface UseTimerSoundOptions {
  * Hook to play timer tick sounds based on remaining time.
  * - Normal tick: every 2s when time is between 10-30 seconds
  * - Urgent tick: every 0.5s when time is 10 seconds or less
+ * - Sounds are stopped immediately on turn end, game over, or pause
  */
 export function useTimerSound({
   timeRemaining,
@@ -35,6 +36,8 @@ export function useTimerSound({
   const soundContext = useSoundContextOptional();
   const lastTickTimeRef = useRef<number>(0);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+  const prevTimeRef = useRef<number | null>(null);
+  const wasTickingRef = useRef<boolean>(false);
 
   useEffect(() => {
     // Clear any existing interval
@@ -43,20 +46,36 @@ export function useTimerSound({
       intervalRef.current = null;
     }
 
-    // Don't tick if no sound context, timer not active, paused, or game over
-    if (!soundContext || timeRemaining === null || isPaused || isGameOver) {
+    // Determine if we should be ticking
+    const shouldTick = 
+      soundContext && 
+      timeRemaining !== null && 
+      !isPaused && 
+      !isGameOver && 
+      timeRemaining > 0 && 
+      timeRemaining <= normalThreshold;
+
+    // If we were ticking but now shouldn't, stop the sounds immediately
+    if (wasTickingRef.current && !shouldTick) {
+      soundContext?.stopTickSounds();
+      wasTickingRef.current = false;
+    }
+
+    // Also stop if time jumped up significantly (turn changed)
+    if (timeRemaining !== null && prevTimeRef.current !== null) {
+      if (timeRemaining > prevTimeRef.current + 5) {
+        // Timer reset (new turn) - stop any playing tick sounds
+        soundContext?.stopTickSounds();
+        lastTickTimeRef.current = 0;
+      }
+    }
+    prevTimeRef.current = timeRemaining;
+
+    if (!shouldTick) {
       return;
     }
 
-    // Don't tick if time is above normal threshold
-    if (timeRemaining > normalThreshold) {
-      return;
-    }
-
-    // Don't tick if time is 0 or negative
-    if (timeRemaining <= 0) {
-      return;
-    }
+    wasTickingRef.current = true;
 
     const isUrgent = timeRemaining <= urgentThreshold;
     const interval = isUrgent ? urgentInterval : normalInterval;
@@ -95,15 +114,10 @@ export function useTimerSound({
     soundContext,
   ]);
 
-  // Reset last tick time when timer resets (goes from null to a value, or increases significantly)
-  const prevTimeRef = useRef<number | null>(null);
+  // Stop tick sounds on unmount
   useEffect(() => {
-    if (timeRemaining !== null && prevTimeRef.current !== null) {
-      // If time increased by more than 5 seconds, timer probably reset
-      if (timeRemaining > prevTimeRef.current + 5) {
-        lastTickTimeRef.current = 0;
-      }
-    }
-    prevTimeRef.current = timeRemaining;
-  }, [timeRemaining]);
+    return () => {
+      soundContext?.stopTickSounds();
+    };
+  }, [soundContext]);
 }

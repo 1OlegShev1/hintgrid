@@ -4,21 +4,16 @@ import { useState, useRef, useEffect } from "react";
 import { useSoundContextOptional } from "@/contexts/SoundContext";
 
 /**
- * Sound toggle component with mute button and volume slider.
- * Shows speaker icon that can be clicked to mute/unmute.
- * Hover/click reveals volume slider.
- * Also includes music toggle with separate volume control.
- * On mobile: slider appears below the button.
- * On desktop: slider appears to the right of the button.
+ * Sound controls with:
+ * - Volume slider (controls master volume for both effects and music)
+ * - Mute button for sound effects
+ * - Music toggle button (on/off, uses 30% of master volume)
  */
 export default function SoundToggle() {
   const soundContext = useSoundContextOptional();
   const [showSlider, setShowSlider] = useState(false);
-  const [showMusicSlider, setShowMusicSlider] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
-  const musicContainerRef = useRef<HTMLDivElement>(null);
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const musicTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clean up timeout on unmount
   useEffect(() => {
@@ -26,41 +21,32 @@ export default function SoundToggle() {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
       }
-      if (musicTimeoutRef.current) {
-        clearTimeout(musicTimeoutRef.current);
-      }
     };
   }, []);
 
   // Close slider when clicking outside
   useEffect(() => {
-    if (!showSlider && !showMusicSlider) return;
+    if (!showSlider) return;
     
     const handleClickOutside = (e: MouseEvent) => {
-      if (showSlider && containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setShowSlider(false);
-      }
-      if (showMusicSlider && musicContainerRef.current && !musicContainerRef.current.contains(e.target as Node)) {
-        setShowMusicSlider(false);
       }
     };
     
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [showSlider, showMusicSlider]);
+  }, [showSlider]);
 
   // Don't render if no sound context
   if (!soundContext) {
     return null;
   }
 
-  const { 
-    volume, setVolume, isMuted, toggleMute, soundEnabled,
-    musicVolume, setMusicVolume, musicEnabled, toggleMusic,
-  } = soundContext;
+  const { volume, setVolume, isMuted, toggleMute, soundEnabled, musicEnabled, toggleMusic } = soundContext;
 
-  // Determine which icon to show
-  const getIcon = () => {
+  // Speaker icon based on mute/volume state
+  const getSpeakerIcon = () => {
     if (isMuted || volume === 0) {
       return (
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -109,7 +95,6 @@ export default function SoundToggle() {
   };
 
   const handleMouseEnter = () => {
-    // Only use hover on desktop (non-touch devices)
     if (window.matchMedia("(hover: hover)").matches) {
       if (timeoutRef.current) {
         clearTimeout(timeoutRef.current);
@@ -120,7 +105,6 @@ export default function SoundToggle() {
   };
 
   const handleMouseLeave = () => {
-    // Only use hover on desktop
     if (window.matchMedia("(hover: hover)").matches) {
       timeoutRef.current = setTimeout(() => {
         setShowSlider(false);
@@ -128,25 +112,7 @@ export default function SoundToggle() {
     }
   };
 
-  const handleMusicMouseEnter = () => {
-    if (window.matchMedia("(hover: hover)").matches) {
-      if (musicTimeoutRef.current) {
-        clearTimeout(musicTimeoutRef.current);
-        musicTimeoutRef.current = null;
-      }
-      setShowMusicSlider(true);
-    }
-  };
-
-  const handleMusicMouseLeave = () => {
-    if (window.matchMedia("(hover: hover)").matches) {
-      musicTimeoutRef.current = setTimeout(() => {
-        setShowMusicSlider(false);
-      }, 300);
-    }
-  };
-
-  const handleButtonClick = () => {
+  const handleVolumeButtonClick = () => {
     // On touch devices, toggle slider visibility
     // On desktop with hover, just toggle mute
     if (window.matchMedia("(hover: none)").matches) {
@@ -156,35 +122,26 @@ export default function SoundToggle() {
     }
   };
 
-  const handleMusicButtonClick = () => {
-    if (window.matchMedia("(hover: none)").matches) {
-      setShowMusicSlider(!showMusicSlider);
-    } else {
-      toggleMusic();
-    }
-  };
-
   return (
     <div className="flex items-center gap-1">
-      {/* Sound Effects Control */}
+      {/* Volume/Mute Control with Slider */}
       <div 
         ref={containerRef}
         className="relative flex items-center"
         onMouseEnter={handleMouseEnter}
         onMouseLeave={handleMouseLeave}
       >
-        {/* Mute/Unmute Button */}
         <button
-          onClick={handleButtonClick}
+          onClick={handleVolumeButtonClick}
           className={`p-2 rounded-lg transition-colors ${
             soundEnabled
               ? "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
               : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
           }`}
-          title={isMuted ? "Unmute sounds" : "Mute sounds"}
-          aria-label={isMuted ? "Unmute sounds" : "Mute sounds"}
+          title={isMuted ? "Unmute" : "Mute"}
+          aria-label={isMuted ? "Unmute" : "Mute"}
         >
-          {getIcon()}
+          {getSpeakerIcon()}
         </button>
 
         {/* Volume Slider Popover */}
@@ -198,6 +155,7 @@ export default function SoundToggle() {
             ${showSlider ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
           `}
         >
+          {/* Mute button inside slider for touch devices */}
           <button
             onClick={toggleMute}
             className={`sm:hidden p-1.5 rounded transition-colors ${
@@ -244,7 +202,7 @@ export default function SoundToggle() {
               [&::-moz-range-thumb]:bg-blue-500
               [&::-moz-range-thumb]:border-0
               [&::-moz-range-thumb]:cursor-pointer"
-            aria-label="Sound effects volume"
+            aria-label="Volume"
           />
           <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right tabular-nums">
             {Math.round(volume * 100)}%
@@ -252,78 +210,19 @@ export default function SoundToggle() {
         </div>
       </div>
 
-      {/* Music Control */}
-      <div 
-        ref={musicContainerRef}
-        className="relative flex items-center"
-        onMouseEnter={handleMusicMouseEnter}
-        onMouseLeave={handleMusicMouseLeave}
+      {/* Music Toggle (simple on/off, no slider) */}
+      <button
+        onClick={toggleMusic}
+        className={`p-2 rounded-lg transition-colors ${
+          musicEnabled
+            ? "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
+            : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
+        }`}
+        title={musicEnabled ? "Turn off music" : "Turn on music"}
+        aria-label={musicEnabled ? "Turn off music" : "Turn on music"}
       >
-        <button
-          onClick={handleMusicButtonClick}
-          className={`p-2 rounded-lg transition-colors ${
-            musicEnabled
-              ? "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
-              : "text-gray-400 dark:text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700"
-          }`}
-          title={musicEnabled ? "Turn off music" : "Turn on music"}
-          aria-label={musicEnabled ? "Turn off music" : "Turn on music"}
-        >
-          {getMusicIcon()}
-        </button>
-
-        {/* Music Volume Slider Popover */}
-        <div 
-          className={`
-            absolute z-50 flex items-center gap-2 px-3 py-2 
-            bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600
-            transition-all duration-200
-            top-full right-0 mt-2 origin-top-right
-            sm:top-auto sm:right-auto sm:left-full sm:mt-0 sm:ml-2 sm:origin-left
-            ${showMusicSlider ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
-          `}
-        >
-          <button
-            onClick={toggleMusic}
-            className={`sm:hidden p-1.5 rounded transition-colors ${
-              !musicEnabled 
-                ? "bg-gray-200 dark:bg-gray-600 text-gray-600 dark:text-gray-300" 
-                : "text-gray-500 dark:text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-700"
-            }`}
-            aria-label={musicEnabled ? "Turn off" : "Turn on"}
-          >
-            {getMusicIcon()}
-          </button>
-          
-          <input
-            type="range"
-            min="0"
-            max="1"
-            step="0.05"
-            value={musicVolume}
-            onChange={(e) => setMusicVolume(parseFloat(e.target.value))}
-            className="w-24 h-2 bg-gray-200 dark:bg-gray-600 rounded-lg appearance-none cursor-pointer
-              [&::-webkit-slider-thumb]:appearance-none
-              [&::-webkit-slider-thumb]:w-4
-              [&::-webkit-slider-thumb]:h-4
-              [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:bg-purple-500
-              [&::-webkit-slider-thumb]:cursor-pointer
-              [&::-webkit-slider-thumb]:transition-transform
-              [&::-webkit-slider-thumb]:hover:scale-110
-              [&::-moz-range-thumb]:w-4
-              [&::-moz-range-thumb]:h-4
-              [&::-moz-range-thumb]:rounded-full
-              [&::-moz-range-thumb]:bg-purple-500
-              [&::-moz-range-thumb]:border-0
-              [&::-moz-range-thumb]:cursor-pointer"
-            aria-label="Music volume"
-          />
-          <span className="text-xs text-gray-500 dark:text-gray-400 w-8 text-right tabular-nums">
-            {Math.round(musicVolume * 100)}%
-          </span>
-        </div>
-      </div>
+        {getMusicIcon()}
+      </button>
     </div>
   );
 }

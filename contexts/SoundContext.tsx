@@ -7,12 +7,14 @@ import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { 
   LOCAL_STORAGE_SOUND_MUTED_KEY, 
   LOCAL_STORAGE_SOUND_VOLUME_KEY,
-  LOCAL_STORAGE_MUSIC_VOLUME_KEY,
   LOCAL_STORAGE_MUSIC_ENABLED_KEY,
 } from "@/shared/constants";
 
 export type SoundName = "gameStart" | "turnChange" | "gameOver" | "tick" | "tickUrgent";
 export type MusicTrack = "lobby" | "game-30s" | "game-60s" | "game-90s" | "victory" | null;
+
+// Music plays at 30% of master volume
+const MUSIC_VOLUME_RATIO = 0.3;
 
 interface SoundContextValue {
   // Sound effects
@@ -23,9 +25,8 @@ interface SoundContextValue {
   toggleMute: () => void;
   soundEnabled: boolean;
   playSound: (name: SoundName) => void;
+  stopTickSounds: () => void;
   // Background music
-  musicVolume: number;
-  setMusicVolume: (volume: number) => void;
   musicEnabled: boolean;
   setMusicEnabled: (enabled: boolean) => void;
   toggleMusic: () => void;
@@ -42,6 +43,8 @@ const playFunctionsRef: { current: {
   playGameOver: () => void;
   playTick: () => void;
   playTickUrgent: () => void;
+  stopTick: () => void;
+  stopTickUrgent: () => void;
 } | null } = { current: null };
 
 /**
@@ -75,14 +78,15 @@ function PlayFunctionCapture({
   });
 
   // Realistic clock tick sounds - interrupt prevents overlapping
-  const [playTick] = useSound("/sounds/tick.mp3", { 
+  // Also expose stop functions to immediately halt playback
+  const [playTick, { stop: stopTick }] = useSound("/sounds/tick.mp3", { 
     volume: volume * 0.5,
     soundEnabled,
     interrupt: true,
   });
   
   // Urgent tick - distinct electronic beep for clear urgency
-  const [playTickUrgent] = useSound("/sounds/tick-urgent.mp3", { 
+  const [playTickUrgent, { stop: stopTickUrgent }] = useSound("/sounds/tick-urgent.mp3", { 
     volume: volume * 0.4,
     soundEnabled,
     interrupt: true,
@@ -90,8 +94,12 @@ function PlayFunctionCapture({
 
   // Update shared ref when play functions change
   useEffect(() => {
-    playFunctionsRef.current = { playGameStart, playTurnChange, playGameOver, playTick, playTickUrgent };
-  }, [playGameStart, playTurnChange, playGameOver, playTick, playTickUrgent]);
+    playFunctionsRef.current = { 
+      playGameStart, playTurnChange, playGameOver, 
+      playTick, playTickUrgent,
+      stopTick, stopTickUrgent,
+    };
+  }, [playGameStart, playTurnChange, playGameOver, playTick, playTickUrgent, stopTick, stopTickUrgent]);
 
   return <>{children}</>;
 }
@@ -112,17 +120,18 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  // Music state
-  const [musicVolume, setMusicVolumeState] = useState(0.3);
+  // Music state (volume derived from master volume)
   const [musicEnabled, setMusicEnabledState] = useState(false);
   const [currentTrack, setCurrentTrackState] = useState<MusicTrack>(null);
   const howlRef = useRef<Howl | null>(null);
+
+  // Computed music volume (30% of master volume)
+  const musicVolume = volume * MUSIC_VOLUME_RATIO;
 
   // Load from localStorage on mount
   useEffect(() => {
     const storedVolume = localStorage.getItem(LOCAL_STORAGE_SOUND_VOLUME_KEY);
     const storedMuted = localStorage.getItem(LOCAL_STORAGE_SOUND_MUTED_KEY);
-    const storedMusicVolume = localStorage.getItem(LOCAL_STORAGE_MUSIC_VOLUME_KEY);
     const storedMusicEnabled = localStorage.getItem(LOCAL_STORAGE_MUSIC_ENABLED_KEY);
     
     if (storedVolume !== null) {
@@ -134,13 +143,6 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     
     if (storedMuted !== null) {
       setIsMutedState(storedMuted === "true");
-    }
-
-    if (storedMusicVolume !== null) {
-      const parsed = parseFloat(storedMusicVolume);
-      if (!isNaN(parsed) && parsed >= 0 && parsed <= 1) {
-        setMusicVolumeState(parsed);
-      }
     }
 
     if (storedMusicEnabled !== null) {
@@ -166,17 +168,6 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const toggleMute = useCallback(() => {
     setIsMuted(!isMuted);
   }, [isMuted, setIsMuted]);
-
-  // Music volume
-  const setMusicVolume = useCallback((newVolume: number) => {
-    const clamped = Math.max(0, Math.min(1, newVolume));
-    setMusicVolumeState(clamped);
-    localStorage.setItem(LOCAL_STORAGE_MUSIC_VOLUME_KEY, String(clamped));
-    // Update current howl volume
-    if (howlRef.current) {
-      howlRef.current.volume(clamped);
-    }
-  }, []);
 
   // Music enabled toggle
   const setMusicEnabled = useCallback((enabled: boolean) => {
@@ -269,6 +260,12 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
   }, [soundEnabled]);
 
+  // Stop all tick sounds immediately (used on turn/game state changes)
+  const stopTickSounds = useCallback(() => {
+    playFunctionsRef.current?.stopTick();
+    playFunctionsRef.current?.stopTickUrgent();
+  }, []);
+
   return (
     <SoundContext.Provider value={{
       volume,
@@ -278,8 +275,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       toggleMute,
       soundEnabled,
       playSound,
-      musicVolume,
-      setMusicVolume,
+      stopTickSounds,
       musicEnabled,
       setMusicEnabled,
       toggleMusic,

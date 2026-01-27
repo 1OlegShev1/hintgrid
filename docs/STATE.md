@@ -100,13 +100,12 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 | Key | Description | Default |
 |-----|-------------|---------|
 | `cluecards_avatar` | Player's selected emoji avatar | Random from preset list |
-| `cluecards_sound_volume` | Sound effects volume (0-1) | `0.5` |
+| `cluecards_sound_volume` | Master volume (0-1) | `0.5` |
 | `cluecards_sound_muted` | Whether sounds are muted | `false` |
-| `cluecards_music_volume` | Background music volume (0-1) | `0.3` |
 | `cluecards_music_enabled` | Whether music is enabled | `false` |
 | `cluecards-theme` | UI theme preference | `system` |
 
-**Note:** Keys are defined in `shared/constants.ts` (except theme which is in `ThemeProvider.tsx`).
+**Note:** Keys are defined in `shared/constants.ts` (except theme which is in `ThemeProvider.tsx`). Music volume is derived from master volume (30%).
 
 ### Game Configuration Constants
 

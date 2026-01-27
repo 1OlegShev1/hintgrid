@@ -56,9 +56,16 @@ export default function RoomPage() {
   });
 
   // Background music - changes based on game state
+  // Only plays when player has actually joined the room (has playerName)
   const soundContext = useSoundContextOptional();
   useEffect(() => {
     if (!soundContext) return;
+    
+    // Don't play music until player has joined (entered their name)
+    if (!playerName) {
+      soundContext.setMusicTrack(null);
+      return;
+    }
     
     const gameState = room.gameState;
     let track: MusicTrack = null;
@@ -83,7 +90,7 @@ export default function RoomPage() {
     }
     
     soundContext.setMusicTrack(track);
-  }, [room.gameState?.gameStarted, room.gameState?.gameOver, room.gameState?.turnDuration, soundContext]);
+  }, [playerName, room.gameState?.gameStarted, room.gameState?.gameOver, room.gameState?.turnDuration, soundContext]);
 
   // Early returns for special states
   if (room.roomClosedReason) {
