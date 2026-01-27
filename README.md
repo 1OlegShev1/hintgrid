@@ -10,7 +10,7 @@ A multiplayer word guessing party game built with Next.js, TypeScript, and Fireb
 - Real-time game synchronization via Firebase
 - Clue Giver and Guesser roles
 - Turn-based gameplay with timer
-- Sound effects with volume control
+- Sound effects and background music with separate volume controls
 
 ## How It Works
 

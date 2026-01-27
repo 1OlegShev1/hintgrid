@@ -33,7 +33,7 @@ components/             # React components
 contexts/               # React context providers
 ├── AuthContext.tsx     # Firebase Auth
 ├── ErrorContext.tsx    # Error toast notifications
-└── SoundContext.tsx    # Sound effects
+└── SoundContext.tsx    # Sound effects + background music
 
 hooks/                  # Custom React hooks
 ├── room/               # Room-specific hooks (connection, actions)
