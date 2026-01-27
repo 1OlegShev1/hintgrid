@@ -148,8 +148,9 @@ export default function GameStatusPanel({
         // Check if conditions are met to resume
         const pausedTeam = gameState.pausedForTeam;
         const teamPlayers = players.filter((p) => p.team === pausedTeam);
-        const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver" && p.connected);
-        const hasGuesser = teamPlayers.some((p) => p.role === "guesser" && p.connected);
+        // connected !== false treats undefined as connected (backwards compatible)
+        const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver" && p.connected !== false);
+        const hasGuesser = teamPlayers.some((p) => p.role === "guesser" && p.connected !== false);
         const canResume = hasClueGiver && hasGuesser;
         
         return (

@@ -115,8 +115,9 @@ export function useRoomConnection(
       const data = snap.val() as Record<string, PlayerData> | null;
       playersDataRef.current = data;
       
+      // connected !== false treats undefined as connected (backwards compatible)
       const connected = data
-        ? Object.values(data).filter((p) => p.connected).length
+        ? Object.values(data).filter((p) => p.connected !== false).length
         : 0;
       setConnectedPlayerCount(connected);
       rebuild();
@@ -133,7 +134,7 @@ export function useRoomConnection(
         // (i.e., they are the first connected player alphabetically by ID)
         if (data) {
           const connectedPlayerIds = Object.entries(data)
-            .filter(([, p]) => p.connected)
+            .filter(([, p]) => p.connected !== false)
             .map(([id]) => id)
             .sort();
           
@@ -198,7 +199,7 @@ export function useRoomConnection(
         // Re-establish onDisconnect handler after reconnection
         // Calculate connected count from current players data (using ref to avoid stale closure)
         const currentConnected = playersDataRef.current
-          ? Object.values(playersDataRef.current).filter((p) => p.connected).length + 1 // +1 for ourselves reconnecting
+          ? Object.values(playersDataRef.current).filter((p) => p.connected !== false).length + 1 // +1 for ourselves reconnecting
           : 1;
         actions.updateDisconnectBehavior(roomCode, playerId, currentConnected).catch((err) => {
           console.warn("[Room] Failed to update disconnect behavior after reconnection:", err.message);

@@ -44,8 +44,9 @@ export default function TeamLobby({
   // Check if the paused team has required roles filled
   const pausedTeam = gameState.pausedForTeam;
   const pausedTeamPlayers = players.filter((p) => p.team === pausedTeam);
-  const hasClueGiver = pausedTeamPlayers.some((p) => p.role === "clueGiver" && p.connected);
-  const hasGuesser = pausedTeamPlayers.some((p) => p.role === "guesser" && p.connected);
+  // connected !== false treats undefined as connected (backwards compatible)
+  const hasClueGiver = pausedTeamPlayers.some((p) => p.role === "clueGiver" && p.connected !== false);
+  const hasGuesser = pausedTeamPlayers.some((p) => p.role === "guesser" && p.connected !== false);
   const canResume = hasClueGiver && hasGuesser;
   const canRemovePlayer = (playerId?: string) => isPaused && isRoomOwner && playerId && playerId !== currentPlayer?.id;
 
