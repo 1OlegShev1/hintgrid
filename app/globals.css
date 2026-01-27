@@ -1,10 +1,6 @@
 @import "tailwindcss";
 
-/* Enable class-based dark mode for Tailwind v4 */
-/* stylelint-disable-next-line at-rule-no-unknown */
-@custom-variant dark (&:where(.dark, .dark *));
-
-/* Light theme (default) */
+/* Theme variables */
 :root,
 .light {
   --background: #ffffff;
@@ -26,7 +22,6 @@
   --trap: #0f172a;
 }
 
-/* Dark theme */
 .dark {
   --background: #0a0a0a;
   --foreground: #ededed;
@@ -47,6 +42,7 @@
   --trap: #18181b;
 }
 
+/* Base body styles */
 body {
   color: var(--foreground);
   background: var(--background);
