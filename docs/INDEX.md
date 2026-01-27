@@ -7,7 +7,7 @@ Start here to understand the project documentation.
 | File | Topics Covered |
 |------|----------------|
 | [`RULES.md`](RULES.md) | Game rules, clue validation, turn mechanics, pause/disconnect handling |
-| [`STATE.md`](STATE.md) | Firebase data model, room lifecycle, turn flow, client-side state, sound system, architecture |
+| [`STATE.md`](STATE.md) | Firebase data model, room lifecycle, turn flow, client-side state, sound system, architecture, testing conventions |
 
 ## Quick Architecture Overview
 
@@ -66,4 +66,5 @@ After implementing a feature, update the relevant doc:
 | New context provider or hook | `STATE.md` (Architecture section) |
 | New client-side storage (localStorage) | `STATE.md` (Client-Side State section) |
 | Sound system changes | `STATE.md` (Sound System section) |
+| New interactive component | Add `data-testid` attributes (see `STATE.md` Testing section) |
 | New documentation file | Add entry to this `INDEX.md` |

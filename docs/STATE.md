@@ -250,3 +250,49 @@ The `database.rules.json` file enforces server-side validation:
 - Duplicate clue giver prevention
 - Vote threshold logic
 - Teams ready validation
+
+## Testing
+
+### E2E Testing with Playwright
+
+E2E tests live in `tests/` and use Playwright. Run with:
+- `npm run test:e2e` — Run against local dev server
+- `npm run test:e2e:deployed` — Run against production (https://clue-cards.web.app)
+
+### Test ID Conventions
+
+**All interactive elements should have `data-testid` attributes for Playwright selectors.**
+
+Use these prefixes by component area:
+
+| Prefix | Area | Examples |
+|--------|------|----------|
+| `home-` | Home page | `home-name-input`, `home-create-btn`, `home-join-btn` |
+| `lobby-` | Lobby/team selection | `lobby-start-btn`, `lobby-randomize-btn`, `lobby-join-red-clueGiver` |
+| `game-` | Active game UI | `game-clue-input`, `game-clue-btn`, `game-end-turn-btn` |
+| `board-` | Game board | `board-card-0`, `board-reveal-12` |
+
+**Naming pattern:** `{area}-{element}-{identifier?}`
+
+Examples:
+```tsx
+// Button
+data-testid="lobby-start-btn"
+
+// Input
+data-testid="game-clue-input"
+
+// Dynamic element (with index or ID)
+data-testid={`board-card-${index}`}
+data-testid={`lobby-join-${team}-${role}`}
+```
+
+**When to add test IDs:**
+- All buttons that trigger actions
+- All form inputs
+- Key status displays (game over panel, winner text)
+- Dynamic elements that tests need to interact with
+
+**Do NOT use:**
+- Loose text selectors like `getByText('Player2')` — use exact match or test IDs
+- CSS class selectors — they change with styling

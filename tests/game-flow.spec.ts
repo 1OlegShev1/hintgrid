@@ -32,8 +32,9 @@ async function getTeamCards(clueGiverPage: Page, team: 'red' | 'blue'): Promise<
 
 /**
  * Helper: Wait for a player to appear in the lobby
+ * Uses longer timeout for production runs where Firebase latency is higher
  */
-async function waitForPlayerVisible(page: Page, playerName: string, timeout = 5000) {
+async function waitForPlayerVisible(page: Page, playerName: string, timeout = 15000) {
   await expect(page.getByText(playerName).first()).toBeVisible({ timeout });
 }
 
@@ -108,8 +109,9 @@ test.describe('Full Game Flow', () => {
     await pages[3].getByTestId('lobby-join-blue-guesser').click();
 
     // Wait for start button to be enabled (indicates all roles assigned)
+    // Use longer timeout for production where Firebase sync takes longer
     const startButton = pages[0].getByTestId('lobby-start-btn');
-    await expect(startButton).toBeEnabled({ timeout: 5000 });
+    await expect(startButton).toBeEnabled({ timeout: 15000 });
 
     // ========================================
     // Step 4: Owner starts the game
@@ -226,16 +228,16 @@ test.describe('Full Game Flow', () => {
 
     // Owner clicks randomize
     const randomizeBtn = pages[0].getByTestId('lobby-randomize-btn');
-    await expect(randomizeBtn).toBeEnabled({ timeout: 5000 });
+    await expect(randomizeBtn).toBeEnabled({ timeout: 10000 });
     await randomizeBtn.click();
 
     // Wait for start button to be enabled (indicates randomization complete)
     const startBtn = pages[0].getByTestId('lobby-start-btn');
-    await expect(startBtn).toBeEnabled({ timeout: 5000 });
+    await expect(startBtn).toBeEnabled({ timeout: 15000 });
     await startBtn.click();
 
     // Game should start - board visible
-    await expect(pages[0].getByTestId('board-card-0')).toBeVisible({ timeout: 10000 });
+    await expect(pages[0].getByTestId('board-card-0')).toBeVisible({ timeout: 15000 });
 
     console.log('Randomize and start game test completed!');
   });
@@ -282,15 +284,15 @@ test.describe('Full Game Flow', () => {
     await pages[2].getByTestId('lobby-join-blue-clueGiver').click();
     await pages[3].getByTestId('lobby-join-blue-guesser').click();
     
-    // Wait for start button to be enabled
+    // Wait for start button to be enabled (longer timeout for production)
     const startButton = pages[0].getByTestId('lobby-start-btn');
-    await expect(startButton).toBeEnabled({ timeout: 5000 });
+    await expect(startButton).toBeEnabled({ timeout: 15000 });
 
     // ========================================
     // Start game
     // ========================================
     await startButton.click();
-    await expect(pages[0].getByTestId('board-card-0')).toBeVisible({ timeout: 10000 });
+    await expect(pages[0].getByTestId('board-card-0')).toBeVisible({ timeout: 15000 });
 
     // ========================================
     // Determine first team and get card info
