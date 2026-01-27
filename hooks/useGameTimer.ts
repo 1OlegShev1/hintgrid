@@ -7,11 +7,13 @@ export interface UseGameTimerReturn {
 
 export function useGameTimer(
   gameState: GameState | null,
-  onTimeout: () => void
+  onTimeout: () => void,
+  options?: { shouldTriggerTimeout?: boolean }
 ): UseGameTimerReturn {
   const [timeRemaining, setTimeRemaining] = useState<number | null>(null);
   const timerIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const timeoutCalledForTurnRef = useRef<number | null>(null);
+  const shouldTriggerTimeout = options?.shouldTriggerTimeout ?? true;
 
   useEffect(() => {
     if (timerIntervalRef.current) {
@@ -37,7 +39,11 @@ export function useGameTimer(
         setTimeRemaining(remaining);
         
         // Only call onTimeout once per turn
-        if (remaining === 0 && timeoutCalledForTurnRef.current !== gameState.turnStartTime) {
+        if (
+          remaining === 0 &&
+          shouldTriggerTimeout &&
+          timeoutCalledForTurnRef.current !== gameState.turnStartTime
+        ) {
           timeoutCalledForTurnRef.current = gameState.turnStartTime;
           onTimeout();
         }
@@ -56,7 +62,15 @@ export function useGameTimer(
         clearInterval(timerIntervalRef.current);
       }
     };
-  }, [gameState?.turnStartTime, gameState?.turnDuration, gameState?.gameStarted, gameState?.gameOver, gameState?.paused, onTimeout]);
+  }, [
+    gameState?.turnStartTime,
+    gameState?.turnDuration,
+    gameState?.gameStarted,
+    gameState?.gameOver,
+    gameState?.paused,
+    onTimeout,
+    shouldTriggerTimeout,
+  ]);
 
   return { timeRemaining };
 }

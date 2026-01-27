@@ -24,6 +24,7 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
           const guessers = players.filter(
             (player) => player.team === team && player.role === "guesser"
           );
+          const clueGiverOffline = clueGiver?.connected === false;
 
           return (
             <div
@@ -52,9 +53,12 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
                         clueGiver.id === currentPlayerId 
                           ? "text-yellow-600 dark:text-yellow-400" 
                           : "text-gray-800 dark:text-gray-200"
-                      }`}>
+                      } ${clueGiverOffline ? "opacity-60" : ""}`}>
                         {clueGiver.name}{clueGiver.id === currentPlayerId ? " (you)" : ""}
                       </span>
+                      {clueGiverOffline && (
+                        <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                      )}
                     </>
                   ) : (
                     <span className="text-gray-400">—</span>
@@ -73,8 +77,11 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
                           p.id === currentPlayerId 
                             ? "text-yellow-600 dark:text-yellow-400 font-medium" 
                             : ""
-                        }`}>
+                      } ${p.connected === false ? "opacity-60" : ""}`}>
                           <span className="text-base">{p.avatar}</span> {p.name}{p.id === currentPlayerId ? " (you)" : ""}{i < guessers.length - 1 ? "," : ""}
+                        {p.connected === false && (
+                          <span className="ml-1 text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                        )}
                         </span>
                       ))
                     )}
@@ -99,6 +106,7 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
           <div className="flex flex-wrap gap-3">
             {spectators.map((p) => {
               const isMe = p.id === currentPlayerId;
+              const isOffline = p.connected === false;
               return (
                 <div
                   key={p.id}
@@ -106,11 +114,14 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
                     isMe
                       ? "bg-yellow-100 dark:bg-yellow-900/40 text-yellow-700 dark:text-yellow-300"
                       : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
-                  }`}
+                  } ${isOffline ? "opacity-60" : ""}`}
                 >
                   <div className={`font-medium flex items-center gap-2 ${isRoomOwner && onAddSpectator ? "mb-2" : ""}`}>
                     <span className="text-lg">{p.avatar}</span>
                     <span>{p.name}{isMe ? " (you)" : ""}</span>
+                    {isOffline && (
+                      <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                    )}
                   </div>
                   {isRoomOwner && onAddSpectator && (
                     <div className="flex gap-2">

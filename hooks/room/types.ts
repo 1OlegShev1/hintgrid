@@ -83,6 +83,8 @@ export function toPlayers(playersData: Record<string, FirebasePlayerData> | null
     avatar: p.avatar || "🐱",
     team: p.team || null,
     role: p.role || null,
+    connected: p.connected,
+    lastSeen: p.lastSeen ?? null,
   }));
 }
 

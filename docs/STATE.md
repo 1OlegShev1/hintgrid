@@ -64,6 +64,17 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
 
 This is **reliable** because it's server-side — no client cooperation needed.
 
+**Stale player cleanup** (owner-only):
+- Owner's client runs periodic cleanup every 30 seconds
+- Players disconnected for 2+ minutes are demoted to spectators (team/role cleared)
+- Their votes are also removed from the board
+- A system message notifies the room: "PlayerName moved to spectators (disconnected)"
+- This keeps role slots available and prevents ghost players from blocking the game
+
+**Owner transfer**:
+- If the room owner disconnects for 30+ seconds, ownership transfers to another connected player
+- If the owner explicitly leaves, ownership transfers immediately
+
 **Backup manual cleanup**:
 Run `npm run cleanup:rooms -- --hours 24` to delete rooms older than 24 hours.
 Requires Firebase Admin credentials (`gcloud auth application-default login`).
@@ -79,9 +90,16 @@ Requires Firebase Admin credentials (`gcloud auth application-default login`).
 
 ### Pause Mechanism
 
-At turn transitions, if the incoming team lacks players:
+At turn transitions, the game checks if the incoming team has **connected** players:
+- No connected players at all → `pauseReason: "teamDisconnected"`
+- No connected clue giver (before clue given) → `pauseReason: "clueGiverDisconnected"`
+- No connected guessers (after clue given) → `pauseReason: "noGuessers"`
+
+When paused:
 - `paused: true`, `pauseReason` set, `turnStartTime: null`
-- Owner calls `resumeGame` when conditions resolve
+- Owner can reassign roles from connected players or spectators
+- Owner can remove offline players from teams during pause
+- Owner calls `resumeGame` when team has connected clue giver + guesser
 
 ### Real-time Subscriptions
 
@@ -121,6 +139,8 @@ Defined in `shared/constants.ts`:
 | `MAX_CLUE_LENGTH` | `30` | Maximum clue word length |
 | `MAX_CHAT_MESSAGE_LENGTH` | `200` | Maximum chat message length |
 | `MIN_PLAYERS_TO_START` | `4` | Minimum players to start game |
+| `STALE_PLAYER_GRACE_MS` | `120000` (2 min) | Time before disconnected player is demoted to spectator |
+| `STALE_PLAYER_CHECK_INTERVAL_MS` | `30000` (30s) | How often to check for stale players |
 
 ### Input Validation
 
@@ -193,7 +213,7 @@ Music auto-switches based on game state (lobby → game → victory).
 | `useGameActions` | `hooks/room/useGameActions.ts` | Game action handlers (vote, reveal, clue) |
 | `useChatActions` | `hooks/room/useChatActions.ts` | Chat message handling |
 | `useRoomDerivedState` | `hooks/useRoomDerivedState.ts` | Computed state (isMyTurn, canVote, etc.) |
-| `useGameTimer` | `hooks/useGameTimer.ts` | Turn countdown timer with timeout callback |
+| `useGameTimer` | `hooks/useGameTimer.ts` | Turn countdown timer; only owner (or fallback) triggers timeout |
 | `useTransitionOverlays` | `hooks/useTransitionOverlays.ts` | Game start/turn change/game over animations |
 | `useTimerSound` | `hooks/useTimerSound.ts` | Timer tick sounds based on time remaining |
 | `usePrefersReducedMotion` | `hooks/usePrefersReducedMotion.ts` | Detects OS reduced motion preference |
@@ -213,13 +233,13 @@ Music auto-switches based on game state (lobby → game → victory).
 |------|---------|
 | `lib/firebase.ts` | Firebase app/auth/database initialization |
 | `lib/firebase-auth.ts` | Anonymous sign-in helper |
-| `lib/rtdb-actions.ts` | All Firebase Realtime Database operations |
+| `lib/rtdb-actions.ts` | All Firebase Realtime Database operations + stale player cleanup |
 | `lib/retry.ts` | Retry utility with exponential backoff for network operations |
 | `shared/types.ts` | TypeScript types for game state and Firebase data structures |
 | `shared/game-utils.ts` | Pure game logic (vote threshold, clue validation) |
 | `shared/validation.ts` | Input sanitization and validation utilities |
 | `shared/words.ts` | Word lists and board generation |
-| `shared/constants.ts` | Game config, localStorage keys, avatars |
+| `shared/constants.ts` | Game config, localStorage keys, avatars, presence cleanup timing |
 | `database.rules.json` | Firebase security rules (with server-side validation) |
 
 ### Utilities

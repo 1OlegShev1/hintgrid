@@ -9,6 +9,7 @@ import { useRoomConnection } from "./room/useRoomConnection";
 import { useGameActions } from "./room/useGameActions";
 import { useChatActions } from "./room/useChatActions";
 import * as actions from "@/lib/rtdb-actions";
+import { STALE_PLAYER_CHECK_INTERVAL_MS, STALE_PLAYER_GRACE_MS } from "@/shared/constants";
 import type { GameState, Player, ChatMessage, RoomClosedReason, WordPack } from "@/shared/types";
 
 export interface UseRtdbRoomReturn {
@@ -81,6 +82,30 @@ export function useRtdbRoom(
       setLeaveRoom(async () => {});
     };
   }, [roomCode, connection.uid, setLeaveRoom]);
+
+  // Owner-only cleanup: demote stale disconnected players to spectators
+  // Runs in all phases (lobby, active game, paused, game over) to keep player list clean
+  useEffect(() => {
+    if (!connection.uid || !roomCode || !connection.gameState) return;
+    if (connection.gameState.ownerId !== connection.uid) return;
+
+    let intervalId: NodeJS.Timeout | null = null;
+
+    const runCleanup = () => {
+      actions
+        .pruneStalePlayers(roomCode, connection.uid!, STALE_PLAYER_GRACE_MS)
+        .catch((err) => {
+          console.warn("[Room] Failed to prune stale players:", err.message);
+        });
+    };
+
+    runCleanup();
+    intervalId = setInterval(runCleanup, STALE_PLAYER_CHECK_INTERVAL_MS);
+
+    return () => {
+      if (intervalId) clearInterval(intervalId);
+    };
+  }, [connection.uid, roomCode, connection.gameState?.ownerId]);
 
   return {
     // Connection state

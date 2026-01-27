@@ -55,8 +55,13 @@ The game pauses automatically at **turn transitions** if the incoming team lacks
 - Players can rejoin by returning to the room with the same session.
 
 **Owner transfer:**
-- If the room owner disconnects for 90+ seconds, ownership transfers to another connected player.
-- This grace period allows for page refreshes, network switches (WiFi → mobile data), etc.
+- If the room owner disconnects for 30+ seconds, ownership transfers to another connected player.
+- This short grace period balances allowing for quick reconnects while keeping the game flowing.
 - If the owner explicitly leaves (clicks Leave Room), ownership transfers immediately.
+
+**Stale player cleanup:**
+- Disconnected players are automatically moved to spectators after 2 minutes.
+- This frees up role slots and keeps the team list accurate.
+- A system message notifies the room when this happens.
 
 If we introduce deviations or house rules, list them here explicitly.

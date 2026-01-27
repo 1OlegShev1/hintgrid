@@ -1,10 +1,11 @@
 "use client";
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import TransitionOverlay from "@/components/TransitionOverlay";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
 import { useGameTimer } from "@/hooks/useGameTimer";
+import { useFirebaseConnection } from "@/hooks/useFirebaseConnection";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
 import { useTimerSound } from "@/hooks/useTimerSound";
 import { useRoomDerivedState } from "@/hooks/useRoomDerivedState";
@@ -44,9 +45,42 @@ export default function RoomPage() {
 
   // Custom hooks - only join room once avatar is loaded to prevent re-join race condition
   const room = useRtdbRoom(roomCode, playerName, playerAvatar || "");
-  const timer = useGameTimer(room.gameState, room.handleEndTurn);
-  const overlays = useTransitionOverlays(room.gameState);
   const derived = useRoomDerivedState(room.gameState, room.currentPlayer, room.players);
+  const firebaseConnection = useFirebaseConnection();
+
+  // Determine who should trigger timeouts:
+  // - Primary: the owner (if connected)
+  // - Fallback: first connected player by ID (if owner is disconnected)
+  const shouldTriggerTimeout = useMemo(() => {
+    if (firebaseConnection !== "connected") return false;
+    if (room.currentPlayer?.connected === false) return false;
+    if (!room.currentPlayer?.id) return false;
+
+    // If I'm the owner, I trigger
+    if (derived.isRoomOwner) return true;
+
+    // Check if owner is disconnected
+    const ownerPlayer = room.players.find((p) => p.id === room.gameState?.ownerId);
+    const ownerConnected = ownerPlayer?.connected !== false;
+    if (ownerConnected) return false;
+
+    // Owner is disconnected - am I the first connected player by ID?
+    const connectedPlayerIds = room.players
+      .filter((p) => p.connected !== false)
+      .map((p) => p.id)
+      .sort();
+    return connectedPlayerIds[0] === room.currentPlayer.id;
+  }, [
+    firebaseConnection,
+    room.currentPlayer?.connected,
+    room.currentPlayer?.id,
+    room.players,
+    room.gameState?.ownerId,
+    derived.isRoomOwner,
+  ]);
+
+  const timer = useGameTimer(room.gameState, room.handleEndTurn, { shouldTriggerTimeout });
+  const overlays = useTransitionOverlays(room.gameState);
   
   // Timer tick sounds
   useTimerSound({

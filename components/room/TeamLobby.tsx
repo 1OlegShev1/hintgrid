@@ -44,9 +44,10 @@ export default function TeamLobby({
   // Check if the paused team has required roles filled
   const pausedTeam = gameState.pausedForTeam;
   const pausedTeamPlayers = players.filter((p) => p.team === pausedTeam);
-  const hasClueGiver = pausedTeamPlayers.some((p) => p.role === "clueGiver");
-  const hasGuesser = pausedTeamPlayers.some((p) => p.role === "guesser");
+  const hasClueGiver = pausedTeamPlayers.some((p) => p.role === "clueGiver" && p.connected);
+  const hasGuesser = pausedTeamPlayers.some((p) => p.role === "guesser" && p.connected);
   const canResume = hasClueGiver && hasGuesser;
+  const canRemovePlayer = (playerId?: string) => isPaused && isRoomOwner && playerId && playerId !== currentPlayer?.id;
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
@@ -166,6 +167,7 @@ export default function TeamLobby({
           const guessers = players.filter(
             (player) => player.team === team && player.role === "guesser"
           );
+          const clueGiverOffline = clueGiver?.connected === false;
 
           return (
             <div
@@ -217,9 +219,21 @@ export default function TeamLobby({
                   {clueGiver ? (
                     <div className={`font-medium truncate flex items-center gap-2 ${
                       clueGiver.id === currentPlayer?.id ? "text-yellow-700 dark:text-yellow-300" : ""
-                    }`}>
+                    } ${clueGiverOffline ? "opacity-60" : ""}`}>
                       <span className="text-xl">{clueGiver.avatar}</span>
                       <span>{clueGiver.name}{clueGiver.id === currentPlayer?.id ? " (you)" : ""}</span>
+                      {clueGiverOffline && (
+                        <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                      )}
+                      {canRemovePlayer(clueGiver.id) && (
+                        <button
+                          type="button"
+                          onClick={() => onSetRole(null, null, clueGiver.id)}
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      )}
                     </div>
                   ) : (
                     <span className="text-gray-500 dark:text-gray-400">Open</span>
@@ -255,13 +269,28 @@ export default function TeamLobby({
                     <div className="text-base text-gray-500 dark:text-gray-400">No guessers yet</div>
                   ) : (
                     guessers.map((player) => (
-                      <div key={player.id} className={`rounded-lg px-3 py-2 text-base border flex items-center gap-2 ${
-                        player.id === currentPlayer?.id
-                          ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600 text-yellow-700 dark:text-yellow-300 font-medium"
-                          : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                      }`}>
+                      <div
+                        key={player.id}
+                        className={`rounded-lg px-3 py-2 text-base border flex items-center gap-2 ${
+                          player.id === currentPlayer?.id
+                            ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600 text-yellow-700 dark:text-yellow-300 font-medium"
+                            : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                        } ${player.connected === false ? "opacity-60" : ""}`}
+                      >
                         <span className="text-xl">{player.avatar}</span>
                         <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
+                        {player.connected === false && (
+                          <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                        )}
+                        {canRemovePlayer(player.id) && (
+                          <button
+                            type="button"
+                            onClick={() => onSetRole(null, null, player.id)}
+                            className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
+                          >
+                            Remove
+                          </button>
+                        )}
                       </div>
                     ))
                   )}
@@ -294,12 +323,15 @@ export default function TeamLobby({
                   player.id === currentPlayer?.id
                     ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600"
                     : "bg-gray-50 dark:bg-gray-900 border-gray-200 dark:border-gray-700"
-                }`}>
+                } ${player.connected === false ? "opacity-60" : ""}`}>
                   <div className={`font-medium flex items-center gap-2 ${
                     player.id === currentPlayer?.id ? "text-yellow-700 dark:text-yellow-300" : ""
                   }`}>
                     <span className="text-2xl">{player.avatar}</span>
                     <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
+                    {player.connected === false && (
+                      <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                    )}
                   </div>
                   {player.team && player.role && (
                     <div className={`text-sm mt-1 ml-9 ${

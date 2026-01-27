@@ -33,7 +33,7 @@ export function shufflePlayers(players: Player[]): Player[] {
 /** Check if teams are properly configured to start game */
 export function teamsAreReady(players: Player[]): boolean {
   // Only count players assigned to teams
-  const assignedPlayers = players.filter((p) => p.team && p.role);
+  const assignedPlayers = players.filter((p) => p.team && p.role && p.connected);
   if (assignedPlayers.length < 4) return false;
 
   const redTeam = assignedPlayers.filter((player) => player.team === "red");

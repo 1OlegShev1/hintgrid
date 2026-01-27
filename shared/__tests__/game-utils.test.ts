@@ -19,6 +19,7 @@ function createPlayer(
     avatar: "🐱",
     team: null,
     role: null,
+    connected: true,
     ...overrides,
   };
 }
@@ -186,6 +187,16 @@ describe('teamsAreReady', () => {
         createPlayer({ id: '4', name: 'D', team: 'blue', role: 'guesser' }),
       ];
       expect(teamsAreReady(players)).toBe(true);
+    });
+
+    it('returns false when assigned players are disconnected', () => {
+      const players: Player[] = [
+        createPlayer({ id: '1', name: 'A', team: 'red', role: 'clueGiver', connected: false }),
+        createPlayer({ id: '2', name: 'B', team: 'red', role: 'guesser', connected: false }),
+        createPlayer({ id: '3', name: 'C', team: 'blue', role: 'clueGiver', connected: false }),
+        createPlayer({ id: '4', name: 'D', team: 'blue', role: 'guesser', connected: false }),
+      ];
+      expect(teamsAreReady(players)).toBe(false);
     });
   });
 

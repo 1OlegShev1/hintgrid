@@ -148,8 +148,8 @@ export default function GameStatusPanel({
         // Check if conditions are met to resume
         const pausedTeam = gameState.pausedForTeam;
         const teamPlayers = players.filter((p) => p.team === pausedTeam);
-        const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver");
-        const hasGuesser = teamPlayers.some((p) => p.role === "guesser");
+        const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver" && p.connected);
+        const hasGuesser = teamPlayers.some((p) => p.role === "guesser" && p.connected);
         const canResume = hasClueGiver && hasGuesser;
         
         return (
@@ -182,7 +182,7 @@ export default function GameStatusPanel({
                   </button>
                 ) : (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Need {pausedTeam} team clue giver and at least one guesser to resume
+                    Need a connected clue giver and at least one connected guesser to resume
                   </p>
                 )}
               </div>

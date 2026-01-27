@@ -19,6 +19,8 @@ export interface Player {
   avatar: string;
   team: Team | null;
   role: Role | null;
+  connected?: boolean;
+  lastSeen?: number | null;
 }
 
 export type PauseReason = "teamDisconnected" | "clueGiverDisconnected" | "noGuessers" | null;
