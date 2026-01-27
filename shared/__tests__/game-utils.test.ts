@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import {
+  shuffle,
   shufflePlayers,
   teamsAreReady,
   getRequiredVotes,
@@ -21,6 +22,91 @@ function createPlayer(
     ...overrides,
   };
 }
+
+// ============================================================================
+// shuffle (Fisher-Yates)
+// ============================================================================
+
+describe('shuffle', () => {
+  it('returns array of same length', () => {
+    const arr = [1, 2, 3, 4, 5];
+    const shuffled = shuffle(arr);
+    expect(shuffled).toHaveLength(5);
+  });
+
+  it('contains all original elements', () => {
+    const arr = [1, 2, 3, 4, 5];
+    const shuffled = shuffle(arr);
+    expect(shuffled.sort((a, b) => a - b)).toEqual([1, 2, 3, 4, 5]);
+  });
+
+  it('does not mutate original array', () => {
+    const arr = [1, 2, 3, 4, 5];
+    const original = [...arr];
+    shuffle(arr);
+    expect(arr).toEqual(original);
+  });
+
+  it('works with empty array', () => {
+    const shuffled = shuffle([]);
+    expect(shuffled).toEqual([]);
+  });
+
+  it('works with single element', () => {
+    const shuffled = shuffle([42]);
+    expect(shuffled).toEqual([42]);
+  });
+
+  it('works with objects', () => {
+    const arr = [{ id: 1 }, { id: 2 }, { id: 3 }];
+    const shuffled = shuffle(arr);
+    expect(shuffled).toHaveLength(3);
+    expect(shuffled.map(o => o.id).sort()).toEqual([1, 2, 3]);
+  });
+
+  it('produces different orderings (randomness test)', () => {
+    const arr = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
+    const orderings = new Set<string>();
+    
+    for (let i = 0; i < 50; i++) {
+      const shuffled = shuffle(arr);
+      orderings.add(shuffled.join(','));
+    }
+    
+    // Should produce multiple unique orderings
+    expect(orderings.size).toBeGreaterThan(5);
+  });
+
+  it('distributes elements fairly (chi-square approximation)', () => {
+    // Run many shuffles and check that each element appears in each position
+    // roughly equally often (basic uniformity test)
+    const arr = [0, 1, 2, 3, 4];
+    const n = arr.length;
+    const iterations = 1000;
+    
+    // Count how many times each element ends up in each position
+    const counts: number[][] = Array(n).fill(null).map(() => Array(n).fill(0));
+    
+    for (let i = 0; i < iterations; i++) {
+      const shuffled = shuffle(arr);
+      shuffled.forEach((val, pos) => {
+        counts[val][pos]++;
+      });
+    }
+    
+    // Each element should appear in each position roughly iterations/n times
+    const expected = iterations / n;
+    const tolerance = expected * 0.3; // Allow 30% deviation
+    
+    for (let val = 0; val < n; val++) {
+      for (let pos = 0; pos < n; pos++) {
+        const count = counts[val][pos];
+        expect(count).toBeGreaterThan(expected - tolerance);
+        expect(count).toBeLessThan(expected + tolerance);
+      }
+    }
+  });
+});
 
 // ============================================================================
 // shufflePlayers

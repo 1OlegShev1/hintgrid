@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
+import { AuthProvider } from "@/contexts/AuthContext";
+import { ErrorProvider } from "@/contexts/ErrorContext";
 import { GameProvider } from "@/components/GameContext";
 import { SoundProvider } from "@/contexts/SoundContext";
 import Navbar from "@/components/Navbar";
@@ -34,12 +36,16 @@ export default function RootLayout({
       </head>
       <body>
         <ThemeProvider>
-          <SoundProvider>
-            <GameProvider>
-              <Navbar />
-              {children}
-            </GameProvider>
-          </SoundProvider>
+          <AuthProvider>
+            <ErrorProvider>
+              <SoundProvider>
+                <GameProvider>
+                  <Navbar />
+                  {children}
+                </GameProvider>
+              </SoundProvider>
+            </ErrorProvider>
+          </AuthProvider>
         </ThemeProvider>
       </body>
     </html>

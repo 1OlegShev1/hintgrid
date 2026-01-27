@@ -2,22 +2,44 @@
   "rules": {
     "rooms": {
       "$roomCode": {
-        ".read": true,
-        ".write": true,
+        // Must be authenticated to read
+        ".read": "auth != null",
+        
+        // Room-level writes allowed for authenticated users
+        // Game logic validation is handled client-side
+        ".write": "auth != null",
         
         "players": {
           "$playerId": {
-            ".read": true,
-            ".write": true
+            // Players can read all player data
+            ".read": "auth != null",
+            
+            // Players can only write their own player document
+            // Exception: room owner can modify others (for randomize, add spectator)
+            ".write": "auth != null && ($playerId === auth.uid || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid)"
           }
         },
         
         "messages": {
           "$messageId": {
-            ".read": true,
-            ".write": true,
+            ".read": "auth != null",
+            ".write": "auth != null",
             ".validate": "newData.hasChildren(['playerName', 'message', 'timestamp', 'type'])"
           }
+        },
+
+        // Board can be modified by any authenticated player
+        "board": {
+          ".read": "auth != null",
+          ".write": "auth != null"
+        },
+
+        // Owner ID can only be changed if:
+        // - Creating room (no existing owner)
+        // - Current owner is changing it (reassignment)
+        "ownerId": {
+          ".read": "auth != null",
+          ".write": "auth != null && (!data.exists() || data.val() === auth.uid)"
         }
       }
     }

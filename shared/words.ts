@@ -1,5 +1,7 @@
 // Word lists for Clue Cards game
 
+import { shuffle } from "./game-utils";
+
 export type WordPack = "classic" | "kahoot";
 
 // Classic party game words
@@ -80,7 +82,7 @@ export function getWordList(pack: WordPack = "classic"): string[] {
 
 export function generateBoard(pack: WordPack = "classic"): string[] {
   const wordList = getWordList(pack);
-  const shuffled = [...wordList].sort(() => Math.random() - 0.5);
+  const shuffled = shuffle(wordList);
   return shuffled.slice(0, 25);
 }
 
@@ -100,7 +102,7 @@ export function assignTeams(
     "trap",
   ];
   
-  const shuffledTeams = teams.sort(() => Math.random() - 0.5);
+  const shuffledTeams = shuffle(teams);
   
   return board.map((word, index) => ({
     word,

@@ -5,12 +5,29 @@
 import type { Player } from "./types";
 
 // ============================================================================
+// Shuffle Utilities
+// ============================================================================
+
+/**
+ * Fisher-Yates shuffle algorithm - produces unbiased random permutation.
+ * Creates a new array, does not mutate the original.
+ */
+export function shuffle<T>(array: T[]): T[] {
+  const result = [...array];
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+  return result;
+}
+
+// ============================================================================
 // Team Validation
 // ============================================================================
 
-/** Shuffle players array randomly */
+/** Shuffle players array randomly using Fisher-Yates */
 export function shufflePlayers(players: Player[]): Player[] {
-  return [...players].sort(() => Math.random() - 0.5);
+  return shuffle(players);
 }
 
 /** Check if teams are properly configured to start game */

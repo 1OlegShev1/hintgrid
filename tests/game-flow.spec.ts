@@ -31,18 +31,18 @@ async function getTeamCards(clueGiverPage: Page, team: 'red' | 'blue'): Promise<
 }
 
 /**
- * Helper: Get unrevealed cards (no line-through class)
+ * Helper: Wait for a player to appear in the lobby
  */
-async function getUnrevealedFromList(page: Page, cardIndices: number[]): Promise<number[]> {
-  const unrevealed: number[] = [];
-  for (const i of cardIndices) {
-    const card = page.getByTestId(`board-card-${i}`);
-    const classes = await card.getAttribute('class');
-    if (!classes?.includes('line-through')) {
-      unrevealed.push(i);
-    }
-  }
-  return unrevealed;
+async function waitForPlayerVisible(page: Page, playerName: string, timeout = 5000) {
+  await expect(page.getByText(playerName).first()).toBeVisible({ timeout });
+}
+
+/**
+ * Helper: Wait for clue to be displayed after submission
+ */
+async function waitForClueDisplayed(page: Page, clueWord: string, timeout = 5000) {
+  // The clue appears in the status panel or clue history
+  await expect(page.getByText(clueWord, { exact: false }).first()).toBeVisible({ timeout });
 }
 
 test.describe('Full Game Flow', () => {
@@ -88,9 +88,8 @@ test.describe('Full Game Flow', () => {
     }
 
     // Verify all players see each other (check on first page)
-    // Use .first() since player name may appear multiple times in UI
     for (const name of playerNames) {
-      await expect(pages[0].getByText(name).first()).toBeVisible({ timeout: 5000 });
+      await waitForPlayerVisible(pages[0], name);
     }
 
     // ========================================
@@ -108,14 +107,13 @@ test.describe('Full Game Flow', () => {
     // Player 3 (BlueGuess) - joins blue guesser
     await pages[3].getByTestId('lobby-join-blue-guesser').click();
 
-    // Wait for all assignments to propagate
-    await pages[0].waitForTimeout(500);
+    // Wait for start button to be enabled (indicates all roles assigned)
+    const startButton = pages[0].getByTestId('lobby-start-btn');
+    await expect(startButton).toBeEnabled({ timeout: 5000 });
 
     // ========================================
     // Step 4: Owner starts the game
     // ========================================
-    const startButton = pages[0].getByTestId('lobby-start-btn');
-    await expect(startButton).toBeEnabled({ timeout: 5000 });
     await startButton.click();
 
     // Wait for game to start - board should be visible
@@ -156,8 +154,8 @@ test.describe('Full Game Flow', () => {
     
     await clueGiverPage.getByTestId('game-clue-btn').click();
 
-    // Wait for clue to be processed
-    await clueGiverPage.waitForTimeout(500);
+    // Wait for clue to be displayed (clue input should disappear)
+    await expect(clueInput).not.toBeVisible({ timeout: 5000 });
 
     // ========================================
     // Step 6: Guesser votes and reveals a card
@@ -166,22 +164,16 @@ test.describe('Full Game Flow', () => {
     const cardToClick = guesserPage.getByTestId('board-card-12'); // Middle card
     await cardToClick.click();
 
-    // Wait for vote to register
-    await guesserPage.waitForTimeout(300);
-
-    // With 1 guesser, 1 vote is enough - reveal button should appear
+    // Wait for reveal button to appear (vote was registered)
     const revealButton = guesserPage.getByTestId('board-reveal-12');
-    await expect(revealButton).toBeVisible({ timeout: 3000 });
+    await expect(revealButton).toBeVisible({ timeout: 5000 });
     await revealButton.click();
-
-    // Wait for reveal to process
-    await guesserPage.waitForTimeout(500);
 
     // ========================================
     // Step 7: Verify card was revealed
     // ========================================
     // The reveal button should be gone now
-    await expect(revealButton).not.toBeVisible({ timeout: 3000 });
+    await expect(revealButton).not.toBeVisible({ timeout: 5000 });
 
     // ========================================
     // Step 8: Verify game state - game board still functional
@@ -227,18 +219,17 @@ test.describe('Full Game Flow', () => {
       await expect(pages[i].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
     }
 
-    // Wait for all players to be visible
-    await pages[0].waitForTimeout(500);
+    // Wait for all players to be visible (instead of arbitrary timeout)
+    for (let i = 1; i <= 4; i++) {
+      await waitForPlayerVisible(pages[0], `Player${i}`);
+    }
 
     // Owner clicks randomize
     const randomizeBtn = pages[0].getByTestId('lobby-randomize-btn');
     await expect(randomizeBtn).toBeEnabled({ timeout: 5000 });
     await randomizeBtn.click();
 
-    // Wait for randomization
-    await pages[0].waitForTimeout(500);
-
-    // Start game should now be enabled
+    // Wait for start button to be enabled (indicates randomization complete)
     const startBtn = pages[0].getByTestId('lobby-start-btn');
     await expect(startBtn).toBeEnabled({ timeout: 5000 });
     await startBtn.click();
@@ -290,13 +281,14 @@ test.describe('Full Game Flow', () => {
     await pages[1].getByTestId('lobby-join-red-guesser').click();
     await pages[2].getByTestId('lobby-join-blue-clueGiver').click();
     await pages[3].getByTestId('lobby-join-blue-guesser').click();
-    await pages[0].waitForTimeout(500);
+    
+    // Wait for start button to be enabled
+    const startButton = pages[0].getByTestId('lobby-start-btn');
+    await expect(startButton).toBeEnabled({ timeout: 5000 });
 
     // ========================================
     // Start game
     // ========================================
-    const startButton = pages[0].getByTestId('lobby-start-btn');
-    await expect(startButton).toBeEnabled({ timeout: 5000 });
     await startButton.click();
     await expect(pages[0].getByTestId('board-card-0')).toBeVisible({ timeout: 10000 });
 
@@ -335,31 +327,39 @@ test.describe('Full Game Flow', () => {
     console.log(`${secondTeam} team has ${winningTeamCards.length} cards: ${winningTeamCards.join(', ')}`);
 
     // ========================================
-    // Turn 1: First team gives clue, guesses ONE card (intentionally wrong to pass turn)
+    // Turn 1: First team gives clue, then ends turn
     // ========================================
     console.log(`Turn 1: ${firstTeam} team's turn`);
     
-    await expect(firstClueGiver.getByTestId('game-clue-input')).toBeVisible({ timeout: 5000 });
-    await firstClueGiver.getByTestId('game-clue-input').fill('RANDOM');
+    const firstClueInput = firstClueGiver.getByTestId('game-clue-input');
+    await expect(firstClueInput).toBeVisible({ timeout: 5000 });
+    await firstClueInput.fill('RANDOM');
     await firstClueGiver.getByTestId('game-clue-count').fill('1');
     await firstClueGiver.getByTestId('game-clue-btn').click();
-    await firstClueGiver.waitForTimeout(500);
+
+    // Wait for clue to be submitted (input disappears)
+    await expect(firstClueInput).not.toBeVisible({ timeout: 5000 });
 
     // First guesser ends turn without guessing (to give second team their turn)
-    await expect(firstGuesser.getByTestId('game-end-turn-btn')).toBeVisible({ timeout: 5000 });
-    await firstGuesser.getByTestId('game-end-turn-btn').click();
-    await firstGuesser.waitForTimeout(500);
+    const endTurnBtn = firstGuesser.getByTestId('game-end-turn-btn');
+    await expect(endTurnBtn).toBeVisible({ timeout: 5000 });
+    await endTurnBtn.click();
+
+    // Wait for turn to change (second team's clue input appears)
+    const secondClueInput = secondClueGiver.getByTestId('game-clue-input');
+    await expect(secondClueInput).toBeVisible({ timeout: 5000 });
 
     // ========================================
     // Turn 2: Second team gives clue for ALL their cards
     // ========================================
     console.log(`Turn 2: ${secondTeam} team's turn - going for the win!`);
     
-    await expect(secondClueGiver.getByTestId('game-clue-input')).toBeVisible({ timeout: 5000 });
-    await secondClueGiver.getByTestId('game-clue-input').fill('WINNING');
+    await secondClueInput.fill('WINNING');
     await secondClueGiver.getByTestId('game-clue-count').fill(String(winningTeamCards.length));
     await secondClueGiver.getByTestId('game-clue-btn').click();
-    await secondClueGiver.waitForTimeout(500);
+
+    // Wait for clue to be submitted
+    await expect(secondClueInput).not.toBeVisible({ timeout: 5000 });
 
     // Second guesser guesses ALL their team's cards
     for (let i = 0; i < winningTeamCards.length; i++) {
@@ -370,24 +370,25 @@ test.describe('Full Game Flow', () => {
       const card = secondGuesser.getByTestId(`board-card-${cardIndex}`);
       
       // Check if card is already revealed (shouldn't be, but safety check)
-      const classes = await card.getAttribute('class');
-      if (classes?.includes('line-through')) {
+      const isDisabled = await card.isDisabled().catch(() => true);
+      if (isDisabled) {
         console.log(`  Card ${cardIndex} already revealed, skipping`);
         continue;
       }
 
       await card.click();
-      await secondGuesser.waitForTimeout(300);
 
-      // Reveal it
+      // Wait for reveal button to appear
       const revealBtn = secondGuesser.getByTestId(`board-reveal-${cardIndex}`);
-      await expect(revealBtn).toBeVisible({ timeout: 3000 });
+      await expect(revealBtn).toBeVisible({ timeout: 5000 });
       await revealBtn.click();
-      await secondGuesser.waitForTimeout(500);
+
+      // Wait for reveal button to disappear (card revealed)
+      await expect(revealBtn).not.toBeVisible({ timeout: 5000 });
 
       // Check if game is over (after each reveal)
-      const gameOverText = secondGuesser.getByText(/Game Over/i);
-      const isGameOver = await gameOverText.isVisible().catch(() => false);
+      const gameOverPanel = secondGuesser.getByTestId('game-over-panel');
+      const isGameOver = await gameOverPanel.isVisible().catch(() => false);
       
       if (isGameOver) {
         console.log(`  Game ended after revealing card ${cardIndex}!`);

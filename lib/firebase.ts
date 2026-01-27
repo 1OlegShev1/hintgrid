@@ -1,11 +1,9 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth, connectAuthEmulator } from "firebase/auth";
-import { getFirestore as getFirestoreSdk, Firestore, connectFirestoreEmulator } from "firebase/firestore";
 import { getDatabase as getDatabaseSdk, Database, connectDatabaseEmulator } from "firebase/database";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
-let db: Firestore | undefined;
 let rtdb: Database | undefined;
 
 const firebaseConfig = {
@@ -49,24 +47,6 @@ export function getFirebaseAuth(): Auth | undefined {
   }
   
   return auth;
-}
-
-export function getFirestore(): Firestore | undefined {
-  if (typeof window === "undefined") return undefined;
-  
-  if (!db) {
-    const app = getFirebaseApp();
-    if (app) {
-      db = getFirestoreSdk(app);
-      
-      // Connect to emulator in development if configured
-      if (process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_HOST) {
-        connectFirestoreEmulator(db, "localhost", Number(process.env.NEXT_PUBLIC_FIREBASE_FIRESTORE_EMULATOR_HOST.split(":")[1] || 8080));
-      }
-    }
-  }
-  
-  return db;
 }
 
 export function getDatabase(): Database | undefined {

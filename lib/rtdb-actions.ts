@@ -720,16 +720,12 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     throw new Error("Not enough votes");
   }
 
-  // Reveal the card and clear only its votes (keep votes on other cards)
-  const updatedBoard = board.map((c, i) =>
-    i === cardIndex
-      ? { ...c, revealed: true, revealedBy: playerId, votes: {} }
-      : c
-  );
-
   const isCorrect = card.team === roomData.currentTeam;
   const isTrap = card.team === "trap";
-  const remainingTeamCards = updatedBoard.filter((c) => c.team === roomData.currentTeam && !c.revealed).length;
+  // Count remaining team cards (excluding the one we're about to reveal)
+  const remainingTeamCards = board.filter(
+    (c, i) => c.team === roomData.currentTeam && !c.revealed && i !== cardIndex
+  ).length;
   const newGuesses = (roomData.remainingGuesses ?? 1) - 1;
 
   // Build system message for the reveal
@@ -743,9 +739,17 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     : "🟡";
   const revealMessage = `${teamEmoji} "${card.word}" revealed — ${teamLabel}`;
 
+  // Use multi-path update for efficiency - only update the specific card, not entire board
+  // This reduces data transfer and improves performance
+  const cardUpdate = {
+    [`board/${cardIndex}/revealed`]: true,
+    [`board/${cardIndex}/revealedBy`]: playerId,
+    [`board/${cardIndex}/votes`]: {},
+  };
+
   if (isTrap) {
     await update(roomRef, {
-      board: updatedBoard,
+      ...cardUpdate,
       gameOver: true,
       winner: roomData.currentTeam === "red" ? "blue" : "red",
       currentClue: null,
@@ -756,7 +760,7 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     const newTeam = roomData.currentTeam === "red" ? "blue" : "red";
     const pause = checkPause(playersData, newTeam, false);
     await update(roomRef, {
-      board: updatedBoard,
+      ...cardUpdate,
       currentTeam: newTeam,
       currentClue: null,
       remainingGuesses: null,
@@ -767,7 +771,7 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     });
   } else if (remainingTeamCards === 0) {
     await update(roomRef, {
-      board: updatedBoard,
+      ...cardUpdate,
       gameOver: true,
       winner: roomData.currentTeam,
       currentClue: null,
@@ -776,7 +780,7 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     });
   } else {
     await update(roomRef, {
-      board: updatedBoard,
+      ...cardUpdate,
       remainingGuesses: newGuesses,
     });
   }
