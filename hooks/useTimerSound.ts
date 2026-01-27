@@ -47,58 +47,67 @@ export function useTimerSound({
     return "normal";
   };
 
+  // Calculate current mode
+  const shouldTick = 
+    soundContext && 
+    timeRemaining !== null && 
+    !isPaused && 
+    !isGameOver && 
+    timeRemaining > 0 && 
+    timeRemaining <= normalThreshold;
+  
+  const targetMode = shouldTick ? getTickMode(timeRemaining) : "none";
+
+  // Effect to handle turn resets (when time jumps up)
   useEffect(() => {
-    // Clear any existing interval first
+    if (timeRemaining !== null && prevTimeRef.current !== null) {
+      if (timeRemaining > prevTimeRef.current + 5) {
+        // Timer reset (new turn) - stop sounds and reset mode
+        soundContext?.stopTickSounds();
+        if (intervalRef.current) {
+          clearInterval(intervalRef.current);
+          intervalRef.current = null;
+        }
+        currentModeRef.current = "none";
+      }
+    }
+    prevTimeRef.current = timeRemaining;
+  }, [timeRemaining, soundContext]);
+
+  // Effect to handle mode changes - only runs when mode actually changes
+  useEffect(() => {
+    const prevMode = currentModeRef.current;
+    
+    // No change in mode - don't recreate interval
+    if (targetMode === prevMode) {
+      return;
+    }
+
+    // Clear existing interval when mode changes
     if (intervalRef.current) {
       clearInterval(intervalRef.current);
       intervalRef.current = null;
     }
 
-    // Check if time jumped up significantly (turn changed)
-    if (timeRemaining !== null && prevTimeRef.current !== null) {
-      if (timeRemaining > prevTimeRef.current + 5) {
-        // Timer reset (new turn) - stop any playing tick sounds
+    // If transitioning to "none", stop sounds
+    if (targetMode === "none") {
+      if (prevMode !== "none") {
         soundContext?.stopTickSounds();
-        currentModeRef.current = "none";
       }
-    }
-    prevTimeRef.current = timeRemaining;
-
-    // Determine if we should be ticking
-    const shouldTick = 
-      soundContext && 
-      timeRemaining !== null && 
-      !isPaused && 
-      !isGameOver && 
-      timeRemaining > 0 && 
-      timeRemaining <= normalThreshold;
-
-    const newMode = shouldTick ? getTickMode(timeRemaining) : "none";
-    const prevMode = currentModeRef.current;
-
-    // If mode changed to "none", stop sounds
-    if (newMode === "none" && prevMode !== "none") {
-      soundContext?.stopTickSounds();
       currentModeRef.current = "none";
       return;
     }
 
-    if (newMode === "none") {
-      return;
-    }
-
-    const isUrgent = newMode === "urgent";
+    const isUrgent = targetMode === "urgent";
     const interval = isUrgent ? urgentInterval : normalInterval;
     const soundName = isUrgent ? "tickUrgent" : "tick";
 
-    // Only play immediately if we're transitioning INTO this mode
-    // (prevents double-play when timeRemaining updates within the same mode)
-    const isTransitioningIn = prevMode !== newMode;
-    if (isTransitioningIn && soundContext) {
+    // Play immediately when entering a tick mode
+    if (soundContext?.soundEnabled) {
       soundContext.playSound(soundName);
     }
 
-    currentModeRef.current = newMode;
+    currentModeRef.current = targetMode;
 
     // Set up interval for subsequent ticks
     intervalRef.current = setInterval(() => {
@@ -113,21 +122,16 @@ export function useTimerSound({
         intervalRef.current = null;
       }
     };
-  }, [
-    timeRemaining,
-    isPaused,
-    isGameOver,
-    normalThreshold,
-    urgentThreshold,
-    normalInterval,
-    urgentInterval,
-    soundContext,
-  ]);
+  }, [targetMode, normalInterval, urgentInterval, soundContext]);
 
   // Stop tick sounds on unmount
   useEffect(() => {
     return () => {
       soundContext?.stopTickSounds();
+      if (intervalRef.current) {
+        clearInterval(intervalRef.current);
+        intervalRef.current = null;
+      }
     };
   }, [soundContext]);
 }

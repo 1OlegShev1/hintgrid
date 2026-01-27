@@ -51,44 +51,42 @@ const playFunctionsRef: { current: {
  * Stable inner component that captures use-sound hooks.
  * Defined outside SoundProvider to maintain component identity when props change.
  * This prevents remounting children when volume/soundEnabled changes.
+ * 
+ * NOTE: We always pass soundEnabled: true to use-sound hooks so Howl instances
+ * are always ready to play. The actual mute/enable logic is handled in playSound().
+ * This fixes issues where sounds don't work after page refresh until toggled.
  */
 function PlayFunctionCapture({ 
   children, 
   volume, 
-  soundEnabled 
 }: { 
   children: ReactNode; 
   volume: number; 
-  soundEnabled: boolean;
 }) {
   // use-sound hooks for audio files
+  // Always enabled - mute logic handled in playSound()
   const [playGameStart] = useSound("/sounds/game-start.mp3", { 
     volume: volume * 0.7,
-    soundEnabled,
   });
   
   const [playTurnChange] = useSound("/sounds/turn-change.mp3", { 
     volume: volume * 0.5,
-    soundEnabled,
   });
   
   const [playGameOver] = useSound("/sounds/game-over.mp3", { 
     volume: volume * 0.6,
-    soundEnabled,
   });
 
   // Realistic clock tick sounds - interrupt prevents overlapping
   // Also expose stop functions to immediately halt playback
   const [playTick, { stop: stopTick }] = useSound("/sounds/tick.mp3", { 
     volume: volume * 0.5,
-    soundEnabled,
     interrupt: true,
   });
   
   // Urgent tick - distinct electronic beep for clear urgency
   const [playTickUrgent, { stop: stopTickUrgent }] = useSound("/sounds/tick-urgent.mp3", { 
     volume: volume * 0.4,
-    soundEnabled,
     interrupt: true,
   });
 
@@ -289,7 +287,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       currentTrack,
       setMusicTrack,
     }}>
-      <PlayFunctionCapture volume={volume} soundEnabled={soundEnabled}>
+      <PlayFunctionCapture volume={volume}>
         {children}
       </PlayFunctionCapture>
     </SoundContext.Provider>
