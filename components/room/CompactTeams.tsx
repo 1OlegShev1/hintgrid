@@ -92,7 +92,6 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
           <div className="flex flex-wrap gap-3">
             {spectators.map((p) => {
               const isMe = p.id === currentPlayerId;
-              const canAddThis = (isRoomOwner || isMe) && onAddSpectator;
               return (
                 <div
                   key={p.id}
@@ -102,8 +101,10 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
                       : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300"
                   }`}
                 >
-                  <div className="font-medium mb-1">{p.name}{isMe ? " (you)" : ""}</div>
-                  {canAddThis && (
+                  <div className={`font-medium ${isRoomOwner && onAddSpectator ? "mb-2" : ""}`}>
+                    {p.name}{isMe ? " (you)" : ""}
+                  </div>
+                  {isRoomOwner && onAddSpectator && (
                     <div className="flex gap-2">
                       <button
                         onClick={() => onAddSpectator("red", p.id)}

@@ -62,12 +62,13 @@ npm run dev
 
 1. Enter your name on the home page
 2. Create a new room or join an existing one with a room code
-3. Wait for at least 4 players to join
-4. Click "Start Game" to begin
-5. Players are assigned to Red and Blue teams with Clue Giver and Guesser roles
+3. Join a team (Red or Blue) as Clue Giver or Guesser, or stay as spectator
+4. Wait for at least 4 players to join teams (teams don't need to be equal)
+5. Room owner clicks "Start Game" to begin
 6. Clue Givers can see all card colors and give clues
 7. Guessers vote on cards to reveal during their team's turn
-8. First team to reveal all their cards wins (but avoid the trap card!)
+8. Room owner can add spectators to teams during the game
+9. First team to reveal all their cards wins (but avoid the trap card!)
 
 ## Project Structure
 
