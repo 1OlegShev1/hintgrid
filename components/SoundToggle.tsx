@@ -144,14 +144,13 @@ export default function SoundToggle() {
           {getSpeakerIcon()}
         </button>
 
-        {/* Volume Slider Popover */}
+        {/* Volume Slider Popover - always below the button */}
         <div 
           className={`
             absolute z-50 flex items-center gap-2 px-3 py-2 
             bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-600
             transition-all duration-200
             top-full right-0 mt-2 origin-top-right
-            sm:top-auto sm:right-auto sm:left-full sm:mt-0 sm:ml-2 sm:origin-left
             ${showSlider ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
           `}
         >
