@@ -83,7 +83,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
   };
 
   return (
-    <div className="mt-4 bg-gradient-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-2 border-amber-400 dark:border-amber-500 rounded-xl p-4 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/30 ring-2 ring-amber-300/50 dark:ring-amber-500/30 animate-pulse-subtle">
+    <div className="mt-4 bg-linear-to-r from-amber-50 to-yellow-50 dark:from-amber-900/20 dark:to-yellow-900/20 border-2 border-amber-400 dark:border-amber-500 rounded-xl p-4 shadow-lg shadow-amber-200/50 dark:shadow-amber-900/30 ring-2 ring-amber-300/50 dark:ring-amber-500/30 animate-pulse-subtle">
       <div className="flex items-center gap-2 mb-3">
         <svg className="w-5 h-5 text-amber-600 dark:text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

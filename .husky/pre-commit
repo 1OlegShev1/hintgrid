@@ -1,1 +1,7 @@
+# Check for deprecated Tailwind patterns
+if grep -r "bg-gradient-to" --include="*.tsx" --include="*.ts" . 2>/dev/null | grep -v node_modules | grep -v ".next"; then
+  echo "❌ Found deprecated 'bg-gradient-to' - use 'bg-linear-to' instead (Tailwind v4)"
+  exit 1
+fi
+
 npx lint-staged
