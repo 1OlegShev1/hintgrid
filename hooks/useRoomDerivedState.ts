@@ -65,11 +65,12 @@ export function useRoomDerivedState(
 
   const guesserCount = useMemo(() => {
     if (!gameState) return 0;
+    // connected !== false treats undefined as connected (backwards compatible)
     return players.filter(
       (player) =>
         player.team === gameState.currentTeam &&
         player.role === "guesser" &&
-        player.connected
+        player.connected !== false
     ).length;
   }, [gameState, players]);
 
