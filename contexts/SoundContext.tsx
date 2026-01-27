@@ -137,6 +137,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const [volume, setVolumeState] = useState(0.5);
   const [isMuted, setIsMutedState] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
+  const [audioUnlocked, setAudioUnlocked] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
 
   // Music state (volume derived from master volume)
@@ -153,6 +154,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     
     const handleInteraction = () => {
       unlockAudioContext();
+      setAudioUnlocked(true);
       // Remove listeners after first interaction
       events.forEach(event => {
         document.removeEventListener(event, handleInteraction);
@@ -275,7 +277,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         }, 300);
       }
     };
-  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion]);
+  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioUnlocked]);
 
   // Update volume when musicVolume changes (without recreating/restarting howl)
   useEffect(() => {
