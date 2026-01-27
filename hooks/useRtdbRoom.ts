@@ -3,7 +3,7 @@
  * This is the main entry point that provides a unified API.
  */
 
-import { useEffect } from "react";
+import { useEffect, useRef, useCallback } from "react";
 import { useGameContext } from "@/components/GameContext";
 import { useRoomConnection } from "./room/useRoomConnection";
 import { useGameActions } from "./room/useGameActions";
@@ -70,30 +70,35 @@ export function useRtdbRoom(
     };
   }, [isLast, isActive, setIsLastPlayer, setIsActiveGame]);
 
-  // Set up leaveRoom callback for Navbar
+  // Use refs for leaveRoom to avoid stale closures and empty callbacks during re-renders
+  const uidRef = useRef<string | null>(connection.uid);
+  const roomCodeRef = useRef(roomCode);
+  
+  // Keep refs updated with latest values
   useEffect(() => {
-    console.log("[useRtdbRoom] Setting up leaveRoom callback", { 
-      roomCode, 
-      uid: connection.uid?.slice(0, 8),
-      hasUid: !!connection.uid 
-    });
-    
-    const leaveRoomFn = async () => {
-      console.log("[Room] leaveRoom called", { uid: connection.uid, roomCode });
-      if (connection.uid && roomCode) {
-        await actions.leaveRoom(roomCode, connection.uid);
-        console.log("[Room] leaveRoom completed");
-      } else {
-        console.warn("[Room] leaveRoom skipped - missing uid or roomCode");
-      }
-    };
-    setLeaveRoom(leaveRoomFn);
-    
-    return () => {
-      console.log("[useRtdbRoom] Cleanup: clearing leaveRoom callback");
-      setLeaveRoom(async () => {});
-    };
-  }, [roomCode, connection.uid, setLeaveRoom]);
+    uidRef.current = connection.uid;
+    roomCodeRef.current = roomCode;
+  }, [connection.uid, roomCode]);
+  
+  // Stable leaveRoom callback that uses refs - never becomes empty
+  const leaveRoomCallback = useCallback(async () => {
+    const uid = uidRef.current;
+    const code = roomCodeRef.current;
+    console.log("[Room] leaveRoom called", { uid, roomCode: code });
+    if (uid && code) {
+      await actions.leaveRoom(code, uid);
+      console.log("[Room] leaveRoom completed");
+    } else {
+      console.warn("[Room] leaveRoom skipped - missing uid or roomCode", { uid, roomCode: code });
+    }
+  }, []);
+  
+  // Set up leaveRoom callback once on mount
+  useEffect(() => {
+    console.log("[useRtdbRoom] Setting up leaveRoom callback");
+    setLeaveRoom(leaveRoomCallback);
+    // Don't clear on cleanup - the callback should always work via refs
+  }, [setLeaveRoom, leaveRoomCallback]);
 
   // Owner-only cleanup: demote stale disconnected players to spectators
   // Runs in all phases (lobby, active game, paused, game over) to keep player list clean
