@@ -168,13 +168,13 @@ export default function GameBoard({
     if (card.revealed) {
       switch (card.team) {
         case "red":
-          return "card-texture-red text-white";
+          return "card-texture-red";
         case "blue":
-          return "card-texture-blue text-white";
+          return "card-texture-blue";
         case "trap":
-          return "card-texture-trap text-white";
+          return "card-texture-trap";
         default:
-          return "card-texture-neutral text-yellow-900 dark:text-yellow-100";
+          return "card-texture-neutral";
       }
     }
 

@@ -72,6 +72,7 @@ body {
     var(--red-team);
   border: 3px solid rgba(0, 0, 0, 0.2);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .card-texture-blue {
@@ -86,6 +87,7 @@ body {
     var(--blue-team);
   border: 3px solid rgba(0, 0, 0, 0.2);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.15);
+  color: white;
 }
 
 .card-texture-neutral {
@@ -100,6 +102,11 @@ body {
     var(--neutral-card);
   border: 3px solid rgba(0, 0, 0, 0.15);
   box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.2);
+  color: #713f12; /* yellow-900 - dark text for light bg */
+}
+
+.dark .card-texture-neutral {
+  color: #fefce8; /* yellow-100 - light text for dark bg */
 }
 
 .card-texture-trap {
@@ -114,6 +121,7 @@ body {
     var(--trap);
   border: 3px solid rgba(255, 255, 255, 0.1);
   box-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.3);
+  color: white;
 }
 
 /* Card flip animation - single element approach */
