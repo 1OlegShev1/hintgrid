@@ -140,6 +140,9 @@ const MUSIC_TRACKS: Record<Exclude<MusicTrack, null>, string> = {
   "victory": "/sounds/music/victory.mp3",
 };
 
+// Session storage key for audio unlock state (survives page reloads within session)
+const SESSION_AUDIO_UNLOCKED_KEY = "cluecards_audio_unlocked";
+
 export function SoundProvider({ children }: { children: ReactNode }) {
   // Sound effects state
   const [volume, setVolumeState] = useState(0.5);
@@ -156,14 +159,25 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   // Computed music volume (30% of master volume)
   const musicVolume = volume * MUSIC_VOLUME_RATIO;
 
+  // Check sessionStorage on mount - user may have interacted before page reload
+  useEffect(() => {
+    if (typeof window !== "undefined" && sessionStorage.getItem(SESSION_AUDIO_UNLOCKED_KEY) === "true") {
+      setAudioUnlocked(true);
+      unlockAudioContext();
+    }
+  }, []);
+
   // Unlock audio context on first user interaction (browser autoplay policy)
   useEffect(() => {
+    // Skip if already unlocked (from sessionStorage)
+    if (audioUnlocked) return;
+
     const events = ["click", "touchstart", "keydown"];
     
     const handleInteraction = () => {
-      // Set unlocked immediately - user has interacted with the page
-      // Howler will handle actual audio context resumption when we play
+      // Set unlocked and persist to sessionStorage (survives page reloads)
       setAudioUnlocked(true);
+      sessionStorage.setItem(SESSION_AUDIO_UNLOCKED_KEY, "true");
       // Also proactively try to resume audio context (best effort, don't wait)
       unlockAudioContext();
       // Remove listeners after first interaction
@@ -181,7 +195,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         document.removeEventListener(event, handleInteraction);
       });
     };
-  }, []);
+  }, [audioUnlocked]);
 
   // Load from localStorage on mount
   useEffect(() => {
