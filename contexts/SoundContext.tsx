@@ -183,14 +183,19 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   // sessionStorage says user interacted before. Browser requires a user gesture
   // on each page load to unlock the audio context.
   useEffect(() => {
+    // Check if audio context is already running (browser may allow autoplay)
+    const ctx = Howler.ctx;
+    if (ctx && ctx.state === "running") {
+      audioContextUnlocked = true;
+      setAudioContextReady(true);
+      return;
+    }
+
     const events = ["click", "touchstart", "keydown"];
     
     const handleInteraction = async () => {
       // Persist to sessionStorage so we know music should auto-play
-      if (!audioUnlocked) {
-        setAudioUnlocked(true);
-        sessionStorage.setItem(SESSION_AUDIO_UNLOCKED_KEY, "true");
-      }
+      sessionStorage.setItem(SESSION_AUDIO_UNLOCKED_KEY, "true");
       
       // Actually unlock the audio context (requires user gesture)
       await unlockAudioContext();
@@ -202,7 +207,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     };
     
     events.forEach(event => {
-      document.addEventListener(event, handleInteraction, { once: true });
+      document.addEventListener(event, handleInteraction);
     });
     
     return () => {

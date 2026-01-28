@@ -70,8 +70,8 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
       )}
 
       {/* Board and Chat */}
-      <div className="grid md:grid-cols-3 gap-4">
-        <div className="md:col-span-2">
+      <div className="grid md:grid-cols-5 gap-4">
+        <div className="md:col-span-3">
           <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 ${turnGlowClass}`}>
             <GameBoard
               board={gameState.board}
@@ -113,7 +113,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           </div>
         </div>
 
-        <div className="space-y-4">
+        <div className="md:col-span-2 space-y-4">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
             <ClueHistory clues={messages} />
           </div>
