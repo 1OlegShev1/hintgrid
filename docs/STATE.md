@@ -138,11 +138,11 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 
 | Key | Description | Default |
 |-----|-------------|---------|
-| `cluecards_avatar` | Player's selected emoji avatar | Random from preset list |
-| `cluecards_sound_volume` | Master volume (0-1) | `0.5` |
-| `cluecards_sound_muted` | Whether sounds are muted | `false` |
-| `cluecards_music_enabled` | Whether music is enabled | `false` |
-| `cluecards-theme` | UI theme preference | `system` |
+| `hintgrid_avatar` | Player's selected emoji avatar | Random from preset list |
+| `hintgrid_sound_volume` | Master volume (0-1) | `0.5` |
+| `hintgrid_sound_muted` | Whether sounds are muted | `false` |
+| `hintgrid_music_enabled` | Whether music is enabled | `false` |
+| `hintgrid-theme` | UI theme preference | `system` |
 
 **Note:** Keys are defined in `shared/constants.ts` (except theme which is in `ThemeProvider.tsx`). Music volume is derived from master volume (30%).
 
@@ -150,7 +150,7 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 
 | Key | Description |
 |-----|-------------|
-| `cluecards_audio_unlocked` | Tracks if user has interacted with the page (for browser autoplay policy). Persists across page reloads within same tab session. |
+| `hintgrid_audio_unlocked` | Tracks if user has interacted with the page (for browser autoplay policy). Persists across page reloads within same tab session. |
 
 **Note:** Key is defined in `SoundContext.tsx`. This enables music to autoplay after navigation (which uses full page reload via `window.location.href`).
 
@@ -331,7 +331,7 @@ The `database.rules.json` file enforces server-side validation:
 
 E2E tests live in `tests/` and use Playwright. Run with:
 - `npm run test:e2e` — Run against local dev server
-- `npm run test:e2e:deployed` — Run against production (https://clue-cards.web.app)
+- `npm run test:e2e:deployed` — Run against production (https://hintgrid.com)
 
 **Multi-player test setup:**
 

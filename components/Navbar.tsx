@@ -160,8 +160,8 @@ export default function Navbar() {
             className="group flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
             <span className="text-xl font-black tracking-tight">
-              <span className="text-red-500">Clue</span>
-              <span className="text-blue-500">Cards</span>
+              <span className="text-red-500">Hint</span>
+              <span className="text-blue-500">Grid</span>
             </span>
             <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 group-hover:bg-amber-200 dark:group-hover:bg-amber-800/50 transition-colors">
               BETA

@@ -40,7 +40,7 @@ export default function Home() {
     <main className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
       <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
         <h1 className="text-5xl font-bold text-center mb-2 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-          Clue Cards
+          HintGrid
         </h1>
         <p className="text-center text-gray-600 dark:text-gray-400 mb-8">
           A word guessing party game

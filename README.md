@@ -1,4 +1,4 @@
-# Clue Cards
+# HintGrid
 
 A multiplayer word guessing party game built with Next.js, TypeScript, and Firebase.
 

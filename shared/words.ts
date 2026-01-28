@@ -1,4 +1,4 @@
-// Word lists for Clue Cards game
+// Word lists for HintGrid game
 
 import { shuffle } from "./game-utils";
 

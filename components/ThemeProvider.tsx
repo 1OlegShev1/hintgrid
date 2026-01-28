@@ -12,7 +12,7 @@ interface ThemeContextValue {
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "cluecards-theme";
+const STORAGE_KEY = "hintgrid-theme";
 
 function getSystemTheme(): "light" | "dark" {
   if (typeof window === "undefined") return "light";

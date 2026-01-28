@@ -7,7 +7,7 @@ import { defineConfig, devices } from '@playwright/test';
  *   npm run test:e2e
  * 
  * Run against deployed Firebase app:
- *   BASE_URL=https://clue-cards.web.app npm run test:e2e
+ *   BASE_URL=https://hintgrid.com npm run test:e2e
  * 
  * See https://playwright.dev/docs/test-configuration
  */

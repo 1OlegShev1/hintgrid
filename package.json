@@ -1,5 +1,5 @@
 {
-  "name": "clue-cards",
+  "name": "hintgrid",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -15,8 +15,8 @@
     "test:e2e": "playwright test",
     "test:e2e:headed": "playwright test --headed --workers=1",
     "test:e2e:ui": "playwright test --ui",
-    "test:e2e:deployed": "BASE_URL=https://clue-cards.web.app playwright test",
-    "test:e2e:deployed:headed": "BASE_URL=https://clue-cards.web.app playwright test --headed --workers=1",
+    "test:e2e:deployed": "BASE_URL=https://hintgrid.com playwright test",
+    "test:e2e:deployed:headed": "BASE_URL=https://hintgrid.com playwright test --headed --workers=1",
     "prepare": "husky",
     "firebase:emulators": "firebase emulators:start",
     "deploy": "npm run build && firebase deploy",

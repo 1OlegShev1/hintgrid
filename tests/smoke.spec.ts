@@ -5,7 +5,7 @@ test.describe('Smoke Tests', () => {
     await page.goto('/');
     
     // Check title and main elements using specific selectors
-    await expect(page.getByRole('heading', { name: 'Clue Cards' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'HintGrid' })).toBeVisible();
     await expect(page.getByTestId('home-name-input')).toBeVisible();
     await expect(page.getByTestId('home-create-btn')).toBeVisible();
     await expect(page.getByTestId('home-join-btn')).toBeVisible();

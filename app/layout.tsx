@@ -8,14 +8,14 @@ import { SoundProvider } from "@/contexts/SoundContext";
 import Navbar from "@/components/Navbar";
 
 export const metadata: Metadata = {
-  title: "Clue Cards",
+  title: "HintGrid",
   description: "A multiplayer word guessing party game",
 };
 
 // Inline script to prevent flash of wrong theme
 const themeScript = `
   (function() {
-    const stored = localStorage.getItem('cluecards-theme');
+    const stored = localStorage.getItem('hintgrid-theme');
     let theme = stored;
     if (!theme || theme === 'system') {
       theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';

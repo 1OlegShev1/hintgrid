@@ -147,7 +147,7 @@ const MUSIC_TRACKS: Record<Exclude<MusicTrack, null>, string> = {
 };
 
 // Session storage key for audio unlock state (survives page reloads within session)
-const SESSION_AUDIO_UNLOCKED_KEY = "cluecards_audio_unlocked";
+const SESSION_AUDIO_UNLOCKED_KEY = "hintgrid_audio_unlocked";
 
 // Check sessionStorage synchronously for SSR safety
 function getInitialAudioUnlocked(): boolean {

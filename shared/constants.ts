@@ -1,8 +1,8 @@
 // localStorage keys
-export const LOCAL_STORAGE_AVATAR_KEY = "cluecards_avatar";
-export const LOCAL_STORAGE_SOUND_VOLUME_KEY = "cluecards_sound_volume";
-export const LOCAL_STORAGE_SOUND_MUTED_KEY = "cluecards_sound_muted";
-export const LOCAL_STORAGE_MUSIC_ENABLED_KEY = "cluecards_music_enabled";
+export const LOCAL_STORAGE_AVATAR_KEY = "hintgrid_avatar";
+export const LOCAL_STORAGE_SOUND_VOLUME_KEY = "hintgrid_sound_volume";
+export const LOCAL_STORAGE_SOUND_MUTED_KEY = "hintgrid_sound_muted";
+export const LOCAL_STORAGE_MUSIC_ENABLED_KEY = "hintgrid_music_enabled";
 
 // Game configuration
 export const TURN_DURATIONS = [30, 60, 90] as const;
