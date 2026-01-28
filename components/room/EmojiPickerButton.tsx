@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from "react";
 import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
-import { useTheme } from "next-themes";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface EmojiPickerButtonProps {
   onEmojiSelect: (emoji: string) => void;
