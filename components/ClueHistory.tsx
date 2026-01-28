@@ -34,15 +34,15 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   const getRevealClasses = (team?: string) => {
     switch (team) {
       case "red":
-        return "bg-red-100/50 dark:bg-red-900/20 text-red-700 dark:text-red-300 border-l-4 border-red-400";
+        return "bg-red-200 dark:bg-red-800/60 text-red-800 dark:text-red-100 border-l-4 border-red-500";
       case "blue":
-        return "bg-blue-100/50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border-l-4 border-blue-400";
+        return "bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100 border-l-4 border-blue-500";
       case "trap":
-        return "bg-gray-800 dark:bg-gray-900 text-white border-l-4 border-gray-600";
+        return "bg-gray-900 dark:bg-black text-white border-l-4 border-red-600";
       case "neutral":
-        return "bg-amber-100/50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border-l-4 border-amber-400";
+        return "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100 border-l-4 border-amber-500";
       default:
-        return "bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 border-l-4 border-gray-400";
+        return "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-l-4 border-gray-500";
     }
   };
 
