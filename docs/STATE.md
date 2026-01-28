@@ -47,7 +47,11 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
           "playerName": "...",
           "message": "...",
           "timestamp": 1234567890,
-          "type": "clue|chat|system|reveal|game-system"
+          "type": "clue|chat|system|reveal|game-system",
+          "reactions": {
+            "👍": { "{playerId}": true },
+            "❤️": { "{playerId}": true }
+          }
         }
       }
     }
@@ -197,6 +201,7 @@ Defined in `shared/constants.ts`:
 | `MIN_PLAYERS_TO_START` | `4` | Minimum players to start game |
 | `STALE_PLAYER_GRACE_MS` | `120000` (2 min) | Time before disconnected player is demoted to spectator |
 | `STALE_PLAYER_CHECK_INTERVAL_MS` | `30000` (30s) | How often to check for stale players |
+| `REACTION_EMOJIS` | `[20 emojis]` | Curated set of reaction emojis for chat messages |
 
 ### Input Validation
 

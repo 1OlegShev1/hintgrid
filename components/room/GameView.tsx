@@ -7,6 +7,7 @@ import {
   GameStatusPanel,
   TeamLobby,
   CompactTeams,
+  EmojiPickerButton,
 } from "@/components/room";
 import type { UseRtdbRoomReturn } from "@/hooks/useRtdbRoom";
 import type { UseRoomDerivedStateReturn } from "@/hooks/useRoomDerivedState";
@@ -28,7 +29,7 @@ interface GameViewProps {
  * Includes game board, chat, status panel, and team info.
  */
 export function GameView({ room, derived, timer, overlays }: GameViewProps) {
-  const { gameState, players, currentPlayer, messages, chatInput, setChatInput, isSendingChat } = room;
+  const { gameState, players, currentPlayer, messages, chatInput, setChatInput, isSendingChat, chatInputRef } = room;
   const { isMyTurn, isRoomOwner, canVote, canGiveClue, requiredVotes, turnGlowClass } = derived;
 
   if (!gameState) return null;
@@ -118,10 +119,21 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
             <ClueHistory clues={messages} />
           </div>
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
-            <ChatLog messages={messages} players={players} />
+            <ChatLog
+              messages={messages}
+              players={players}
+              currentPlayerId={currentPlayer?.id}
+              onAddReaction={room.handleAddReaction}
+              onRemoveReaction={room.handleRemoveReaction}
+            />
             <form onSubmit={room.handleSendMessage} className="mt-3 shrink-0">
               <div className="flex gap-2">
+                <EmojiPickerButton
+                  onEmojiSelect={room.handleEmojiSelect}
+                  disabled={isSendingChat}
+                />
                 <input
+                  ref={chatInputRef}
                   type="text"
                   value={chatInput}
                   onChange={(e) => setChatInput(e.target.value)}

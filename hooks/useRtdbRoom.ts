@@ -24,6 +24,7 @@ export interface UseRtdbRoomReturn {
   chatInput: string;
   setChatInput: (value: string) => void;
   isSendingChat: boolean;
+  chatInputRef: React.RefObject<HTMLInputElement | null>;
   handleStartGame: () => void;
   handleSetLobbyRole: (team: "red" | "blue" | null, role: "clueGiver" | "guesser" | null, targetPlayerId?: string) => void;
   handleRandomizeTeams: () => void;
@@ -34,6 +35,9 @@ export interface UseRtdbRoomReturn {
   handleConfirmReveal: (index: number) => void;
   handleEndTurn: () => void;
   handleSendMessage: (e: React.FormEvent) => void;
+  handleEmojiSelect: (emoji: string) => void;
+  handleAddReaction: (messageId: string, emoji: string) => void;
+  handleRemoveReaction: (messageId: string, emoji: string) => void;
   handleGiveClue: (word: string, count: number) => void;
   handleTurnDurationChange: (duration: number) => void;
   handleWordPackChange: (pack: WordPack) => void;
@@ -134,7 +138,11 @@ export function useRtdbRoom(
     chatInput: chatActions.chatInput,
     setChatInput: chatActions.setChatInput,
     isSendingChat: chatActions.isSending,
+    chatInputRef: chatActions.inputRef,
     handleSendMessage: chatActions.handleSendMessage,
+    handleEmojiSelect: chatActions.handleEmojiSelect,
+    handleAddReaction: chatActions.handleAddReaction,
+    handleRemoveReaction: chatActions.handleRemoveReaction,
     
     // Game actions
     handleStartGame: gameActions.handleStartGame,

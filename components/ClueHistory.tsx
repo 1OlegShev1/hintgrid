@@ -46,32 +46,6 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
     }
   };
 
-  const getRevealLabel = (team?: string) => {
-    switch (team) {
-      case "red": return "RED";
-      case "blue": return "BLUE";
-      case "trap": return "TRAP";
-      case "neutral": return "NEUTRAL";
-      default: return "";
-    }
-  };
-
-  // Get badge styling for reveal result
-  const getRevealBadgeClasses = (team?: string) => {
-    switch (team) {
-      case "red":
-        return "bg-red-500 text-white";
-      case "blue":
-        return "bg-blue-500 text-white";
-      case "trap":
-        return "bg-gray-900 text-white";
-      case "neutral":
-        return "bg-amber-500 text-white";
-      default:
-        return "bg-gray-500 text-white";
-    }
-  };
-
   return (
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-full min-h-48 flex flex-col">
       <h3 className="font-semibold px-4 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
@@ -84,23 +58,18 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
           gameMessages.map((msg) => (
             <div key={msg.id}>
               {msg.type === "clue" ? (
-                // Clue message - team colored with left border
+                // Clue message - compact single line with team color
                 (() => {
                   const styles = getClueTeamClasses(msg.clueTeam);
                   return (
-                    <div className={`rounded-r-lg px-3 py-2 ${styles.container}`}>
-                      <div className="flex items-center gap-2 mb-1">
-                        <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${styles.badge}`}>
-                          {msg.clueTeam || "?"} hint
-                        </span>
-                        <span className="text-lg">{msg.playerAvatar || "🎯"}</span>
-                        <span className={`font-medium text-sm ${styles.text}`}>{msg.playerName}</span>
-                        <span className="ml-auto text-gray-400 text-[10px]">
+                    <div className={`rounded-r-lg px-3 py-1.5 text-sm ${styles.container}`}>
+                      <div className="flex items-center gap-2">
+                        <span>{msg.playerAvatar || "🎯"}</span>
+                        <span className={`font-medium ${styles.text}`}>{msg.playerName}</span>
+                        <span className={`font-bold ${styles.clue}`}>{msg.message}</span>
+                        <span className="ml-auto text-[10px] opacity-50">
                           {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                         </span>
-                      </div>
-                      <div className={`font-bold text-lg ${styles.clue}`}>
-                        {msg.message}
                       </div>
                     </div>
                   );
