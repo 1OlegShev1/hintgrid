@@ -67,7 +67,7 @@ export default function ChatLog({
                     </div>
                     {/* Reactions row for chat messages only */}
                     {reactionsEnabled && (
-                      <div className="ml-12">
+                      <div>
                         <MessageReactions
                           messageId={msg.id}
                           reactions={msg.reactions}
