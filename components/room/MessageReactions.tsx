@@ -105,6 +105,31 @@ export function MessageReactions({
 
   return (
     <div className="flex flex-wrap items-center gap-1 mt-0.5">
+      {/* Add reaction button - at the start of the row */}
+      <button
+        ref={buttonRef}
+        onClick={() => (showPicker ? setShowPicker(false) : openPicker())}
+        disabled={!currentPlayerId}
+        title="Add reaction"
+        className="inline-flex items-center justify-center w-5 h-5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-0 group-hover:opacity-100 focus:opacity-100"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-3.5 h-3.5"
+        >
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <line x1="9" y1="9" x2="9.01" y2="9" />
+          <line x1="15" y1="9" x2="15.01" y2="9" />
+        </svg>
+      </button>
+
       {/* Existing reactions */}
       {sortedReactions.map(([emoji, playerIds]) => (
         <button
@@ -127,31 +152,6 @@ export function MessageReactions({
           <span className="text-gray-600 dark:text-gray-400 font-medium">{playerIds.length}</span>
         </button>
       ))}
-
-      {/* Add reaction button - smiley face icon */}
-      <button
-        ref={buttonRef}
-        onClick={() => (showPicker ? setShowPicker(false) : openPicker())}
-        disabled={!currentPlayerId}
-        title="Add reaction"
-        className="inline-flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-0 group-hover:opacity-100 focus:opacity-100"
-      >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="w-4 h-4"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-          <line x1="9" y1="9" x2="9.01" y2="9" />
-          <line x1="15" y1="9" x2="15.01" y2="9" />
-        </svg>
-      </button>
 
       {/* Reaction picker popup - fixed position to escape overflow container */}
       {showPicker && (
