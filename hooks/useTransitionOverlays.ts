@@ -108,9 +108,11 @@ export function useTransitionOverlays(
       }
     }
     
-    // Clue announcement animation (with cleanup)
+    // Clue announcement animation (with cleanup) and sound
     if (currentClueWord && currentClueWord !== prevClueRef.current) {
       setClueAnimating(true);
+      // Play clue submit sound - use clue word + turnStartTime as unique identifier
+      playSoundOnce("clueSubmit", `clue:${currentClueWord}:${turnStartTime}`);
       if (clueAnimationTimeoutRef.current) {
         clearTimeout(clueAnimationTimeoutRef.current);
       }

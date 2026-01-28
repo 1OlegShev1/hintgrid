@@ -200,6 +200,7 @@ All sounds use audio files via `use-sound`/Howler.js for realistic, high-quality
 - `tick.mp3` — Soft click sound every 2s in the last 30 seconds
 - `tick-urgent.mp3` — Fast mechanical alarm clock tic-tac every 0.5s in the last 10 seconds
 - `card-reveal.mp3` — Subtle page turn/flick when a card is revealed
+- `clue-submit.mp3` — Soft interface start sound when clue giver submits a clue
 
 **Background Music** (`/public/sounds/music/`):
 - `lobby.mp3` — Chill lo-fi for lobby waiting

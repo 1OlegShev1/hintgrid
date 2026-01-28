@@ -12,6 +12,7 @@ Sound effects in this folder are sourced from free, royalty-free libraries.
 | `tick.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Thermostat click |
 | `tick-urgent.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Mechanical alarm clock tic-tac |
 | `card-reveal.mp3` | [Mixkit](https://mixkit.co) | Mixkit License | Page turn single |
+| `clue-submit.mp3` | [Mixkit](https://mixkit.co) | Mixkit License | Software interface start |
 
 ## Background Music
 

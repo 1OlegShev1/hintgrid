@@ -10,7 +10,7 @@ import {
   LOCAL_STORAGE_MUSIC_ENABLED_KEY,
 } from "@/shared/constants";
 
-export type SoundName = "gameStart" | "turnChange" | "gameOver" | "tick" | "tickUrgent" | "cardReveal";
+export type SoundName = "gameStart" | "turnChange" | "gameOver" | "tick" | "tickUrgent" | "cardReveal" | "clueSubmit";
 export type MusicTrack = "lobby" | "game-30s" | "game-60s" | "game-90s" | "victory" | null;
 
 // Music plays at 30% of master volume
@@ -66,6 +66,7 @@ const playFunctionsRef: { current: {
   playTick: () => void;
   playTickUrgent: () => void;
   playCardReveal: () => void;
+  playClueSubmit: () => void;
   stopTick: () => void;
   stopTickUrgent: () => void;
 } | null } = { current: null };
@@ -119,14 +120,19 @@ function PlayFunctionCapture({
     interrupt: true,
   });
 
+  // Clue submit - soft interface start sound
+  const [playClueSubmit] = useSound("/sounds/clue-submit.mp3", { 
+    volume: volume * 0.4,
+  });
+
   // Update shared ref when play functions change
   useEffect(() => {
     playFunctionsRef.current = { 
       playGameStart, playTurnChange, playGameOver, 
-      playTick, playTickUrgent, playCardReveal,
+      playTick, playTickUrgent, playCardReveal, playClueSubmit,
       stopTick, stopTickUrgent,
     };
-  }, [playGameStart, playTurnChange, playGameOver, playTick, playTickUrgent, playCardReveal, stopTick, stopTickUrgent]);
+  }, [playGameStart, playTurnChange, playGameOver, playTick, playTickUrgent, playCardReveal, playClueSubmit, stopTick, stopTickUrgent]);
 
   return <>{children}</>;
 }
@@ -338,6 +344,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         break;
       case "cardReveal":
         playFunctionsRef.current?.playCardReveal();
+        break;
+      case "clueSubmit":
+        playFunctionsRef.current?.playClueSubmit();
         break;
     }
   }, [soundEnabled]);
