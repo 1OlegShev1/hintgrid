@@ -284,7 +284,7 @@ Music auto-switches based on game state (lobby → game → victory).
 | `useRtdbRoom` | `hooks/useRtdbRoom.ts` | Main room hook, composes connection + actions |
 | `useRoomConnection` | `hooks/room/useRoomConnection.ts` | Firebase listeners, presence, player state |
 | `useGameActions` | `hooks/room/useGameActions.ts` | Game action handlers (vote, reveal, clue) |
-| `useChatActions` | `hooks/room/useChatActions.ts` | Chat message handling |
+| `useChatActions` | `hooks/room/useChatActions.ts` | Chat messages, emoji picker, and reactions |
 | `useRoomDerivedState` | `hooks/useRoomDerivedState.ts` | Computed state (isMyTurn, canVote, etc.) |
 | `useGameTimer` | `hooks/useGameTimer.ts` | Turn countdown timer; only owner (or fallback) triggers timeout |
 | `useTransitionOverlays` | `hooks/useTransitionOverlays.ts` | Game start/turn change/game over animations |
@@ -299,6 +299,11 @@ Music auto-switches based on game state (lobby → game → victory).
 **Room Views:**
 - `GameView` (`components/room/GameView.tsx`) — Active game UI (board, chat, status)
 - `LobbyView` (`components/room/LobbyView.tsx`) — Pre-game lobby UI (team selection)
+
+**Chat Components:**
+- `EmojiPickerButton` (`components/room/EmojiPickerButton.tsx`) — Full emoji picker dropdown for chat input (uses `emoji-picker-react`)
+- `MessageReactions` (`components/room/MessageReactions.tsx`) — Reaction display and picker for chat messages
+- `ChatLog` (`components/ChatLog.tsx`) — IRC-style chat log with reaction support
 
 ### Key Files
 
@@ -342,6 +347,7 @@ The `database.rules.json` file enforces server-side validation:
 - Vote modifications: Only the voting player can modify their own vote
 - Player data: Self or owner
 - Messages: Any authenticated player can send; owner can delete all
+- Reactions: Only the reacting player can add/remove their own reactions
 
 **Validation Rules:**
 - Turn duration: Must be 30, 60, or 90 seconds; only settable before game starts
