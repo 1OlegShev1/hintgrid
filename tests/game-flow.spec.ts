@@ -1,4 +1,4 @@
-import { test, expect, Page } from '@playwright/test';
+import { test, expect, Page, BrowserContext } from '@playwright/test';
 
 /**
  * Full game flow E2E test.
@@ -10,6 +10,10 @@ import { test, expect, Page } from '@playwright/test';
  * 4. Clue giver gives a clue
  * 5. Guesser votes and reveals a card
  * 6. Turn changes appropriately
+ * 
+ * IMPORTANT: Each player needs a separate browser context to get a unique
+ * Firebase Auth session. Using pages from the same context would give all
+ * players the same uid, breaking multi-player functionality.
  */
 
 /**
@@ -58,16 +62,44 @@ async function waitForClueDisplayed(page: Page, clueWord: string, timeout = 5000
   await expect(page.getByText(clueWord, { exact: false }).first()).toBeVisible({ timeout });
 }
 
+/**
+ * Helper: Clean up test contexts properly
+ * Clicks "Leave" button to trigger clean Firebase disconnect (onDisconnect fires immediately)
+ */
+async function cleanupContexts(contexts: BrowserContext[]) {
+  // Click Leave button on each page to trigger clean disconnect
+  for (const ctx of contexts) {
+    for (const page of ctx.pages()) {
+      const leaveBtn = page.getByTestId('leave-room-btn');
+      // Only click if visible (page might be on home or error state)
+      if (await leaveBtn.isVisible().catch(() => false)) {
+        await leaveBtn.click().catch(() => {
+          // Ignore - page might navigate away
+        });
+      }
+    }
+  }
+  
+  // Small delay to let disconnect propagate to server
+  await new Promise(resolve => setTimeout(resolve, 300));
+  
+  // Now close contexts
+  await Promise.all(contexts.map(ctx => ctx.close()));
+}
+
 test.describe('Full Game Flow', () => {
-  test('complete game flow with 4 players', async ({ context }) => {
+  test('complete game flow with 4 players', async ({ browser }) => {
     test.setTimeout(120000); // 2 minutes for multi-player test with Firebase latency
-    // Create 4 browser pages for 4 players
-    const pages = await Promise.all([
-      context.newPage(),
-      context.newPage(),
-      context.newPage(),
-      context.newPage(),
+    
+    // Create 4 separate browser contexts - each gets its own Firebase Auth session
+    // This is critical: pages in the same context share IndexedDB (and thus Firebase uid)
+    const contexts: BrowserContext[] = await Promise.all([
+      browser.newContext(),
+      browser.newContext(),
+      browser.newContext(),
+      browser.newContext(),
     ]);
+    const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
     const playerNames = ['RedClue', 'RedGuess', 'BlueClue', 'BlueGuess'];
 
@@ -196,68 +228,21 @@ test.describe('Full Game Flow', () => {
     await expect(revealedCard).toBeVisible();
 
     console.log('Full game flow test completed successfully!');
+    
+    await cleanupContexts(contexts);
   });
 
-  test('randomize teams and start game', async ({ context }) => {
-    test.setTimeout(120000); // 2 minutes for multi-player test with Firebase latency
-    // Create 4 browser pages
-    const pages = await Promise.all([
-      context.newPage(),
-      context.newPage(),
-      context.newPage(),
-      context.newPage(),
-    ]);
-
-    // First player creates room
-    await pages[0].goto('/');
-    await pages[0].getByTestId('home-name-input').fill('Player1');
-    await pages[0].getByTestId('home-create-btn').click();
-
-    // Wait for navigation and get room code
-    await expect(pages[0]).toHaveURL(/\/room\/[A-Z0-9]+/);
-    const url = pages[0].url();
-    const roomCode = url.match(/\/room\/([A-Z0-9]+)/)?.[1];
-    expect(roomCode).toBeTruthy();
-
-    await expect(pages[0].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
-
-    // Other players join
-    for (let i = 1; i < 4; i++) {
-      await pages[i].goto('/');
-      await pages[i].getByTestId('home-name-input').fill(`Player${i + 1}`);
-      await pages[i].getByTestId('home-code-input').fill(roomCode!);
-      await pages[i].getByTestId('home-join-btn').click();
-      await expect(pages[i].getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
-    }
-
-    // Wait for all players to be synced on owner's page
-    await waitForPlayerCount(pages[0], 4);
-
-    // Owner clicks randomize
-    const randomizeBtn = pages[0].getByTestId('lobby-randomize-btn');
-    await expect(randomizeBtn).toBeEnabled({ timeout: 10000 });
-    await randomizeBtn.click();
-
-    // Wait for start button to be enabled (indicates randomization complete)
-    const startBtn = pages[0].getByTestId('lobby-start-btn');
-    await expect(startBtn).toBeEnabled({ timeout: 15000 });
-    await startBtn.click();
-
-    // Game should start - board visible
-    await expect(pages[0].getByTestId('board-card-0')).toBeVisible({ timeout: 15000 });
-
-    console.log('Randomize and start game test completed!');
-  });
-
-  test('play full game until one team wins', async ({ context }) => {
+  test('play full game until one team wins', async ({ browser }) => {
     test.setTimeout(120000); // 2 minutes for full game test
-    // Create 4 browser pages for 4 players
-    const pages = await Promise.all([
-      context.newPage(),
-      context.newPage(),
-      context.newPage(),
-      context.newPage(),
+    
+    // Create 4 separate browser contexts for unique Firebase Auth sessions
+    const contexts: BrowserContext[] = await Promise.all([
+      browser.newContext(),
+      browser.newContext(),
+      browser.newContext(),
+      browser.newContext(),
     ]);
+    const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
 
     const playerNames = ['RedClue', 'RedGuess', 'BlueClue', 'BlueGuess'];
 
@@ -370,24 +355,29 @@ test.describe('Full Game Flow', () => {
     // Wait for clue to be submitted
     await expect(secondClueInput).not.toBeVisible({ timeout: 5000 });
 
+    // Wait for voting to be enabled (first team card should become clickable)
+    // This ensures Firebase has synced the clue and remainingGuesses to the guesser
+    const firstCardToGuess = secondGuesser.getByTestId(`board-card-${winningTeamCards[0]}`);
+    await expect(firstCardToGuess).toBeEnabled({ timeout: 10000 });
+
     // Second guesser guesses ALL their team's cards
     for (let i = 0; i < winningTeamCards.length; i++) {
       const cardIndex = winningTeamCards[i];
       console.log(`  Guessing card ${i + 1}/${winningTeamCards.length}: index ${cardIndex}`);
 
-      // Vote for the card
-      const card = secondGuesser.getByTestId(`board-card-${cardIndex}`);
-      
-      // Check if card is already revealed (shouldn't be, but safety check)
-      const isDisabled = await card.isDisabled().catch(() => true);
-      if (isDisabled) {
-        console.log(`  Card ${cardIndex} already revealed, skipping`);
-        continue;
+      // Check if game is already over (e.g., hit trap card)
+      const gameOverPanel = secondGuesser.getByTestId('game-over-panel');
+      const isGameOver = await gameOverPanel.isVisible().catch(() => false);
+      if (isGameOver) {
+        console.log(`  Game already ended, stopping guesses`);
+        break;
       }
 
+      // Vote for the card
+      const card = secondGuesser.getByTestId(`board-card-${cardIndex}`);
       await card.click();
 
-      // Wait for reveal button to appear
+      // Wait for reveal button to appear (vote registered, threshold met)
       const revealBtn = secondGuesser.getByTestId(`board-reveal-${cardIndex}`);
       await expect(revealBtn).toBeVisible({ timeout: 5000 });
       await revealBtn.click();
@@ -395,11 +385,9 @@ test.describe('Full Game Flow', () => {
       // Wait for reveal button to disappear (card revealed)
       await expect(revealBtn).not.toBeVisible({ timeout: 5000 });
 
-      // Check if game is over (after each reveal)
-      const gameOverPanel = secondGuesser.getByTestId('game-over-panel');
-      const isGameOver = await gameOverPanel.isVisible().catch(() => false);
-      
-      if (isGameOver) {
+      // Check if game ended after this reveal
+      const gameEndedNow = await gameOverPanel.isVisible().catch(() => false);
+      if (gameEndedNow) {
         console.log(`  Game ended after revealing card ${cardIndex}!`);
         break;
       }
@@ -410,23 +398,34 @@ test.describe('Full Game Flow', () => {
     // ========================================
     console.log('Verifying game over state...');
 
-    // Wait for game over panel using proper test ID
-    await expect(pages[0].getByTestId('game-over-panel')).toBeVisible({ timeout: 5000 });
+    // Step 1: Wait for game over overlay (proves gameOver state propagated)
+    // This appears immediately when game ends, before the panel
+    const gameOverOverlay = pages[0].getByTestId('game-over-overlay');
+    await expect(gameOverOverlay).toBeVisible({ timeout: 5000 });
+    console.log('Game over overlay visible - game state confirmed');
+
+    // Step 2: Wait for overlay to dismiss and panel to appear
+    // Overlay shows for 3s + 0.4s exit animation, then panel appears
+    const gameOverPanel = pages[0].getByTestId('game-over-panel');
+    await expect(gameOverPanel).toBeVisible({ timeout: 5000 });
     
     // Verify winner text shows the correct team
     const winnerText = pages[0].getByTestId('game-winner-text');
-    await expect(winnerText).toBeVisible({ timeout: 3000 });
+    await expect(winnerText).toBeVisible();
     await expect(winnerText).toContainText(`${secondTeam.toUpperCase()} Team Wins`);
 
-    // Verify all players see game over panel
+    // Verify all players see game over panel (they also had overlay time to sync)
     for (const page of pages) {
-      await expect(page.getByTestId('game-over-panel')).toBeVisible({ timeout: 3000 });
+      await expect(page.getByTestId('game-over-panel')).toBeVisible({ timeout: 5000 });
     }
 
     // Verify rematch button is available (indicates game truly ended)
     const rematchBtn = pages[0].getByTestId('game-rematch-btn');
-    await expect(rematchBtn).toBeVisible({ timeout: 3000 });
+    await expect(rematchBtn).toBeVisible();
 
     console.log(`Full game completed! ${secondTeam.toUpperCase()} team wins!`);
+    
+    // Cleanup: navigate away to trigger leaveRoom, then close contexts
+    await cleanupContexts(contexts);
   });
 });

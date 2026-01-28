@@ -1,5 +1,7 @@
-import { signInAnonymously, User } from "firebase/auth";
+import { signInAnonymously, User, AuthError } from "firebase/auth";
 import { getFirebaseAuth } from "./firebase";
+
+let signInAttempts = 0;
 
 export async function signInAnonymous(): Promise<User | null> {
   const auth = getFirebaseAuth();
@@ -8,11 +10,16 @@ export async function signInAnonymous(): Promise<User | null> {
     return null;
   }
 
+  signInAttempts++;
+  console.log(`[Auth] signInAnonymously attempt #${signInAttempts}`);
+
   try {
     const userCredential = await signInAnonymously(auth);
+    console.log(`[Auth] signInAnonymously succeeded, uid: ${userCredential.user.uid}`);
     return userCredential.user;
   } catch (error) {
-    console.error("Error signing in anonymously:", error);
+    const authError = error as AuthError;
+    console.error(`[Auth] signInAnonymously failed (attempt #${signInAttempts}):`, authError.code, authError.message);
     return null;
   }
 }

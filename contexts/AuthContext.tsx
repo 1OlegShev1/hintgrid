@@ -1,6 +1,6 @@
 "use client";
 
-import { createContext, useContext, useState, useEffect, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { signInAnonymous } from "@/lib/firebase-auth";
@@ -18,6 +18,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  
+  // Guard against concurrent sign-in attempts
+  const signingInRef = useRef(false);
 
   useEffect(() => {
     const auth = getFirebaseAuth();
@@ -33,11 +36,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (firebaseUser) => {
         if (firebaseUser) {
           // User is signed in
+          signingInRef.current = false;
           setUser(firebaseUser);
           setIsLoading(false);
           setError(null);
         } else {
-          // No user, sign in anonymously
+          // No user - sign in anonymously (but only once)
+          if (signingInRef.current) {
+            // Already signing in, skip
+            return;
+          }
+          signingInRef.current = true;
           setIsLoading(true);
           const newUser = await signInAnonymous();
           if (newUser) {
@@ -45,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             setError(null);
           } else {
             setError("Failed to sign in anonymously");
+            signingInRef.current = false; // Allow retry on failure
           }
           setIsLoading(false);
         }
@@ -53,6 +63,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         console.error("Auth state error:", err);
         setError(err.message);
         setIsLoading(false);
+        signingInRef.current = false;
       }
     );
 

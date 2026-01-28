@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import TransitionOverlay from "@/components/TransitionOverlay";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
+import { goOffline } from "@/lib/firebase";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useFirebaseConnection } from "@/hooks/useFirebaseConnection";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
@@ -88,6 +89,13 @@ export default function RoomPage() {
     isPaused: room.gameState?.paused,
     isGameOver: room.gameState?.gameOver,
   });
+
+  // Leave room handler - triggers clean Firebase disconnect
+  const handleLeaveRoom = () => {
+    console.log("[Room] Leave button clicked - disconnecting...");
+    goOffline(); // Triggers onDisconnect immediately (clean disconnect)
+    router.push("/");
+  };
 
   // Background music - changes based on game state
   // Only plays when player has actually joined the room (has playerName)
@@ -188,7 +196,7 @@ export default function RoomPage() {
       )}
       
       <div className="max-w-6xl mx-auto">
-        <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} />
+        <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} onLeaveRoom={handleLeaveRoom} />
         <OfflineBanner />
 
         {room.gameState.gameStarted ? (

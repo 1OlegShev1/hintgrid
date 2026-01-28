@@ -110,6 +110,7 @@ export default function TransitionOverlay({
   if (type === "gameOver") {
     return (
       <div 
+        data-testid="game-over-overlay"
         className={`
           fixed inset-0 z-50 flex items-center justify-center pointer-events-none
           transition-opacity duration-500

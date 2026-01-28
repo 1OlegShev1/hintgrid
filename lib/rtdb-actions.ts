@@ -194,22 +194,22 @@ export async function updateDisconnectBehavior(
   const roomSnap = await get(roomRef);
   const isOwner = roomSnap.exists() && roomSnap.val().ownerId === playerId;
 
+  // ALWAYS set player-level disconnect handler - this ensures cleanup even if 
+  // room-level handler fails (e.g., WebSocket closes ungracefully)
+  await onDisconnect(playerRef).update({
+    connected: false,
+    lastSeen: serverTimestamp(),
+  });
+
+  // Additionally handle room deletion for owner when they're the last player
   if (connectedCount <= 1 && isOwner) {
-    // I'm the last connected player AND the owner - delete room on disconnect
-    // First set up room deletion, then cancel player-level handler
+    // Set up room deletion - if this fires, it removes everything including players
+    // If it doesn't fire (network issues), at least player-level handler above
+    // will mark us as disconnected so cleanup script can delete the room later
     await onDisconnect(roomRef).remove();
-    await onDisconnect(playerRef).cancel();
-  } else {
-    // Others are connected OR I'm not the owner - just mark myself as disconnected
-    // First set up player disconnect, then cancel room-level handler (if we had one)
-    await onDisconnect(playerRef).update({
-      connected: false,
-      lastSeen: serverTimestamp(),
-    });
-    // Only try to cancel room-level handler if we're the owner (non-owners never set it up)
-    if (isOwner) {
-      await onDisconnect(roomRef).cancel();
-    }
+  } else if (isOwner) {
+    // Owner but others are connected - cancel room-level handler if we had one
+    await onDisconnect(roomRef).cancel();
   }
 }
 

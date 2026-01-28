@@ -201,25 +201,35 @@ export function useRoomConnection(
       if (isCleanedUp) return;
       const isConnected = snap.val() === true;
       
-      // Only act on reconnection (was disconnected, now connected)
-      // Skip the initial connection since joinRoom handles that
-      if (wasConnectedRef.current === false && isConnected) {
-        const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
-        update(playerRef, {
-          connected: true,
-          lastSeen: serverTimestamp(),
-        }).catch((err) => {
-          console.warn("[Room] Failed to restore presence after reconnection:", err.message);
-        });
+      // Detect actual reconnection: we must have successfully joined before,
+      // then disconnected, and now reconnected.
+      // Skip initial connection sequence (false → true before join completes)
+      const hasJoined = disconnectRefRef.current !== null;
+      const isReconnection = hasJoined && wasConnectedRef.current === false && isConnected;
+      
+      if (isReconnection) {
+        // Verify room and player still exist (might have been cleaned up while disconnected)
+        const roomExists = roomDataRef.current !== null;
+        const playerExists = playersDataRef.current?.[playerId] !== undefined;
         
-        // Re-establish onDisconnect handler after reconnection
-        // Calculate connected count from current players data (using ref to avoid stale closure)
-        const currentConnected = playersDataRef.current
-          ? Object.values(playersDataRef.current).filter((p) => p.connected !== false).length + 1 // +1 for ourselves reconnecting
-          : 1;
-        actions.updateDisconnectBehavior(roomCode, playerId, currentConnected).catch((err) => {
-          console.warn("[Room] Failed to update disconnect behavior after reconnection:", err.message);
-        });
+        if (roomExists && playerExists) {
+          const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
+          update(playerRef, {
+            connected: true,
+            lastSeen: serverTimestamp(),
+          }).catch((err) => {
+            console.warn("[Room] Failed to restore presence after reconnection:", err.message);
+          });
+          
+          // Re-establish onDisconnect handler after reconnection
+          const currentConnected = playersDataRef.current
+            ? Object.values(playersDataRef.current).filter((p) => p.connected !== false).length + 1
+            : 1;
+          actions.updateDisconnectBehavior(roomCode, playerId, currentConnected).catch((err) => {
+            console.warn("[Room] Failed to update disconnect behavior after reconnection:", err.message);
+          });
+        }
+        // If room/player gone, silently skip - user will see "room closed" UI anyway
       }
       
       wasConnectedRef.current = isConnected;

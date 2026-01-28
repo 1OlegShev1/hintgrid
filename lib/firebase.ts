@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth, connectAuthEmulator } from "firebase/auth";
-import { getDatabase as getDatabaseSdk, Database, connectDatabaseEmulator } from "firebase/database";
+import { getDatabase as getDatabaseSdk, Database, connectDatabaseEmulator, goOffline as firebaseGoOffline } from "firebase/database";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
@@ -66,4 +66,15 @@ export function getDatabase(): Database | undefined {
   }
   
   return rtdb;
+}
+
+/**
+ * Disconnect from Firebase Database.
+ * Triggers onDisconnect handlers immediately (clean disconnect).
+ */
+export function goOffline(): void {
+  const db = getDatabase();
+  if (db) {
+    firebaseGoOffline(db);
+  }
 }

@@ -327,6 +327,24 @@ E2E tests live in `tests/` and use Playwright. Run with:
 - `npm run test:e2e` — Run against local dev server
 - `npm run test:e2e:deployed` — Run against production (https://clue-cards.web.app)
 
+**Multi-player test setup:**
+
+Each simulated player needs a **separate browser context** to get a unique Firebase Auth session:
+
+```typescript
+// CORRECT: Separate contexts = separate Firebase Auth sessions
+const contexts = await Promise.all([
+  browser.newContext(),
+  browser.newContext(),
+]);
+const pages = await Promise.all(contexts.map(ctx => ctx.newPage()));
+
+// WRONG: Same context = same Firebase uid for all pages
+const pages = [await context.newPage(), await context.newPage()];
+```
+
+This is because Firebase Auth stores credentials in IndexedDB, which is shared across pages in the same browser context. Without separate contexts, all "players" would have the same `uid` and appear as the same player.
+
 ### Test ID Conventions
 
 **All interactive elements should have `data-testid` attributes for Playwright selectors.**

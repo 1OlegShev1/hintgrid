@@ -12,7 +12,8 @@ async function globalTeardown() {
   console.log('\n🧹 Cleaning up test rooms...');
   
   try {
-    // Run cleanup script - delete rooms older than 5 minutes (test rooms should be done by then)
+    // Run cleanup script - delete disconnected rooms or those older than 5 minutes
+    // With clean disconnect (goOffline), onDisconnect fires immediately
     const result = execSync('npm run cleanup:rooms -- --hours 0.083', {
       cwd: process.cwd(),
       encoding: 'utf-8',
