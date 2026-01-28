@@ -166,10 +166,10 @@ export default function GameStatusPanel({
                 <>{gameState.pausedForTeam?.toUpperCase()} team has no connected players. Waiting for reconnection...</>
               )}
               {gameState.pauseReason === "clueGiverDisconnected" && (
-                <>{gameState.pausedForTeam?.toUpperCase()} team hinter disconnected. Waiting for reconnection...</>
+                <>{gameState.pausedForTeam?.toUpperCase()} team clue giver disconnected. Waiting for reconnection...</>
               )}
               {gameState.pauseReason === "noGuessers" && (
-                <>{gameState.pausedForTeam?.toUpperCase()} team has no connected seekers. Waiting for reconnection...</>
+                <>{gameState.pausedForTeam?.toUpperCase()} team has no connected guessers. Waiting for reconnection...</>
               )}
             </p>
             {isRoomOwner && (
@@ -183,7 +183,7 @@ export default function GameStatusPanel({
                   </button>
                 ) : (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Need a connected hinter and at least one connected seeker to resume
+                    Need a connected clue giver and at least one connected guesser to resume
                   </p>
                 )}
               </div>
@@ -203,7 +203,7 @@ export default function GameStatusPanel({
               ? "text-red-800 dark:text-red-200"
               : "text-blue-800 dark:text-blue-200"
           }`}>
-            ⏳ Waiting for {gameState.currentTeam} team hinter to give a clue...
+            ⏳ Waiting for {gameState.currentTeam} team clue giver to give a clue...
           </p>
         </div>
       )}
