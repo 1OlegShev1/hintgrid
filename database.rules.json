@@ -138,6 +138,14 @@
             },
             "playerAvatar": {
               ".validate": "!newData.exists() || newData.isString()"
+            },
+            "reactions": {
+              "$emoji": {
+                "$playerId": {
+                  ".write": "auth != null && $playerId === auth.uid",
+                  ".validate": "newData.isBoolean() || !newData.exists()"
+                }
+              }
             }
           }
         }

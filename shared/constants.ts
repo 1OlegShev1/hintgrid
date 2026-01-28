@@ -27,6 +27,15 @@ export const AVATARS = [
   "🦋", "🐝", "🐢", "🦜", "🎃", "🤖", "👻", "👾",
 ] as const;
 
+// Reaction emojis for chat messages
+export const REACTION_EMOJIS = [
+  "👍", "👎", "❤️", "😂", "😮", "😢", "😡", "🎉",
+  "🤔", "👀", "🔥", "💯", "👏", "🙌", "💀", "😭",
+  "🤣", "😍", "🫡", "✨",
+] as const;
+
+export type ReactionEmoji = typeof REACTION_EMOJIS[number];
+
 export type Avatar = typeof AVATARS[number];
 
 export function getRandomAvatar(): Avatar {

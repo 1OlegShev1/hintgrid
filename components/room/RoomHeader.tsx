@@ -132,7 +132,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, onLea
               currentPlayer.team === "red" ? "bg-red-team" : "bg-blue-team"
             }`}>
               {isRoomOwner && <CrownIcon className="w-4 h-4 text-yellow-300" />}
-              {currentPlayer.name} • {currentPlayer.team} {currentPlayer.role}
+              {currentPlayer.name} • {currentPlayer.team} {currentPlayer.role === "clueGiver" ? "hinter" : "seeker"}
             </span>
           )}
           {!currentPlayer?.team && (

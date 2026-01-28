@@ -89,6 +89,25 @@ export function toPlayers(playersData: Record<string, FirebasePlayerData> | null
 }
 
 /**
+ * Transform Firebase reactions data into client format.
+ * Firebase: Record<emoji, Record<playerId, boolean>>
+ * Client: Record<emoji, playerId[]>
+ */
+function transformReactions(
+  reactions: Record<string, Record<string, boolean>> | undefined
+): Record<string, string[]> | undefined {
+  if (!reactions) return undefined;
+  const result: Record<string, string[]> = {};
+  for (const [emoji, players] of Object.entries(reactions)) {
+    const playerIds = Object.keys(players).filter((id) => players[id]);
+    if (playerIds.length > 0) {
+      result[emoji] = playerIds;
+    }
+  }
+  return Object.keys(result).length > 0 ? result : undefined;
+}
+
+/**
  * Transform Firebase messages data into client ChatMessage array.
  */
 export function toMessages(messagesData: Record<string, FirebaseMessageData> | null): ChatMessage[] {
@@ -104,6 +123,7 @@ export function toMessages(messagesData: Record<string, FirebaseMessageData> | n
       type: m.type,
       clueTeam: m.clueTeam,
       revealedTeam: m.revealedTeam,
+      reactions: transformReactions(m.reactions),
     }))
     .sort((a, b) => a.timestamp - b.timestamp);
 }

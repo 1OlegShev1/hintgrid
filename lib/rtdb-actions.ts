@@ -957,6 +957,41 @@ export async function sendMessage(
   });
 }
 
+/**
+ * Add a reaction to a message.
+ * Each player can only have one reaction per emoji per message.
+ */
+export async function addReaction(
+  roomCode: string,
+  messageId: string,
+  playerId: string,
+  emoji: string
+): Promise<void> {
+  const db = getDb();
+  const reactionRef = ref(
+    db,
+    `rooms/${roomCode}/messages/${messageId}/reactions/${emoji}/${playerId}`
+  );
+  await set(reactionRef, true);
+}
+
+/**
+ * Remove a reaction from a message.
+ */
+export async function removeReaction(
+  roomCode: string,
+  messageId: string,
+  playerId: string,
+  emoji: string
+): Promise<void> {
+  const db = getDb();
+  const reactionRef = ref(
+    db,
+    `rooms/${roomCode}/messages/${messageId}/reactions/${emoji}/${playerId}`
+  );
+  await remove(reactionRef);
+}
+
 // ============================================================================
 // Presence - not needed with onDisconnect, but keeping for manual cleanup
 // ============================================================================

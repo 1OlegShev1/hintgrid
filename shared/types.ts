@@ -58,6 +58,8 @@ export interface ChatMessage {
   clueTeam?: "red" | "blue";
   // For reveal messages: what team the card belonged to
   revealedTeam?: Team;
+  // Emoji reactions: emoji -> playerIds
+  reactions?: Record<string, string[]>;
 }
 
 export type RoomClosedReason = "abandoned" | "allPlayersLeft" | "timeout";
@@ -106,6 +108,8 @@ export interface FirebaseMessageData {
   clueTeam?: "red" | "blue";
   // For reveal messages: what team the card belonged to
   revealedTeam?: Team;
+  // Emoji reactions: emoji -> { playerId: true }
+  reactions?: Record<string, Record<string, boolean>>;
 }
 
 /**
