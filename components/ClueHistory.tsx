@@ -73,7 +73,7 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-80 flex flex-col">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-96 flex flex-col">
       <h3 className="font-semibold px-4 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
         Game Log
       </h3>
@@ -106,17 +106,13 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
                   );
                 })()
               ) : msg.type === "reveal" ? (
-                // Reveal message - compact, indented style
-                <div className={`rounded-r-lg px-3 py-1.5 text-sm ${getRevealClasses(msg.revealedTeam)}`}>
+                // Reveal message - indented under clue, colored by card team
+                <div className={`ml-6 rounded-r-lg px-3 py-1.5 text-sm ${getRevealClasses(msg.revealedTeam)}`}>
                   <div className="flex items-center gap-2 flex-wrap">
-                    <span className="opacity-60">↳</span>
                     <span>{msg.playerAvatar || "👆"}</span>
                     <span className="font-medium">{msg.playerName}</span>
                     <span className="opacity-75">found</span>
                     <span className="font-bold">{msg.message}</span>
-                    <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${getRevealBadgeClasses(msg.revealedTeam)}`}>
-                      {getRevealLabel(msg.revealedTeam)}
-                    </span>
                     <span className="ml-auto text-[10px] opacity-50">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
