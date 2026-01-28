@@ -695,7 +695,7 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
     message: `${sanitized} ${count}`,
     timestamp: serverTimestamp(),
     type: "clue",
-    clueTeam: playerData.team as "red" | "blue",
+    clueTeam: roomData.currentTeam as "red" | "blue",
   });
 }
 
