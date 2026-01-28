@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import { REACTION_EMOJIS } from "@/shared/constants";
 import type { Player } from "@/shared/types";
 
@@ -22,12 +22,32 @@ export function MessageReactions({
   onRemoveReaction,
 }: MessageReactionsProps) {
   const [showPicker, setShowPicker] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
+
+  // Calculate picker position when opening
+  const openPicker = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // Position above the button, aligned to the left
+      setPickerPosition({
+        top: rect.top - 8, // 8px gap above button
+        left: rect.left,
+      });
+    }
+    setShowPicker(true);
+  }, []);
 
   // Close picker when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
         setShowPicker(false);
       }
     }
@@ -108,41 +128,55 @@ export function MessageReactions({
         </button>
       ))}
 
-      {/* Add reaction button */}
-      <div ref={pickerRef} className="relative">
-        <button
-          onClick={() => setShowPicker(!showPicker)}
-          disabled={!currentPlayerId}
-          title="Add reaction"
-          className="inline-flex items-center justify-center w-6 h-6 rounded-full text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+      {/* Add reaction button - smiley face icon */}
+      <button
+        ref={buttonRef}
+        onClick={() => (showPicker ? setShowPicker(false) : openPicker())}
+        disabled={!currentPlayerId}
+        title="Add reaction"
+        className="inline-flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-0 group-hover:opacity-100 focus:opacity-100"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className="w-4 h-4"
         >
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 20 20"
-            fill="currentColor"
-            className="w-4 h-4"
-          >
-            <path d="M10 18a8 8 0 100-16 8 8 0 000 16zm.75-11.25a.75.75 0 00-1.5 0v2.5h-2.5a.75.75 0 000 1.5h2.5v2.5a.75.75 0 001.5 0v-2.5h2.5a.75.75 0 000-1.5h-2.5v-2.5z" />
-          </svg>
-        </button>
+          <circle cx="12" cy="12" r="10" />
+          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
+          <line x1="9" y1="9" x2="9.01" y2="9" />
+          <line x1="15" y1="9" x2="15.01" y2="9" />
+        </svg>
+      </button>
 
-        {/* Reaction picker popup */}
-        {showPicker && (
-          <div className="absolute bottom-full left-0 mb-1 p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50">
-            <div className="grid grid-cols-5 gap-1" style={{ width: "180px" }}>
-              {REACTION_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => handlePickerSelect(emoji)}
-                  className="w-8 h-8 flex items-center justify-center text-lg hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
+      {/* Reaction picker popup - fixed position to escape overflow container */}
+      {showPicker && (
+        <div
+          ref={pickerRef}
+          className="fixed p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+          style={{
+            top: pickerPosition.top,
+            left: pickerPosition.left,
+            transform: "translateY(-100%)",
+          }}
+        >
+          <div className="grid grid-cols-5 gap-1" style={{ width: "180px" }}>
+            {REACTION_EMOJIS.map((emoji) => (
+              <button
+                key={emoji}
+                onClick={() => handlePickerSelect(emoji)}
+                className="w-8 h-8 flex items-center justify-center text-lg hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+              >
+                {emoji}
+              </button>
+            ))}
           </div>
-        )}
-      </div>
+        </div>
+      )}
     </div>
   );
 }

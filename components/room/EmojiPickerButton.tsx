@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
 import EmojiPicker, { Theme, EmojiClickData } from "emoji-picker-react";
 import { useTheme } from "@/components/ThemeProvider";
 
@@ -11,13 +11,33 @@ interface EmojiPickerButtonProps {
 
 export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef<HTMLDivElement>(null);
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const buttonRef = useRef<HTMLButtonElement>(null);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
+
+  // Calculate picker position when opening
+  const openPicker = useCallback(() => {
+    if (buttonRef.current) {
+      const rect = buttonRef.current.getBoundingClientRect();
+      // Position above the button, aligned to the right edge
+      setPickerPosition({
+        top: rect.top - 8, // 8px gap above button
+        left: Math.max(8, rect.right - 320), // Align right edge, but keep 8px from screen edge
+      });
+    }
+    setIsOpen(true);
+  }, []);
 
   // Close picker when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(event.target as Node)) {
+      if (
+        pickerRef.current &&
+        !pickerRef.current.contains(event.target as Node) &&
+        buttonRef.current &&
+        !buttonRef.current.contains(event.target as Node)
+      ) {
         setIsOpen(false);
       }
     }
@@ -48,10 +68,11 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
   };
 
   return (
-    <div ref={containerRef} className="relative">
+    <>
       <button
+        ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen(!isOpen)}
+        onClick={() => (isOpen ? setIsOpen(false) : openPicker())}
         disabled={disabled}
         className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Open emoji picker"
@@ -74,8 +95,17 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
         </svg>
       </button>
 
+      {/* Fixed position picker to escape overflow containers */}
       {isOpen && (
-        <div className="absolute bottom-full right-0 mb-2 z-50">
+        <div
+          ref={pickerRef}
+          className="fixed z-50"
+          style={{
+            top: pickerPosition.top,
+            left: pickerPosition.left,
+            transform: "translateY(-100%)",
+          }}
+        >
           <EmojiPicker
             onEmojiClick={handleEmojiClick}
             theme={resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT}
@@ -88,6 +118,6 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
           />
         </div>
       )}
-    </div>
+    </>
   );
 }

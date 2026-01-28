@@ -56,7 +56,7 @@ export default function ChatLog({
                   </div>
                 ) : (
                   // Chat message - IRC style with brackets
-                  <div>
+                  <div className="group">
                     <div className="text-gray-800 dark:text-gray-200">
                       <span className="text-gray-400 dark:text-gray-500 text-xs">[{time}]</span>{" "}
                       {avatar && <span className="not-italic">{avatar}</span>}
