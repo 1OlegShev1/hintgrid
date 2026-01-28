@@ -71,10 +71,10 @@ export default function TeamLobby({
               <h2 className="text-xl font-semibold">Game Paused - Assign Roles</h2>
               <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
                 {gameState.pauseReason === "clueGiverDisconnected" && (
-                  <>The {pausedTeam} team needs a clue giver to continue</>
+                  <>The {pausedTeam} team needs a hinter to continue</>
                 )}
                 {gameState.pauseReason === "noGuessers" && (
-                  <>The {pausedTeam} team needs at least one guesser to continue</>
+                  <>The {pausedTeam} team needs at least one seeker to continue</>
                 )}
                 {gameState.pauseReason === "teamDisconnected" && (
                   <>The {pausedTeam} team needs players to continue</>
@@ -203,7 +203,7 @@ export default function TeamLobby({
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                     </svg>
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Clue Giver</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">Hinter</span>
                   </div>
                   {showControls && (
                     <button
@@ -222,7 +222,7 @@ export default function TeamLobby({
                     </button>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ml-6">Sees all cards • Gives one-word clues</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ml-6">Sees all cards • Gives one-word hints</p>
                 <div className={`rounded-lg p-3 text-base border ${
                   clueGiver?.id === currentPlayer?.id
                     ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600"
@@ -259,7 +259,7 @@ export default function TeamLobby({
                     <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                     </svg>
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Guessers</span>
+                    <span className="font-semibold text-gray-800 dark:text-gray-200">Seekers</span>
                   </div>
                   {showControls && (
                     <button
@@ -275,10 +275,10 @@ export default function TeamLobby({
                     </button>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ml-6">Guess words based on clues</p>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ml-6">Find words based on hints</p>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {guessers.length === 0 ? (
-                    <div className="text-base text-gray-500 dark:text-gray-400">No guessers yet</div>
+                    <div className="text-base text-gray-500 dark:text-gray-400">No seekers yet</div>
                   ) : (
                     guessers.map((player) => (
                       <div
@@ -358,7 +358,7 @@ export default function TeamLobby({
                     <div className={`text-sm mt-1 ml-9 ${
                       player.team === "red" ? "text-red-600 dark:text-red-400" : "text-blue-600 dark:text-blue-400"
                     }`}>
-                      {player.team} {player.role === "clueGiver" ? "clue giver" : "guesser"}
+                      {player.team} {player.role === "clueGiver" ? "hinter" : "seeker"}
                     </div>
                   )}
                   {!player.team || !player.role ? (

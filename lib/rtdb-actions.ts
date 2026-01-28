@@ -687,6 +687,7 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
   await push(ref(db, `rooms/${roomCode}/messages`), {
     playerId,
     playerName: playerData.name,
+    playerAvatar: playerData.avatar || "🐱",
     message: `${sanitized} ${count}`,
     timestamp: serverTimestamp(),
     type: "clue",
@@ -798,16 +799,8 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
   ).length;
   const newGuesses = (roomData.remainingGuesses ?? 1) - 1;
 
-  // Build system message for the reveal
-  const teamLabel = card.team === "red" ? "Red" 
-    : card.team === "blue" ? "Blue" 
-    : card.team === "trap" ? "Trap" 
-    : "Neutral";
-  const teamEmoji = card.team === "red" ? "🔴" 
-    : card.team === "blue" ? "🔵" 
-    : card.team === "trap" ? "⬛" 
-    : "🟡";
-  const revealMessage = `${teamEmoji} "${card.word}" revealed — ${teamLabel}`;
+  // Build reveal message
+  const revealMessage = card.word;
 
   // Update remaining card fields and game state
   // Note: revealed is already set to true by the transaction above
@@ -862,13 +855,15 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     });
   }
 
-  // Add system message about the reveal (after board update)
+  // Add reveal message (after board update)
   await push(ref(db, `rooms/${roomCode}/messages`), {
-    playerId: null,
-    playerName: "System",
+    playerId,
+    playerName: playerData.name,
+    playerAvatar: playerData.avatar || "🐱",
     message: revealMessage,
     timestamp: serverTimestamp(),
-    type: "system",
+    type: "reveal",
+    revealedTeam: card.team,
   });
 }
 

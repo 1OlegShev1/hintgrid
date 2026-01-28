@@ -1,10 +1,10 @@
 ## Game Rules Summary
 
-- Two teams (red and blue) with a clue giver and guessers.
+- Two teams (red and blue) with a hinter and seekers.
 - 25 words in a 5x5 grid; one trap, 7 neutral, 8 for one team, 9 for the starting team.
-- Clue giver gives a one-word clue plus a number.
+- Hinter gives a one-word clue plus a number.
 - Clues cannot be any of the words currently on the board.
-- Guessers guess up to the clue number plus one extra guess.
+- Seekers guess up to the clue number plus one extra guess.
 - Turn ends immediately on guessing the opposing team or a neutral card.
 - Guessing the trap ends the game immediately (instant loss).
 - A team wins by revealing all of its cards.
@@ -13,7 +13,7 @@
 
 This project follows standard word-guessing game rules, with the following clarifications:
 
-- A clue is required before guessers can guess.
+- A clue is required before seekers can guess.
 - Remaining guesses are tracked as `count + 1`.
 - A timer is enabled per turn (configurable: 30s, 60s, or 90s).
 - Word packs available: "classic" (299 words) and "kahoot" (70 words). Owner selects before game start.
@@ -21,22 +21,22 @@ This project follows standard word-guessing game rules, with the following clari
   - Exact matches with board words (case-insensitive)
   - Prefix/suffix relationships (e.g., "farm" blocked if "farmer" on board, but "war" allowed even if "dwarf" on board)
   - Simple plural variants (adding/removing S/ES)
-- Guessers vote on a card first; a teammate must confirm once votes meet a threshold.
-  - Vote threshold: 1 vote for 1-3 guessers, 2 votes for 4+ guessers.
-  - Threshold is based on total guessers assigned to the team (not affected by temporary disconnections).
+- Seekers vote on a card first; a teammate must confirm once votes meet a threshold.
+  - Vote threshold: 1 vote for 1-3 seekers, 2 votes for 4+ seekers.
+  - Threshold is based on total seekers assigned to the team (not affected by temporary disconnections).
 - Room owner can start rematch after game ends. Players can reassign roles before rematch, or owner can randomize teams.
 - Minimum 4 players on teams required to start. Teams don't need to be equal size.
 - Players choose a lobby team and role before start; owner can randomize assignments and override choices.
 - Players can remain as spectators (not on a team) when the game starts.
-- Room owner can add spectators to teams as guessers during an ongoing game.
+- Room owner can add spectators to teams as seekers during an ongoing game.
 - Only the room owner can start the game.
 - Room owner can end an active game, returning all players to the lobby.
 
 ## Pause and Disconnection Handling
 
 The game pauses automatically at **turn transitions** if the incoming team lacks required players:
-- The team's clue giver is disconnected (needed to give clue).
-- The team has no connected guessers (needed to guess).
+- The team's hinter is disconnected (needed to give clue).
+- The team has no connected seekers (needed to guess).
 - The entire team is disconnected.
 
 **When paused:**
@@ -46,7 +46,7 @@ The game pauses automatically at **turn transitions** if the incoming team lacks
 - The room owner sees a "Resume Game" button when conditions are met.
 
 **Resuming:**
-- The room owner clicks "Resume Game" once the paused team has at least one clue giver and one guesser connected.
+- The room owner clicks "Resume Game" once the paused team has at least one hinter and one seeker connected.
 - The turn timer resets and the game continues.
 
 **Player disconnection:**

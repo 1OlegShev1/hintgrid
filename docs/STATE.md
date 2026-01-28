@@ -47,7 +47,7 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
           "playerName": "...",
           "message": "...",
           "timestamp": 1234567890,
-          "type": "clue|chat|system"
+          "type": "clue|chat|system|reveal"
         }
       }
     }
@@ -96,8 +96,8 @@ Requires Firebase Admin credentials (`gcloud auth application-default login`).
 ### Turn Flow
 
 1. `startGame` generates board, sets starting team
-2. Clue giver gives clue → `currentClue` and `remainingGuesses` set
-3. Guessers vote and confirm reveals
+2. Hinter gives clue → `currentClue` and `remainingGuesses` set
+3. Seekers vote and confirm reveals
 4. Wrong guess or out of guesses → switch teams
 5. Trap → game over, other team wins
 6. All team cards revealed → team wins
@@ -106,14 +106,14 @@ Requires Firebase Admin credentials (`gcloud auth application-default login`).
 
 At turn transitions, the game checks if the incoming team has **connected** players:
 - No connected players at all → `pauseReason: "teamDisconnected"`
-- No connected clue giver (before clue given) → `pauseReason: "clueGiverDisconnected"`
-- No connected guessers (after clue given) → `pauseReason: "noGuessers"`
+- No connected hinter (before clue given) → `pauseReason: "clueGiverDisconnected"`
+- No connected seekers (after clue given) → `pauseReason: "noGuessers"`
 
 When paused:
 - `paused: true`, `pauseReason` set, `turnStartTime: null`
 - Owner can reassign roles from connected players or spectators
 - Owner can remove any player from their team/role
-- Owner calls `resumeGame` when team has connected clue giver + guesser
+- Owner calls `resumeGame` when team has connected hinter + seeker
 
 **Player Removal (Owner Only):**
 - In lobby (before game starts): Owner can remove any player from their team
@@ -305,8 +305,8 @@ The `database.rules.json` file enforces server-side validation:
 - Room deletion: Owner only
 - Owner reassignment: Current owner, or any player if owner is disconnected
 - Game state (`gameStarted`): Owner only
-- Turn state (`currentTeam`, `gameOver`, `winner`, etc.): Owner or guessers
-- Board modifications: Owner, clue giver, or guesser
+- Turn state (`currentTeam`, `gameOver`, `winner`, etc.): Owner or seekers
+- Board modifications: Owner, hinter, or seeker
 - Vote modifications: Only the voting player can modify their own vote
 - Player data: Self or owner
 - Messages: Any authenticated player can send; owner can delete all
@@ -320,7 +320,7 @@ The `database.rules.json` file enforces server-side validation:
 
 **Limitations** (validated client-side only):
 - Clue word not matching board words
-- Duplicate clue giver prevention
+- Duplicate hinter prevention
 - Vote threshold logic
 - Teams ready validation
 - Profanity filtering (player names, clues blocked; chat messages censored)

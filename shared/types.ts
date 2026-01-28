@@ -50,9 +50,12 @@ export interface ChatMessage {
   id: string;
   playerId?: string;
   playerName: string;
+  playerAvatar?: string;
   message: string;
   timestamp: number;
-  type: "clue" | "chat" | "system";
+  type: "clue" | "chat" | "system" | "reveal";
+  // For reveal messages: what team the card belonged to
+  revealedTeam?: Team;
 }
 
 export type RoomClosedReason = "abandoned" | "allPlayersLeft" | "timeout";
@@ -93,9 +96,12 @@ export interface FirebasePlayerData {
 export interface FirebaseMessageData {
   playerId: string | null;
   playerName: string;
+  playerAvatar?: string;
   message: string;
   timestamp: number;
-  type: "clue" | "chat" | "system";
+  type: "clue" | "chat" | "system" | "reveal";
+  // For reveal messages: what team the card belonged to
+  revealedTeam?: Team;
 }
 
 /**

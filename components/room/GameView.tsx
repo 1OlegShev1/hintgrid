@@ -100,7 +100,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
                   <span className={`font-bold text-lg ${
                     currentPlayer.team === "red" ? "text-red-700 dark:text-red-200" : "text-blue-700 dark:text-blue-200"
                   }`}>
-                    {currentPlayer.team.toUpperCase()} {currentPlayer.role === "clueGiver" ? "Clue Giver" : "Guesser"}
+                    {currentPlayer.team.toUpperCase()} {currentPlayer.role === "clueGiver" ? "Hinter" : "Seeker"}
                   </span>
                   <span className={`text-sm ${
                     currentPlayer.team === "red" ? "text-red-600 dark:text-red-300" : "text-blue-600 dark:text-blue-300"

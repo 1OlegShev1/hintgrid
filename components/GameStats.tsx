@@ -114,7 +114,7 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
       {topPlayers.length > 0 && (
         <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
           <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">
-            Top Guessers
+            Top Seekers
           </h4>
           <div className="space-y-2">
             {topPlayers.map((stat, index) => (
@@ -156,7 +156,7 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
           </div>
           {playerStats.length === 0 && (
             <p className="text-sm text-gray-500 dark:text-gray-400">
-              No cards were revealed by guessers.
+              No cards were revealed by seekers.
             </p>
           )}
         </div>

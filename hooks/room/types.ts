@@ -98,9 +98,11 @@ export function toMessages(messagesData: Record<string, FirebaseMessageData> | n
       id,
       playerId: m.playerId || undefined,
       playerName: m.playerName,
+      playerAvatar: m.playerAvatar,
       message: m.message,
       timestamp: m.timestamp || Date.now(),
       type: m.type,
+      revealedTeam: m.revealedTeam,
     }))
     .sort((a, b) => a.timestamp - b.timestamp);
 }
