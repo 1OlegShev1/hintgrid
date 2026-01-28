@@ -179,7 +179,7 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 |-----|-------------|
 | `hintgrid_audio_unlocked` | Tracks if user has interacted with the page (for browser autoplay policy). Persists across page reloads within same tab session. |
 
-**Note:** Key is defined in `SoundContext.tsx`. This enables music to autoplay after navigation (which uses full page reload via `window.location.href`).
+**Note:** Key is defined in `SoundContext.tsx`. This flag indicates user intent (music should auto-play), but **a user gesture is still required on each page load** to unlock the browser's audio context. The code always sets up event listeners for user interaction; sessionStorage just remembers that music should start playing once audio is unlocked.
 
 ### Game Configuration Constants
 

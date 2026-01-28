@@ -174,22 +174,28 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   // Computed music volume (30% of master volume)
   const musicVolume = volume * MUSIC_VOLUME_RATIO;
 
-  // Unlock audio context on first user interaction (browser autoplay policy)
-  // Also proactively resume if already unlocked from sessionStorage
-  useEffect(() => {
-    // If already unlocked from sessionStorage, just resume audio context
-    if (audioUnlocked) {
-      unlockAudioContext();
-      return;
-    }
+  // Track if audio context has been unlocked on THIS page load
+  // (separate from sessionStorage which just tracks user intent)
+  const [audioContextReady, setAudioContextReady] = useState(false);
 
+  // Unlock audio context on first user interaction (browser autoplay policy)
+  // IMPORTANT: We must ALWAYS set up event listeners on each page load, even if
+  // sessionStorage says user interacted before. Browser requires a user gesture
+  // on each page load to unlock the audio context.
+  useEffect(() => {
     const events = ["click", "touchstart", "keydown"];
     
-    const handleInteraction = () => {
-      // Set unlocked and persist to sessionStorage (survives page reloads)
-      setAudioUnlocked(true);
-      sessionStorage.setItem(SESSION_AUDIO_UNLOCKED_KEY, "true");
-      unlockAudioContext();
+    const handleInteraction = async () => {
+      // Persist to sessionStorage so we know music should auto-play
+      if (!audioUnlocked) {
+        setAudioUnlocked(true);
+        sessionStorage.setItem(SESSION_AUDIO_UNLOCKED_KEY, "true");
+      }
+      
+      // Actually unlock the audio context (requires user gesture)
+      await unlockAudioContext();
+      setAudioContextReady(true);
+      
       events.forEach(event => {
         document.removeEventListener(event, handleInteraction);
       });
@@ -204,7 +210,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         document.removeEventListener(event, handleInteraction);
       });
     };
-  }, [audioUnlocked]);
+  }, []); // No dependencies - set up once on mount
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -282,8 +288,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       howlRef.current = null;
     }
 
-    // Don't play if no track, music disabled, not hydrated, or user prefers reduced motion
-    if (!currentTrack || !musicEnabled || !isHydrated || prefersReducedMotion || !audioUnlocked) {
+    // Don't play if no track, music disabled, not hydrated, user prefers reduced motion,
+    // or audio context hasn't been unlocked by user gesture yet
+    if (!currentTrack || !musicEnabled || !isHydrated || prefersReducedMotion || !audioContextReady) {
       return;
     }
 
@@ -311,7 +318,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         }, 300);
       }
     };
-  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioUnlocked]);
+  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioContextReady]);
 
   // Update volume when musicVolume changes (without recreating/restarting howl)
   useEffect(() => {

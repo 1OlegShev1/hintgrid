@@ -34,15 +34,15 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   const getRevealClasses = (team?: string) => {
     switch (team) {
       case "red":
-        return "bg-red-200 dark:bg-red-800/60 text-red-800 dark:text-red-100 border-l-4 border-red-500";
+        return "bg-red-200 dark:bg-red-800/60 text-red-800 dark:text-red-100";
       case "blue":
-        return "bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100 border-l-4 border-blue-500";
+        return "bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100";
       case "trap":
-        return "bg-gray-900 dark:bg-black text-white border-l-4 border-red-600";
+        return "bg-gray-900 dark:bg-black text-white";
       case "neutral":
-        return "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100 border-l-4 border-amber-500";
+        return "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100";
       default:
-        return "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200 border-l-4 border-gray-500";
+        return "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200";
     }
   };
 
@@ -73,7 +73,7 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-96 flex flex-col">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-[28rem] flex flex-col">
       <h3 className="font-semibold px-4 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
         Game Log
       </h3>
@@ -107,7 +107,7 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
                 })()
               ) : msg.type === "reveal" ? (
                 // Reveal message - indented under clue, colored by card team
-                <div className={`ml-6 rounded-r-lg px-3 py-1.5 text-sm ${getRevealClasses(msg.revealedTeam)}`}>
+                <div className={`ml-3 rounded-lg px-3 py-1.5 text-sm ${getRevealClasses(msg.revealedTeam)}`}>
                   <div className="flex items-center gap-2 flex-wrap">
                     <span>{msg.playerAvatar || "👆"}</span>
                     <span className="font-medium">{msg.playerName}</span>
