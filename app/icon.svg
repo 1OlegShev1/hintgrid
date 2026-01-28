@@ -1,6 +1,7 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
   <rect width="32" height="32" rx="6" fill="#1e293b"/>
-  <text x="16" y="22" font-family="system-ui, -apple-system, sans-serif" font-size="16" font-weight="700" fill="#f8fafc" text-anchor="middle">CC</text>
-  <circle cx="24" cy="8" r="3" fill="#ef4444"/>
-  <circle cx="8" cy="8" r="3" fill="#3b82f6"/>
+  <path d="M32 0 L32 32 L0 32 Z" fill="#0f172a" opacity="0.5"/>
+  <text x="16" y="21" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="800" fill="#f8fafc" text-anchor="middle" letter-spacing="-1">HG</text>
+  <rect x="4" y="26" width="10" height="3" rx="1" fill="#3b82f6"/>
+  <rect x="18" y="26" width="10" height="3" rx="1" fill="#ef4444"/>
 </svg>
