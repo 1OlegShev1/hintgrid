@@ -8,7 +8,8 @@ interface ChatLogProps {
 }
 
 export default function ChatLog({ messages, players = [] }: ChatLogProps) {
-  // Show both chat and system messages (IRC-style)
+  // Show chat and user-related system messages (not game-system)
+  // User system messages: offline, joined team, spectator, owner transfer
   const chatMessages = messages.filter((msg) => msg.type === "chat" || msg.type === "system");
 
   // Helper to get avatar by playerId

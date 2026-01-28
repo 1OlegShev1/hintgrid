@@ -102,6 +102,7 @@ export function toMessages(messagesData: Record<string, FirebaseMessageData> | n
       message: m.message,
       timestamp: m.timestamp || Date.now(),
       type: m.type,
+      clueTeam: m.clueTeam,
       revealedTeam: m.revealedTeam,
     }))
     .sort((a, b) => a.timestamp - b.timestamp);

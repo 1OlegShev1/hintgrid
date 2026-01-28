@@ -490,13 +490,13 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     ...playerUpdates,
   });
 
-  // Add system message
+  // Add game system message
   await push(ref(db, `rooms/${roomCode}/messages`), {
     playerId: null,
     playerName: "System",
     message: "Game ended by room owner.",
     timestamp: serverTimestamp(),
-    type: "system",
+    type: "game-system",
   });
 }
 
@@ -535,7 +535,7 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
     playerName: "System",
     message: "Game resumed.",
     timestamp: serverTimestamp(),
-    type: "system",
+    type: "game-system",
   });
 }
 
@@ -594,8 +594,12 @@ export async function setLobbyRole(
   const isOwner = requesterId && roomData.ownerId === requesterId;
   const isSpectator = !playerData?.team || !playerData?.role;
   
-  // During active game: only allow owner to add spectators as guessers
-  if (roomData.gameStarted && !roomData.gameOver && !roomData.paused) {
+  // Team management modes:
+  // - Open Mode (Lobby, Paused, Game Over): Anyone can join/leave, owner can remove others
+  // - Restricted Mode (Active Game): Only owner can add spectators as guessers
+  const isActiveGame = roomData.gameStarted && !roomData.gameOver && !roomData.paused;
+  
+  if (isActiveGame) {
     if (!isOwner) throw new Error("Only owner can add players during game");
     if (!isSpectator) throw new Error("Can only add spectators during game");
     if (role === "clueGiver") throw new Error("Can only add as guesser during game");
@@ -691,6 +695,7 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
     message: `${sanitized} ${count}`,
     timestamp: serverTimestamp(),
     type: "clue",
+    clueTeam: playerData.team as "red" | "blue",
   });
 }
 

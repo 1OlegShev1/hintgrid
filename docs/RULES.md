@@ -64,4 +64,28 @@ The game pauses automatically at **turn transitions** if the incoming team lacks
 - This frees up role slots and keeps the team list accurate.
 - A system message notifies the room when this happens.
 
+## Team Management
+
+Team management operates in two modes based on game state:
+
+**Open Mode** (Lobby, Paused, Game Over):
+- Players can join any team as hinter (if slot is empty) or seeker
+- Players can leave their team (become spectators)
+- Room owner can remove any other player from their team (they become spectators)
+
+**Restricted Mode** (Active Game — started, not paused, not over):
+- Players cannot change their own team/role
+- Only the room owner can add spectators to teams, and only as seekers (not hinter)
+- Room owner cannot remove players from teams during active gameplay
+
+| Action | Who | Lobby | Active | Paused | Game Over |
+|--------|-----|-------|--------|--------|-----------|
+| Join as Hinter | Self | ✅ | ❌ | ✅ | ✅ |
+| Join as Seeker | Self | ✅ | ❌ | ✅ | ✅ |
+| Leave Team | Self | ✅ | ❌ | ✅ | ✅ |
+| Add Spectator | Owner | ✅ | ✅* | ✅ | ✅ |
+| Remove from Team | Owner | ✅ | ❌ | ✅ | ✅ |
+
+*During active game, owner can only add spectators as seekers (not hinter).
+
 If we introduce deviations or house rules, list them here explicitly.

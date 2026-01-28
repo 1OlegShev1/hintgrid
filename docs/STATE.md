@@ -47,7 +47,7 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
           "playerName": "...",
           "message": "...",
           "timestamp": 1234567890,
-          "type": "clue|chat|system|reveal"
+          "type": "clue|chat|system|reveal|game-system"
         }
       }
     }
@@ -115,12 +115,39 @@ When paused:
 - Owner can remove any player from their team/role
 - Owner calls `resumeGame` when team has connected hinter + seeker
 
-**Player Removal (Owner Only):**
-- In lobby (before game starts): Owner can remove any player from their team
-- During paused game: Owner can remove any player from their team
+### Game States
+
+The room can be in one of four states, determined by the `gameStarted`, `paused`, and `gameOver` flags:
+
+| State | Flags | Description |
+|-------|-------|-------------|
+| **Lobby** | `gameStarted: false` | Pre-game, players joining and selecting teams |
+| **Active Game** | `gameStarted: true`, `paused: false`, `gameOver: false` | Game in progress |
+| **Paused** | `gameStarted: true`, `paused: true`, `gameOver: false` | Game paused due to disconnections |
+| **Game Over** | `gameOver: true` | Game finished, preparing for rematch |
+
+### Team Management Modes
+
+Team management permissions depend on game state:
+
+**Open Mode** (Lobby, Paused, Game Over):
+```typescript
+const isActiveGame = gameStarted && !paused && !gameOver;
+const isTeamManagementAllowed = !isActiveGame;
+```
+
+- Players can join/leave teams freely
+- Owner can remove any other player from their team (they become spectators)
+
+**Restricted Mode** (Active Game):
+- Players cannot change their own team/role
+- Only owner can add spectators as seekers (not hinter)
+- Owner cannot remove players during active gameplay
+
+**Player Removal:**
 - Removing a player clears their team/role, making them a spectator
 - Spectators can rejoin a team or leave the room
-- Truly removing a player (kicking from room) is not implemented; they become spectators
+- Truly kicking a player from the room is not implemented; they just become spectators
 
 ### Real-time Subscriptions
 

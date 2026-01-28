@@ -41,6 +41,12 @@ export default function TeamLobby({
   // Check if game is paused (mid-game role reassignment mode)
   const isPaused = gameState.gameStarted && gameState.paused && !gameState.gameOver;
   
+  // Team management (join/leave/remove) is allowed when NOT in active gameplay.
+  // Active gameplay = game started AND not paused AND not over.
+  // Allowed in: Lobby, Paused, Game Over
+  const isActiveGame = gameState.gameStarted && !gameState.paused && !gameState.gameOver;
+  const isTeamManagementAllowed = !isActiveGame;
+  
   // Check if the paused team has required roles filled
   const pausedTeam = gameState.pausedForTeam;
   const pausedTeamPlayers = players.filter((p) => p.team === pausedTeam);
@@ -48,17 +54,12 @@ export default function TeamLobby({
   const hasClueGiver = pausedTeamPlayers.some((p) => p.role === "clueGiver" && p.connected !== false);
   const hasGuesser = pausedTeamPlayers.some((p) => p.role === "guesser" && p.connected !== false);
   const canResume = hasClueGiver && hasGuesser;
-  // Owner can remove players from their team/role when:
-  // 1. Game is paused (reassigning roles for the paused team)
-  // 2. In lobby (not started) - can remove anyone from teams
-  // Cannot remove yourself
+  
+  // Owner can remove players from their team/role when team management is allowed
+  // (Lobby, Paused, or Game Over). Cannot remove yourself.
   const canRemovePlayer = (playerId?: string) => {
     if (!isRoomOwner || !playerId || playerId === currentPlayer?.id) return false;
-    // During paused game, owner can remove anyone
-    if (isPaused) return true;
-    // In lobby (not started), owner can remove anyone from teams
-    if (!gameState.gameStarted) return true;
-    return false;
+    return isTeamManagementAllowed;
   };
 
   return (

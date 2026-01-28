@@ -53,7 +53,9 @@ export interface ChatMessage {
   playerAvatar?: string;
   message: string;
   timestamp: number;
-  type: "clue" | "chat" | "system" | "reveal";
+  type: "clue" | "chat" | "system" | "reveal" | "game-system";
+  // For clue messages: which team gave the clue
+  clueTeam?: "red" | "blue";
   // For reveal messages: what team the card belonged to
   revealedTeam?: Team;
 }
@@ -99,7 +101,9 @@ export interface FirebaseMessageData {
   playerAvatar?: string;
   message: string;
   timestamp: number;
-  type: "clue" | "chat" | "system" | "reveal";
+  type: "clue" | "chat" | "system" | "reveal" | "game-system";
+  // For clue messages: which team gave the clue
+  clueTeam?: "red" | "blue";
   // For reveal messages: what team the card belonged to
   revealedTeam?: Team;
 }
