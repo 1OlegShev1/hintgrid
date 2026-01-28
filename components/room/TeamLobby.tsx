@@ -438,7 +438,7 @@ export default function TeamLobby({
                       )}
                     </div>
                   ))}
-                  {showControls && (
+                  {showControls && !guessers.some(p => p.id === currentPlayer?.id) && (
                     <button
                       onClick={() => onSetRole(team, "guesser")}
                       data-testid={`lobby-join-${team}-guesser`}
