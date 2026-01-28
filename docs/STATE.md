@@ -77,11 +77,17 @@ This is **reliable** because it's server-side — no client cooperation needed.
 - If the room owner disconnects for 30+ seconds, ownership transfers to another connected player
 - If the owner explicitly leaves, ownership transfers immediately
 
-**Explicit leave** (via navbar click or closing tab):
+**Explicit leave** (via Leave button):
 - Player's `connected` is set to `false`, `lastSeen` updated
 - Player's votes are cleared from all cards (each vote removed individually for permission)
 - If player was owner, ownership transfers immediately
-- The `leaveRoom` callback uses refs to ensure it always has the latest uid/roomCode
+- `goOffline()` triggers immediate Firebase disconnect (clean disconnect)
+
+**Idle timeout** (lobby only):
+- After 1 hour of no activity in lobby, "Are you still there?" modal appears
+- User has 60 seconds to respond before being auto-redirected to home
+- Disabled during active games (only triggers in lobby or game-over state)
+- Helps clean up abandoned rooms from users who leave tabs open
 
 **Backup manual cleanup**:
 Run `npm run cleanup:rooms -- --hours 24` to delete rooms older than 24 hours.

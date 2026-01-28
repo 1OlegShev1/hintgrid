@@ -1,6 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getAuth, Auth, connectAuthEmulator } from "firebase/auth";
-import { getDatabase as getDatabaseSdk, Database, connectDatabaseEmulator, goOffline as firebaseGoOffline } from "firebase/database";
+import { getDatabase as getDatabaseSdk, Database, connectDatabaseEmulator, goOffline as firebaseGoOffline, goOnline as firebaseGoOnline } from "firebase/database";
 
 let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
@@ -76,5 +76,16 @@ export function goOffline(): void {
   const db = getDatabase();
   if (db) {
     firebaseGoOffline(db);
+  }
+}
+
+/**
+ * Reconnect to Firebase Database.
+ * Call this after goOffline() to restore connection.
+ */
+export function goOnline(): void {
+  const db = getDatabase();
+  if (db) {
+    firebaseGoOnline(db);
   }
 }

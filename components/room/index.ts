@@ -6,5 +6,6 @@ export { default as CompactTeams } from "./CompactTeams";
 export { default as RoomClosedModal } from "./RoomClosedModal";
 export { default as JoinRoomForm } from "./JoinRoomForm";
 export { default as ConnectionStatus } from "./ConnectionStatus";
+export { default as IdleWarningModal } from "./IdleWarningModal";
 export { GameView } from "./GameView";
 export { LobbyView } from "./LobbyView";

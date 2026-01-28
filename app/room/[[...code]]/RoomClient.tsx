@@ -4,7 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import TransitionOverlay from "@/components/TransitionOverlay";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
-import { goOffline } from "@/lib/firebase";
+import { goOffline, goOnline } from "@/lib/firebase";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useFirebaseConnection } from "@/hooks/useFirebaseConnection";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
@@ -19,8 +19,13 @@ import {
   ConnectionStatus,
   GameView,
   LobbyView,
+  IdleWarningModal,
 } from "@/components/room";
 import OfflineBanner from "@/components/OfflineBanner";
+import { useIdleTimeout } from "@/hooks/useIdleTimeout";
+
+// 1 hour idle timeout (only active in lobby, not during game)
+const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
 
 export default function RoomPage() {
   const pathname = usePathname();
@@ -90,10 +95,31 @@ export default function RoomPage() {
     isGameOver: room.gameState?.gameOver,
   });
 
+  // Idle timeout - only active in lobby (not during game)
+  // Shows warning after 1 hour of inactivity, then redirects to home
+  const isInActiveGame = room.gameState?.gameStarted && !room.gameState?.gameOver;
+  const { isIdle, resetIdleTimer } = useIdleTimeout({
+    timeout: IDLE_TIMEOUT_MS,
+    enabled: !!playerName && !isInActiveGame, // Only track when in lobby
+  });
+
   // Leave room handler - triggers clean Firebase disconnect
   const handleLeaveRoom = () => {
     console.log("[Room] Leave button clicked - disconnecting...");
     goOffline(); // Triggers onDisconnect immediately (clean disconnect)
+    // Reconnect so home page can work normally
+    setTimeout(() => goOnline(), 100);
+    router.push("/");
+  };
+
+  // Handle idle warning responses
+  const handleIdleStay = () => {
+    resetIdleTimer();
+  };
+
+  const handleIdleLeave = () => {
+    // For idle timeout, just navigate away - onDisconnect will handle cleanup
+    // Don't call goOffline() as it disconnects Firebase entirely
     router.push("/");
   };
 
@@ -192,6 +218,14 @@ export default function RoomPage() {
           type="gameOver"
           team={overlays.transitionTeam}
           onComplete={overlays.dismissGameOver}
+        />
+      )}
+
+      {/* Idle Warning Modal - shows after 1 hour of inactivity in lobby */}
+      {isIdle && (
+        <IdleWarningModal
+          onStay={handleIdleStay}
+          onLeave={handleIdleLeave}
         />
       )}
       
