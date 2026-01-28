@@ -56,6 +56,22 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
     }
   };
 
+  // Get badge styling for reveal result
+  const getRevealBadgeClasses = (team?: string) => {
+    switch (team) {
+      case "red":
+        return "bg-red-500 text-white";
+      case "blue":
+        return "bg-blue-500 text-white";
+      case "trap":
+        return "bg-gray-900 text-white";
+      case "neutral":
+        return "bg-amber-500 text-white";
+      default:
+        return "bg-gray-500 text-white";
+    }
+  };
+
   return (
     <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-80 flex flex-col">
       <h3 className="font-semibold px-4 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
@@ -92,14 +108,14 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
               ) : msg.type === "reveal" ? (
                 // Reveal message - compact, indented style
                 <div className={`rounded-r-lg px-3 py-1.5 text-sm ${getRevealClasses(msg.revealedTeam)}`}>
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="opacity-60">↳</span>
                     <span>{msg.playerAvatar || "👆"}</span>
                     <span className="font-medium">{msg.playerName}</span>
                     <span className="opacity-75">found</span>
                     <span className="font-bold">{msg.message}</span>
-                    <span className="text-[10px] font-semibold uppercase opacity-75">
-                      ({getRevealLabel(msg.revealedTeam)})
+                    <span className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${getRevealBadgeClasses(msg.revealedTeam)}`}>
+                      {getRevealLabel(msg.revealedTeam)}
                     </span>
                     <span className="ml-auto text-[10px] opacity-50">
                       {new Date(msg.timestamp).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
