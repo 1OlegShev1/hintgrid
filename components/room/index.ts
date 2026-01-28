@@ -9,5 +9,3 @@ export { default as ConnectionStatus } from "./ConnectionStatus";
 export { default as IdleWarningModal } from "./IdleWarningModal";
 export { GameView } from "./GameView";
 export { LobbyView } from "./LobbyView";
-export { EmojiPickerButton } from "./EmojiPickerButton";
-export { MessageReactions } from "./MessageReactions";
