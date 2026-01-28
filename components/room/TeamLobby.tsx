@@ -1,3 +1,4 @@
+import { useState, useRef, useEffect } from "react";
 import type { GameState, Player, WordPack, TimerPreset } from "@/shared/types";
 import { TIMER_PRESETS, WORD_PACKS } from "@/shared/constants";
 import { getPackDisplayName, getWordCount } from "@/shared/words";
@@ -41,6 +42,28 @@ export default function TeamLobby({
   onResumeGame,
   showControls = true,
 }: TeamLobbyProps) {
+  // Dropdown states
+  const [isWordPackOpen, setIsWordPackOpen] = useState(false);
+  const [isTimerOpen, setIsTimerOpen] = useState(false);
+  const wordPackRef = useRef<HTMLDivElement>(null);
+  const timerRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (wordPackRef.current && !wordPackRef.current.contains(event.target as Node)) {
+        setIsWordPackOpen(false);
+      }
+      if (timerRef.current && !timerRef.current.contains(event.target as Node)) {
+        setIsTimerOpen(false);
+      }
+    }
+    if (isWordPackOpen || isTimerOpen) {
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => document.removeEventListener("mousedown", handleClickOutside);
+    }
+  }, [isWordPackOpen, isTimerOpen]);
+
   // Check if game is paused (mid-game role reassignment mode)
   const isPaused = gameState.gameStarted && gameState.paused && !gameState.gameOver;
   
@@ -108,64 +131,82 @@ export default function TeamLobby({
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Words:</span>
               {isRoomOwner ? (
-                <div className="relative group">
+                <div className="relative" ref={wordPackRef}>
                   <button
                     type="button"
-                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 min-w-[120px]"
+                    onClick={() => setIsWordPackOpen(!isWordPackOpen)}
+                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 min-w-[120px] hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                   >
                     <span className="truncate max-w-[150px]">
-                      {gameState.wordPack.map(p => getPackDisplayName(p)).join(", ")}
+                      {gameState.wordPack.length === 1 
+                        ? getPackDisplayName(gameState.wordPack[0])
+                        : `${gameState.wordPack.length} packs`}
                     </span>
                     <span className="text-gray-400 text-xs">({getWordCount(gameState.wordPack)})</span>
-                    <svg className="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg 
+                      className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isWordPackOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                     </svg>
                   </button>
-                  <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 min-w-[200px] hidden group-hover:block">
-                    <div className="p-2 space-y-1">
-                      {wordPackOptions.map((option) => {
-                        const isSelected = gameState.wordPack.includes(option.value);
-                        const packWordCount = getWordCount(option.value);
-                        return (
-                          <label
-                            key={option.value}
-                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={isSelected}
-                              onChange={() => {
-                                let newPacks: WordPack[];
-                                if (isSelected) {
-                                  // Don't allow deselecting the last pack
-                                  if (gameState.wordPack.length > 1) {
-                                    newPacks = gameState.wordPack.filter(p => p !== option.value);
-                                  } else {
-                                    return;
-                                  }
-                                } else {
-                                  newPacks = [...gameState.wordPack, option.value];
-                                }
-                                onWordPackChange(newPacks);
-                              }}
-                              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
-                            />
-                            <span className="text-sm font-medium">{option.label}</span>
-                            <span className="text-xs text-gray-500 ml-auto">{packWordCount}</span>
-                          </label>
-                        );
-                      })}
+                  {isWordPackOpen && (
+                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 min-w-[220px]">
+                      <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto">
+                        {wordPackOptions.map((option) => {
+                          const isSelected = gameState.wordPack.includes(option.value);
+                          const packWordCount = getWordCount(option.value);
+                          const isLastSelected = isSelected && gameState.wordPack.length === 1;
+                          return (
+                            <label
+                              key={option.value}
+                              className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer ${
+                                isLastSelected 
+                                  ? 'opacity-50 cursor-not-allowed' 
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              <input
+                                type="checkbox"
+                                checked={isSelected}
+                                disabled={isLastSelected}
+                                onChange={() => {
+                                  if (isLastSelected) return;
+                                  const newPacks = isSelected
+                                    ? gameState.wordPack.filter(p => p !== option.value)
+                                    : [...gameState.wordPack, option.value];
+                                  onWordPackChange(newPacks);
+                                }}
+                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                              />
+                              <span className="text-sm font-medium flex-1">{option.label}</span>
+                              <span className="text-xs text-gray-500">{packWordCount}</span>
+                            </label>
+                          );
+                        })}
+                      </div>
+                      <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2 flex justify-between items-center">
+                        <span className="text-xs text-gray-500">
+                          Total: {getWordCount(gameState.wordPack)} words
+                        </span>
+                        <button
+                          type="button"
+                          onClick={() => setIsWordPackOpen(false)}
+                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                        >
+                          Done
+                        </button>
+                      </div>
                     </div>
-                    <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2">
-                      <span className="text-xs text-gray-500">
-                        Total: {getWordCount(gameState.wordPack)} words
-                      </span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               ) : (
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  {gameState.wordPack.map(p => getPackDisplayName(p)).join(", ")}
+                  {gameState.wordPack.length === 1 
+                    ? getPackDisplayName(gameState.wordPack[0])
+                    : gameState.wordPack.map(p => getPackDisplayName(p)).join(", ")}
                   <span className="text-xs text-gray-500 ml-1">({getWordCount(gameState.wordPack)})</span>
                 </span>
               )}
@@ -173,20 +214,68 @@ export default function TeamLobby({
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Timer:</span>
               {isRoomOwner ? (
-                <select
-                  value={gameState.timerPreset}
-                  onChange={(e) => onTimerPresetChange(e.target.value as TimerPreset)}
-                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium"
-                >
-                  {timerPresetOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative" ref={timerRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsTimerOpen(!isTimerOpen)}
+                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 min-w-[100px] hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                  >
+                    <span>{TIMER_PRESETS[gameState.timerPreset].label}</span>
+                    <svg 
+                      className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isTimerOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {isTimerOpen && (
+                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 min-w-[200px]">
+                      <div className="p-2 space-y-1">
+                        {timerPresetOptions.map((option) => {
+                          const isSelected = gameState.timerPreset === option.value;
+                          const preset = TIMER_PRESETS[option.value];
+                          return (
+                            <button
+                              key={option.value}
+                              type="button"
+                              onClick={() => {
+                                onTimerPresetChange(option.value);
+                                setIsTimerOpen(false);
+                              }}
+                              className={`w-full text-left px-3 py-2 rounded flex items-center justify-between ${
+                                isSelected 
+                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
+                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                              }`}
+                            >
+                              <div>
+                                <div className="text-sm font-medium">{preset.label}</div>
+                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                  {preset.clue}s clue / {preset.guess}s guess
+                                </div>
+                              </div>
+                              {isSelected && (
+                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                                </svg>
+                              )}
+                            </button>
+                          );
+                        })}
+                      </div>
+                      <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2">
+                        <p className="text-xs text-gray-500">
+                          First clue gets +{TIMER_PRESETS[gameState.timerPreset].firstClueBonus}s bonus
+                        </p>
+                      </div>
+                    </div>
+                  )}
+                </div>
               ) : (
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  {TIMER_PRESETS[gameState.timerPreset].label} ({TIMER_PRESETS[gameState.timerPreset].clue}/{TIMER_PRESETS[gameState.timerPreset].guess}s)
+                  {TIMER_PRESETS[gameState.timerPreset].label}
                 </span>
               )}
             </div>
