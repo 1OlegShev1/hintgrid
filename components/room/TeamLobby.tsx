@@ -135,14 +135,13 @@ export default function TeamLobby({
                   <button
                     type="button"
                     onClick={() => setIsWordPackOpen(!isWordPackOpen)}
-                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 min-w-[120px] hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 w-[160px] hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
                   >
-                    <span className="truncate max-w-[150px]">
+                    <span className="truncate flex-1 text-left">
                       {gameState.wordPack.length === 1 
                         ? getPackDisplayName(gameState.wordPack[0])
-                        : `${gameState.wordPack.length} packs`}
+                        : `${gameState.wordPack.length} packs selected`}
                     </span>
-                    <span className="text-gray-400 text-xs">({getWordCount(gameState.wordPack)})</span>
                     <svg 
                       className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isWordPackOpen ? 'rotate-180' : ''}`} 
                       fill="none" 
