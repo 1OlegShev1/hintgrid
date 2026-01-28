@@ -20,7 +20,7 @@ export default function ChatLog({ messages, players = [] }: ChatLogProps) {
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-64 flex flex-col">
+    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-80 flex flex-col">
       <h3 className="font-semibold px-4 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
         Chat
       </h3>
