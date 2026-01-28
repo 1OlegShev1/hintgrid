@@ -79,8 +79,8 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
             Red Cards Revealed
           </div>
           {winner === "red" && (
-            <div className="mt-3 text-xl font-semibold text-red-700 dark:text-red-300">
-              🏆 Winner!
+            <div className="mt-3 text-2xl font-bold text-red-700 dark:text-red-300">
+              🎉 🏆 Winner! 🏆 🎉
             </div>
           )}
         </div>
@@ -96,8 +96,8 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
             Blue Cards Revealed
           </div>
           {winner === "blue" && (
-            <div className="mt-3 text-xl font-semibold text-blue-700 dark:text-blue-300">
-              🏆 Winner!
+            <div className="mt-3 text-2xl font-bold text-blue-700 dark:text-blue-300">
+              🎉 🏆 Winner! 🏆 🎉
             </div>
           )}
         </div>
