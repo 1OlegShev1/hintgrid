@@ -9,6 +9,14 @@ Start here to understand the project documentation.
 | [`RULES.md`](RULES.md) | Game rules, clue validation, turn mechanics, pause/disconnect handling |
 | [`STATE.md`](STATE.md) | Firebase data model, room lifecycle, turn flow, client-side state, sound system, architecture, testing conventions |
 
+## Future Plans
+
+Ideas parked for later development:
+
+| File | Feature |
+|------|---------|
+| [`future/IMAGE-MODE.md`](future/IMAGE-MODE.md) | Image-based game mode (Codenames Pictures style) |
+
 ## Quick Architecture Overview
 
 ```
