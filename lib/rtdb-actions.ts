@@ -351,8 +351,13 @@ export async function startGame(roomCode: string, playerId: string): Promise<voi
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
   const playersRef = ref(db, `rooms/${roomCode}/players`);
+  const messagesRef = ref(db, `rooms/${roomCode}/messages`);
 
-  const [roomSnap, playersSnap] = await Promise.all([get(roomRef), get(playersRef)]);
+  const [roomSnap, playersSnap, messagesSnap] = await Promise.all([
+    get(roomRef),
+    get(playersRef),
+    get(messagesRef),
+  ]);
   if (!roomSnap.exists()) throw new Error("Room not found");
 
   const roomData = roomSnap.val() as RoomData;
@@ -372,6 +377,21 @@ export async function startGame(roomCode: string, playerId: string): Promise<voi
     .filter((p) => p.team && p.role) as Player[];
 
   if (!teamsAreReady(players)) throw new Error("Teams not ready");
+
+  // Clear game-related messages (keep chat and user system messages)
+  // Also clear old-format reveal messages (type "system" with "revealed" in message)
+  const messagesData = (messagesSnap.val() || {}) as Record<string, MessageData>;
+  const gameMessageTypes = ["clue", "reveal", "game-system"];
+  const isGameMessage = (msg: MessageData) => {
+    if (gameMessageTypes.includes(msg.type)) return true;
+    // Old-format reveal messages were type "system" with "revealed" in message
+    if (msg.type === "system" && msg.message.includes("revealed")) return true;
+    return false;
+  };
+  const deletePromises = Object.entries(messagesData)
+    .filter(([, msg]) => isGameMessage(msg))
+    .map(([id]) => remove(ref(db, `rooms/${roomCode}/messages/${id}`)));
+  await Promise.all(deletePromises);
 
   const wordPack = (roomData.wordPack || "classic") as WordPack;
   const boardWords = generateBoard(wordPack);
