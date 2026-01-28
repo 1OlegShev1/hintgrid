@@ -102,13 +102,13 @@ export default function TeamLobby({
             {gameState.gameOver ? "Teams — Reassign for Rematch" : `Teams (${players.length}/8)`}
           </h2>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Words:</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Words:</span>
               {isRoomOwner ? (
                 <select
                   value={gameState.wordPack}
                   onChange={(e) => onWordPackChange(e.target.value as WordPack)}
-                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium"
                 >
                   {wordPackOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -117,18 +117,18 @@ export default function TeamLobby({
                   ))}
                 </select>
               ) : (
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                   {gameState.wordPack === "kahoot" ? "Kahoot!" : "Classic"}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-gray-600 dark:text-gray-400">Turn:</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Turn:</span>
               {isRoomOwner ? (
                 <select
                   value={gameState.turnDuration}
                   onChange={(e) => onTurnDurationChange(Number(e.target.value))}
-                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-sm"
+                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium"
                 >
                   {turnOptions.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -137,7 +137,7 @@ export default function TeamLobby({
                   ))}
                 </select>
               ) : (
-                <span className="text-sm text-gray-700 dark:text-gray-300">
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
                   {gameState.turnDuration}s
                 </span>
               )}
@@ -198,38 +198,20 @@ export default function TeamLobby({
               </h3>
 
               <div className="mb-4">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
-                    </svg>
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Hinter</span>
-                  </div>
-                  {showControls && (
-                    <button
-                      onClick={() => onSetRole(team, "clueGiver")}
-                      disabled={Boolean(clueGiver) && clueGiver?.id !== currentPlayer?.id}
-                      data-testid={`lobby-join-${team}-clueGiver`}
-                      className={`px-3 py-1.5 rounded text-sm font-semibold ${
-                        clueGiver?.id === currentPlayer?.id
-                          ? "bg-gray-800 text-white"
-                          : team === "red"
-                            ? "bg-red-team text-white hover:brightness-110"
-                            : "bg-blue-team text-white hover:brightness-110"
-                      } disabled:opacity-50 disabled:cursor-not-allowed`}
-                    >
-                      Join
-                    </button>
-                  )}
+                <div className="flex items-center gap-2 mb-1">
+                  <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                  </svg>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">Hinter</span>
                 </div>
                 <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ml-6">Sees all cards • Gives one-word hints</p>
-                <div className={`rounded-lg p-3 text-base border ${
-                  clueGiver?.id === currentPlayer?.id
-                    ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600"
-                    : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                }`}>
-                  {clueGiver ? (
+                {clueGiver ? (
+                  <div className={`rounded-lg p-3 text-base border ${
+                    clueGiver.id === currentPlayer?.id
+                      ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600"
+                      : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                  }`}>
                     <div className={`font-medium truncate flex items-center gap-2 ${
                       clueGiver.id === currentPlayer?.id ? "text-yellow-700 dark:text-yellow-300" : ""
                     } ${clueGiverOffline ? "opacity-60" : ""}`}>
@@ -237,6 +219,15 @@ export default function TeamLobby({
                       <span>{clueGiver.name}{clueGiver.id === currentPlayer?.id ? " (you)" : ""}</span>
                       {clueGiverOffline && (
                         <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                      )}
+                      {clueGiver.id === currentPlayer?.id && showControls && (
+                        <button
+                          type="button"
+                          onClick={() => onSetRole(null, null)}
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        >
+                          Leave
+                        </button>
                       )}
                       {canRemovePlayer(clueGiver.id) && (
                         <button
@@ -248,76 +239,84 @@ export default function TeamLobby({
                         </button>
                       )}
                     </div>
-                  ) : (
+                  </div>
+                ) : showControls ? (
+                  <button
+                    onClick={() => onSetRole(team, "clueGiver")}
+                    data-testid={`lobby-join-${team}-clueGiver`}
+                    className={`w-full rounded-lg p-3 text-base border-2 border-dashed font-medium transition-all ${
+                      team === "red"
+                        ? "border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-600"
+                        : "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 dark:hover:border-blue-600"
+                    }`}
+                  >
+                    Join as Hinter
+                  </button>
+                ) : (
+                  <div className="rounded-lg p-3 text-base border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
                     <span className="text-gray-500 dark:text-gray-400">Open</span>
-                  )}
-                </div>
+                  </div>
+                )}
               </div>
 
-              <div className="mb-4">
-                <div className="flex items-center justify-between mb-1">
-                  <div className="flex items-center gap-2">
-                    <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                    </svg>
-                    <span className="font-semibold text-gray-800 dark:text-gray-200">Seekers</span>
-                  </div>
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <svg className="w-4 h-4 text-gray-600 dark:text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                  <span className="font-semibold text-gray-800 dark:text-gray-200">Seekers</span>
+                </div>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ml-6">Find words based on hints</p>
+                <div className="space-y-2 max-h-32 overflow-y-auto">
+                  {guessers.map((player) => (
+                    <div
+                      key={player.id}
+                      className={`rounded-lg px-3 py-2 text-base border flex items-center gap-2 ${
+                        player.id === currentPlayer?.id
+                          ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600 text-yellow-700 dark:text-yellow-300 font-medium"
+                          : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
+                      } ${player.connected === false ? "opacity-60" : ""}`}
+                    >
+                      <span className="text-xl">{player.avatar}</span>
+                      <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
+                      {player.connected === false && (
+                        <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                      )}
+                      {player.id === currentPlayer?.id && showControls && (
+                        <button
+                          type="button"
+                          onClick={() => onSetRole(null, null)}
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        >
+                          Leave
+                        </button>
+                      )}
+                      {canRemovePlayer(player.id) && (
+                        <button
+                          type="button"
+                          onClick={() => onSetRole(null, null, player.id)}
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
+                        >
+                          Remove
+                        </button>
+                      )}
+                    </div>
+                  ))}
                   {showControls && (
                     <button
                       onClick={() => onSetRole(team, "guesser")}
                       data-testid={`lobby-join-${team}-guesser`}
-                      className={`px-3 py-1.5 rounded text-sm font-semibold ${
+                      className={`w-full rounded-lg px-3 py-2 text-base border-2 border-dashed font-medium transition-all ${
                         team === "red"
-                          ? "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200 hover:bg-red-200 dark:hover:bg-red-900/60"
-                          : "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-900/60"
+                          ? "border-red-300 dark:border-red-700 text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 hover:border-red-400 dark:hover:border-red-600"
+                          : "border-blue-300 dark:border-blue-700 text-blue-600 dark:text-blue-400 hover:bg-blue-50 dark:hover:bg-blue-900/20 hover:border-blue-400 dark:hover:border-blue-600"
                       }`}
                     >
-                      Join
+                      Join as Seeker
                     </button>
                   )}
                 </div>
-                <p className="text-sm text-gray-500 dark:text-gray-400 mb-2 ml-6">Find words based on hints</p>
-                <div className="space-y-2 max-h-32 overflow-y-auto">
-                  {guessers.length === 0 ? (
-                    <div className="text-base text-gray-500 dark:text-gray-400">No seekers yet</div>
-                  ) : (
-                    guessers.map((player) => (
-                      <div
-                        key={player.id}
-                        className={`rounded-lg px-3 py-2 text-base border flex items-center gap-2 ${
-                          player.id === currentPlayer?.id
-                            ? "bg-yellow-50 dark:bg-yellow-900/30 border-yellow-400 dark:border-yellow-600 text-yellow-700 dark:text-yellow-300 font-medium"
-                            : "bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700"
-                        } ${player.connected === false ? "opacity-60" : ""}`}
-                      >
-                        <span className="text-xl">{player.avatar}</span>
-                        <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
-                        {player.connected === false && (
-                          <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
-                        )}
-                        {canRemovePlayer(player.id) && (
-                          <button
-                            type="button"
-                            onClick={() => onSetRole(null, null, player.id)}
-                            className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
-                          >
-                            Remove
-                          </button>
-                        )}
-                      </div>
-                    ))
-                  )}
-                </div>
               </div>
-
-              {currentPlayer?.team === team && showControls && (
-                <button
-                  onClick={() => onSetRole(null, null)}
-                  className="px-3 py-1.5 rounded text-sm font-semibold bg-gray-200 text-gray-700 hover:bg-gray-300"
-                >
-                  Leave Team
-                </button>
-              )}
             </div>
           );
         })}

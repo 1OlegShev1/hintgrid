@@ -128,7 +128,16 @@
               ".validate": "newData.isNumber()"
             },
             "type": {
-              ".validate": "newData.isString() && (newData.val() === 'clue' || newData.val() === 'chat' || newData.val() === 'system')"
+              ".validate": "newData.isString() && (newData.val() === 'clue' || newData.val() === 'chat' || newData.val() === 'system' || newData.val() === 'reveal' || newData.val() === 'game-system')"
+            },
+            "clueTeam": {
+              ".validate": "!newData.exists() || (newData.isString() && (newData.val() === 'red' || newData.val() === 'blue'))"
+            },
+            "revealedTeam": {
+              ".validate": "!newData.exists() || (newData.isString() && (newData.val() === 'red' || newData.val() === 'blue' || newData.val() === 'neutral' || newData.val() === 'trap'))"
+            },
+            "playerAvatar": {
+              ".validate": "!newData.exists() || newData.isString()"
             }
           }
         }

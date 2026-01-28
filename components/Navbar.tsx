@@ -159,7 +159,7 @@ export default function Navbar() {
             onClick={handleHomeClick}
             className="group flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
-            <span className="text-xl font-black tracking-tight">
+            <span className="text-2xl sm:text-3xl font-black tracking-tight">
               <span className="text-red-500">Hint</span>
               <span className="text-blue-500">Grid</span>
             </span>
