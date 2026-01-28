@@ -9,11 +9,14 @@ import type {
   RoomClosedReason,
   Card,
   WordPack,
+  WordPackSelection,
+  TimerPreset,
   FirebaseBoardCard,
   FirebasePlayerData,
   FirebaseMessageData,
   FirebaseRoomData,
 } from "@/shared/types";
+import { DEFAULT_TIMER_PRESET, TIMER_PRESETS } from "@/shared/constants";
 
 // Re-export Firebase types for convenience
 export type { FirebaseBoardCard, FirebasePlayerData, FirebaseMessageData, FirebaseRoomData };
@@ -45,6 +48,24 @@ export function toGameState(
     if (votes.length) cardVotes[i] = votes;
   });
 
+  // Handle backwards compatibility: old rooms may have turnDuration but not timerPreset
+  // Map old turnDuration to closest preset, or use default
+  let timerPreset: TimerPreset = roomData.timerPreset || DEFAULT_TIMER_PRESET;
+  if (!roomData.timerPreset && roomData.turnDuration) {
+    // Legacy room - map old turnDuration to closest preset
+    if (roomData.turnDuration <= 45) {
+      timerPreset = "fast";
+    } else if (roomData.turnDuration <= 75) {
+      timerPreset = "normal";
+    } else {
+      timerPreset = "relaxed";
+    }
+  }
+  
+  // For legacy turnDuration field, derive from preset if not set
+  const preset = TIMER_PRESETS[timerPreset];
+  const turnDuration = roomData.turnDuration || preset.clue;
+
   return {
     roomCode,
     players,
@@ -58,11 +79,17 @@ export function toGameState(
     cardVotes,
     currentTeam: roomData.currentTeam || "red",
     startingTeam: roomData.startingTeam || "red",
-    wordPack: roomData.wordPack || "classic",
+    // Handle both legacy single pack and new array format
+    wordPack: roomData.wordPack 
+      ? (Array.isArray(roomData.wordPack) ? roomData.wordPack : [roomData.wordPack])
+      : ["classic"],
     currentClue: roomData.currentClue || null,
     remainingGuesses: roomData.remainingGuesses ?? null,
     turnStartTime: roomData.turnStartTime || null,
-    turnDuration: roomData.turnDuration || 60,
+    timerPreset,
+    redHasGivenClue: roomData.redHasGivenClue || false,
+    blueHasGivenClue: roomData.blueHasGivenClue || false,
+    turnDuration, // Legacy field - kept for compatibility
     gameStarted: roomData.gameStarted || false,
     gameOver: roomData.gameOver || false,
     winner: roomData.winner || null,
@@ -129,4 +156,4 @@ export function toMessages(messagesData: Record<string, FirebaseMessageData> | n
 }
 
 // Re-export client types for convenience
-export type { GameState, Player, ChatMessage, RoomClosedReason, WordPack };
+export type { GameState, Player, ChatMessage, RoomClosedReason, WordPack, WordPackSelection, TimerPreset };

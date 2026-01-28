@@ -15,8 +15,12 @@ This project follows standard word-guessing game rules, with the following clari
 
 - A clue is required before seekers can guess.
 - Remaining guesses are tracked as `count + 1`.
-- A timer is enabled per turn (configurable: 30s, 60s, or 90s).
-- Word packs available: "classic" (299 words) and "kahoot" (70 words). Owner selects before game start.
+- Timer presets control turn durations:
+  - **Fast**: 60s clue / 45s guess
+  - **Normal**: 90s clue / 60s guess  
+  - **Relaxed**: 120s clue / 90s guess
+  - Each team's first clue gets +50% bonus time (cold start is harder)
+- Word packs available: "Classic" (~270 words), "Kahoot" (70 words), "Geography" (200 words), "Pop Culture" (180 words), "Science" (200 words), "Space" (180 words), "Nature" (250 words). Owner selects before game start.
 - Clue validation blocks:
   - Exact matches with board words (case-insensitive)
   - Prefix/suffix relationships (e.g., "farm" blocked if "farmer" on board, but "war" allowed even if "dwarf" on board)

@@ -16,11 +16,13 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
       "ownerId": "...",
       "currentTeam": "red|blue",
       "startingTeam": "red|blue",
-      "wordPack": "classic|kahoot",
+      "wordPack": ["classic", "geography", "space"],
       "currentClue": { "word": "...", "count": 3 },
       "remainingGuesses": 3,
       "turnStartTime": 1234567890,
-      "turnDuration": 60,
+      "timerPreset": "fast|normal|relaxed",
+      "redHasGivenClue": false,
+      "blueHasGivenClue": false,
       "gameStarted": false,
       "gameOver": false,
       "winner": null,
@@ -191,10 +193,10 @@ Defined in `shared/constants.ts`:
 
 | Constant | Value | Description |
 |----------|-------|-------------|
-| `TURN_DURATIONS` | `[30, 60, 90]` | Allowed turn durations in seconds |
-| `DEFAULT_TURN_DURATION` | `60` | Default turn duration |
-| `WORD_PACKS` | `["classic", "kahoot"]` | Available word packs |
-| `DEFAULT_WORD_PACK` | `"classic"` | Default word pack |
+| `TIMER_PRESETS` | See below | Timer presets with clue/guess/bonus durations |
+| `DEFAULT_TIMER_PRESET` | `"normal"` | Default timer preset |
+| `WORD_PACKS` | `["classic", "kahoot", "geography", "popculture", "science", "space", "nature"]` | Available word packs |
+| `DEFAULT_WORD_PACK` | `["classic"]` | Default word pack selection (array) |
 | `MAX_PLAYER_NAME_LENGTH` | `20` | Maximum player name length |
 | `MAX_CLUE_LENGTH` | `30` | Maximum clue word length |
 | `MAX_CHAT_MESSAGE_LENGTH` | `200` | Maximum chat message length |
@@ -202,6 +204,18 @@ Defined in `shared/constants.ts`:
 | `STALE_PLAYER_GRACE_MS` | `120000` (2 min) | Time before disconnected player is demoted to spectator |
 | `STALE_PLAYER_CHECK_INTERVAL_MS` | `30000` (30s) | How often to check for stale players |
 | `REACTION_EMOJIS` | `[20 emojis]` | Curated set of reaction emojis for chat messages |
+
+**Timer Presets:**
+
+| Preset | Clue Duration | Guess Duration | First Clue Bonus |
+|--------|---------------|----------------|------------------|
+| `fast` | 60s | 45s | +30s |
+| `normal` | 90s | 60s | +45s |
+| `relaxed` | 120s | 90s | +60s |
+
+- **Clue Duration**: Time for hinter to give their clue
+- **Guess Duration**: Time for seekers to guess after clue is given
+- **First Clue Bonus**: Extra time added to each team's first clue (cold start is hardest)
 
 ### Input Validation
 
@@ -351,7 +365,7 @@ The `database.rules.json` file enforces server-side validation:
 
 **Validation Rules:**
 - Turn duration: Must be 30, 60, or 90 seconds; only settable before game starts
-- Word pack: Must be "classic" or "kahoot"; only settable before game starts
+- Word pack: Must be valid pack names; only settable before game starts; supports multi-select
 - Clue format: Word 1-30 chars, count >= 0
 - Player name: 1-20 characters
 - Chat message: 1-200 characters

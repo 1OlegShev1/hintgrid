@@ -132,7 +132,7 @@ export default function RoomPage() {
   const hasGameState = !!room.gameState;
   const gameStarted = room.gameState?.gameStarted ?? false;
   const gameOver = room.gameState?.gameOver ?? false;
-  const turnDuration = room.gameState?.turnDuration ?? 60;
+  const timerPreset = room.gameState?.timerPreset ?? "normal";
   
   useEffect(() => {
     if (!setMusicTrack) return;
@@ -154,10 +154,11 @@ export default function RoomPage() {
     if (gameOver) {
       track = "victory";
     } else if (gameStarted) {
-      // Select track based on turn duration
-      if (turnDuration <= 30) {
+      // Select track based on timer preset
+      // fast → upbeat 30s track, normal → balanced 60s, relaxed → chill 90s
+      if (timerPreset === "fast") {
         track = "game-30s";
-      } else if (turnDuration <= 60) {
+      } else if (timerPreset === "normal") {
         track = "game-60s";
       } else {
         track = "game-90s";
@@ -168,7 +169,7 @@ export default function RoomPage() {
     }
     
     setMusicTrack(track);
-  }, [playerName, hasGameState, gameStarted, gameOver, turnDuration, setMusicTrack]);
+  }, [playerName, hasGameState, gameStarted, gameOver, timerPreset, setMusicTrack]);
 
   // Early returns for special states
   if (room.roomClosedReason) {

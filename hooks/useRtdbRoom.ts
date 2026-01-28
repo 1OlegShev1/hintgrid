@@ -10,7 +10,7 @@ import { useGameActions } from "./room/useGameActions";
 import { useChatActions } from "./room/useChatActions";
 import * as actions from "@/lib/rtdb-actions";
 import { STALE_PLAYER_CHECK_INTERVAL_MS, STALE_PLAYER_GRACE_MS } from "@/shared/constants";
-import type { GameState, Player, ChatMessage, RoomClosedReason, WordPack } from "@/shared/types";
+import type { GameState, Player, ChatMessage, RoomClosedReason, WordPack, TimerPreset } from "@/shared/types";
 
 export interface UseRtdbRoomReturn {
   gameState: GameState | null;
@@ -39,8 +39,8 @@ export interface UseRtdbRoomReturn {
   handleAddReaction: (messageId: string, emoji: string) => void;
   handleRemoveReaction: (messageId: string, emoji: string) => void;
   handleGiveClue: (word: string, count: number) => void;
-  handleTurnDurationChange: (duration: number) => void;
-  handleWordPackChange: (pack: WordPack) => void;
+  handleTimerPresetChange: (preset: TimerPreset) => void;
+  handleWordPackChange: (packs: WordPack[]) => void;
 }
 
 export function useRtdbRoom(
@@ -155,7 +155,7 @@ export function useRtdbRoom(
     handleConfirmReveal: gameActions.handleConfirmReveal,
     handleEndTurn: gameActions.handleEndTurn,
     handleGiveClue: gameActions.handleGiveClue,
-    handleTurnDurationChange: gameActions.handleTurnDurationChange,
+    handleTimerPresetChange: gameActions.handleTimerPresetChange,
     handleWordPackChange: gameActions.handleWordPackChange,
   };
 }

@@ -41,10 +41,22 @@
           ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid && root.child('rooms').child($roomCode).child('gameStarted').val() !== true",
           ".validate": "newData.isNumber() && (newData.val() === 30 || newData.val() === 60 || newData.val() === 90)"
         },
+        "timerPreset": {
+          ".write": "auth != null && (!root.child('rooms').child($roomCode).exists() || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid) && root.child('rooms').child($roomCode).child('gameStarted').val() !== true",
+          ".validate": "newData.isString() && (newData.val() === 'fast' || newData.val() === 'normal' || newData.val() === 'relaxed')"
+        },
+        "redHasGivenClue": {
+          ".write": "auth != null && (!root.child('rooms').child($roomCode).exists() || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid || root.child('rooms').child($roomCode).child('players').child(auth.uid).child('role').val() === 'clueGiver')",
+          ".validate": "newData.isBoolean()"
+        },
+        "blueHasGivenClue": {
+          ".write": "auth != null && (!root.child('rooms').child($roomCode).exists() || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid || root.child('rooms').child($roomCode).child('players').child(auth.uid).child('role').val() === 'clueGiver')",
+          ".validate": "newData.isBoolean()"
+        },
 
         "wordPack": {
-          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid && root.child('rooms').child($roomCode).child('gameStarted').val() !== true",
-          ".validate": "newData.isString() && (newData.val() === 'classic' || newData.val() === 'kahoot')"
+          ".write": "auth != null && (!root.child('rooms').child($roomCode).exists() || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid) && root.child('rooms').child($roomCode).child('gameStarted').val() !== true",
+          ".validate": "newData.exists()"
         },
 
         "currentClue": {

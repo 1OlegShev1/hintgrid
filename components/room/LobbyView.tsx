@@ -28,7 +28,7 @@ export function LobbyView({ room, derived }: LobbyViewProps) {
       onSetRole={room.handleSetLobbyRole}
       onRandomize={room.handleRandomizeTeams}
       onStartGame={room.handleStartGame}
-      onTurnDurationChange={room.handleTurnDurationChange}
+      onTimerPresetChange={room.handleTimerPresetChange}
       onWordPackChange={room.handleWordPackChange}
       showControls={true}
     />

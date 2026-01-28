@@ -63,7 +63,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
             onSetRole={room.handleSetLobbyRole}
             onRandomize={room.handleRandomizeTeams}
             onStartGame={room.handleStartGame}
-            onTurnDurationChange={room.handleTurnDurationChange}
+            onTimerPresetChange={room.handleTimerPresetChange}
             onWordPackChange={room.handleWordPackChange}
             showControls={true}
           />
@@ -181,7 +181,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           onSetRole={room.handleSetLobbyRole}
           onRandomize={room.handleRandomizeTeams}
           onStartGame={room.handleStartGame}
-          onTurnDurationChange={room.handleTurnDurationChange}
+          onTimerPresetChange={room.handleTimerPresetChange}
           onWordPackChange={room.handleWordPackChange}
           onResumeGame={room.handleResumeGame}
           showControls={true}

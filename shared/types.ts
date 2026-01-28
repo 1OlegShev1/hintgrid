@@ -1,6 +1,11 @@
 export type Team = "red" | "blue" | "neutral" | "trap";
 
-export type WordPack = "classic" | "kahoot";
+export type WordPack = "classic" | "kahoot" | "geography" | "popculture" | "science" | "space" | "nature";
+
+// Word pack selection can be a single pack or multiple packs combined
+export type WordPackSelection = WordPack | WordPack[];
+
+export type TimerPreset = "fast" | "normal" | "relaxed";
 
 export type Role = "clueGiver" | "guesser";
 export type LobbyTeam = "red" | "blue" | null;
@@ -33,10 +38,15 @@ export interface GameState {
   cardVotes: Record<number, string[]>;
   currentTeam: Team;
   startingTeam: Team;
-  wordPack: WordPack; // Selected word pack for this game
+  wordPack: WordPack[]; // Selected word pack(s) for this game
   currentClue: { word: string; count: number } | null;
   remainingGuesses: number | null;
   turnStartTime: number | null;
+  // Timer configuration
+  timerPreset: TimerPreset;
+  redHasGivenClue: boolean; // True after red team gives their first clue (for first clue bonus)
+  blueHasGivenClue: boolean; // True after blue team gives their first clue (for first clue bonus)
+  // @deprecated Legacy field - use timerPreset instead
   turnDuration: number; // in seconds
   gameStarted: boolean;
   gameOver: boolean;
@@ -119,11 +129,16 @@ export interface FirebaseRoomData {
   ownerId: string;
   currentTeam: Team;
   startingTeam: Team;
-  wordPack: WordPack;
+  wordPack: WordPack | WordPack[]; // Can be single (legacy) or array (new)
   currentClue: { word: string; count: number } | null;
   remainingGuesses: number | null;
   turnStartTime: number | null;
-  turnDuration: number;
+  // Timer configuration
+  timerPreset?: TimerPreset; // Optional for backwards compatibility with old rooms
+  redHasGivenClue?: boolean;
+  blueHasGivenClue?: boolean;
+  // @deprecated Legacy field - kept for backwards compatibility
+  turnDuration?: number;
   gameStarted: boolean;
   gameOver: boolean;
   winner: Team | null;

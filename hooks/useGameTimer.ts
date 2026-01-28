@@ -1,8 +1,29 @@
 import { useEffect, useState, useRef } from "react";
 import type { GameState } from "@/shared/types";
+import { TIMER_PRESETS } from "@/shared/constants";
 
 export interface UseGameTimerReturn {
   timeRemaining: number | null;
+}
+
+/**
+ * Calculate the effective duration for the current turn phase.
+ * - Clue phase (no currentClue): uses clue duration + first clue bonus if applicable
+ * - Guess phase (has currentClue): uses guess duration
+ */
+function getEffectiveDuration(gameState: GameState): number {
+  const preset = TIMER_PRESETS[gameState.timerPreset];
+  
+  if (!gameState.currentClue) {
+    // Clue phase - hinter is thinking
+    const isFirstClue = gameState.currentTeam === "red"
+      ? !gameState.redHasGivenClue
+      : !gameState.blueHasGivenClue;
+    return preset.clue + (isFirstClue ? preset.firstClueBonus : 0);
+  } else {
+    // Guess phase - seekers are guessing
+    return preset.guess;
+  }
 }
 
 export function useGameTimer(
@@ -35,7 +56,8 @@ export function useGameTimer(
 
       const updateTimer = () => {
         const elapsed = Math.floor((Date.now() - gameState.turnStartTime!) / 1000);
-        const remaining = Math.max(0, gameState.turnDuration - elapsed);
+        const effectiveDuration = getEffectiveDuration(gameState);
+        const remaining = Math.max(0, effectiveDuration - elapsed);
         setTimeRemaining(remaining);
         
         // Only call onTimeout once per turn
@@ -64,7 +86,11 @@ export function useGameTimer(
     };
   }, [
     gameState?.turnStartTime,
-    gameState?.turnDuration,
+    gameState?.timerPreset,
+    gameState?.currentClue,
+    gameState?.currentTeam,
+    gameState?.redHasGivenClue,
+    gameState?.blueHasGivenClue,
     gameState?.gameStarted,
     gameState?.gameOver,
     gameState?.paused,

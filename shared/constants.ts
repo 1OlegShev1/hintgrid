@@ -5,10 +5,25 @@ export const LOCAL_STORAGE_SOUND_MUTED_KEY = "hintgrid_sound_muted";
 export const LOCAL_STORAGE_MUSIC_ENABLED_KEY = "hintgrid_music_enabled";
 
 // Game configuration
+// Timer presets with separate durations for clue (hinter) and guess (seeker) phases
+// First clue bonus gives extra time for each team's first clue (cold start is hardest)
+export const TIMER_PRESETS = {
+  fast: { clue: 60, guess: 45, firstClueBonus: 30, label: "Fast" },
+  normal: { clue: 90, guess: 60, firstClueBonus: 45, label: "Normal" },
+  relaxed: { clue: 120, guess: 90, firstClueBonus: 60, label: "Relaxed" },
+} as const;
+
+export type TimerPreset = keyof typeof TIMER_PRESETS;
+export const TIMER_PRESET_KEYS = Object.keys(TIMER_PRESETS) as TimerPreset[];
+export const DEFAULT_TIMER_PRESET: TimerPreset = "normal";
+
+// Legacy support - kept for backwards compatibility with old rooms
+// @deprecated Use TIMER_PRESETS instead
 export const TURN_DURATIONS = [30, 60, 90] as const;
 export const DEFAULT_TURN_DURATION = 60;
-export const WORD_PACKS = ["classic", "kahoot"] as const;
-export const DEFAULT_WORD_PACK = "classic";
+
+export const WORD_PACKS = ["classic", "kahoot", "geography", "popculture", "science", "space", "nature"] as const;
+export const DEFAULT_WORD_PACK: typeof WORD_PACKS[number][] = ["classic"];
 
 // Validation limits
 export const MAX_PLAYER_NAME_LENGTH = 20;

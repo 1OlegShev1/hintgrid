@@ -6,7 +6,7 @@
 import { useCallback } from "react";
 import * as actions from "@/lib/rtdb-actions";
 import { useError } from "@/contexts/ErrorContext";
-import type { WordPack } from "./types";
+import type { WordPack, TimerPreset } from "./types";
 
 export interface UseGameActionsReturn {
   handleStartGame: () => void;
@@ -19,8 +19,8 @@ export interface UseGameActionsReturn {
   handleConfirmReveal: (index: number) => void;
   handleEndTurn: () => void;
   handleGiveClue: (word: string, count: number) => void;
-  handleTurnDurationChange: (duration: number) => void;
-  handleWordPackChange: (pack: WordPack) => void;
+  handleTimerPresetChange: (preset: TimerPreset) => void;
+  handleWordPackChange: (packs: WordPack[]) => void;
 }
 
 export function useGameActions(
@@ -76,12 +76,12 @@ export function useGameActions(
     if (uid) actions.giveClue(roomCode, uid, w, c).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
-  const handleTurnDurationChange = useCallback((d: number) => {
-    if (uid) actions.setTurnDuration(roomCode, uid, d).catch((e) => showError(e.message));
+  const handleTimerPresetChange = useCallback((preset: TimerPreset) => {
+    if (uid) actions.setTimerPreset(roomCode, uid, preset).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
-  const handleWordPackChange = useCallback((pack: WordPack) => {
-    if (uid) actions.setWordPack(roomCode, uid, pack).catch((e) => showError(e.message));
+  const handleWordPackChange = useCallback((packs: WordPack[]) => {
+    if (uid) actions.setWordPack(roomCode, uid, packs).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
   return {
@@ -95,7 +95,7 @@ export function useGameActions(
     handleConfirmReveal,
     handleEndTurn,
     handleGiveClue,
-    handleTurnDurationChange,
+    handleTimerPresetChange,
     handleWordPackChange,
   };
 }

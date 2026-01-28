@@ -1,4 +1,6 @@
-import type { GameState, Player, WordPack } from "@/shared/types";
+import type { GameState, Player, WordPack, TimerPreset } from "@/shared/types";
+import { TIMER_PRESETS, WORD_PACKS } from "@/shared/constants";
+import { getPackDisplayName, getWordCount } from "@/shared/words";
 
 interface TeamLobbyProps {
   players: Player[];
@@ -8,22 +10,23 @@ interface TeamLobbyProps {
   onSetRole: (team: "red" | "blue" | null, role: "clueGiver" | "guesser" | null, targetPlayerId?: string) => void;
   onRandomize: () => void;
   onStartGame: () => void;
-  onTurnDurationChange: (duration: number) => void;
-  onWordPackChange: (pack: WordPack) => void;
+  onTimerPresetChange: (preset: TimerPreset) => void;
+  onWordPackChange: (packs: WordPack[]) => void;
   onResumeGame?: () => void;
   showControls?: boolean; // Hide start button in rematch mode
 }
 
-const turnOptions = [
-  { label: "Short (30s)", value: 30 },
-  { label: "Medium (60s)", value: 60 },
-  { label: "Long (90s)", value: 90 },
+const timerPresetOptions: { label: string; value: TimerPreset }[] = [
+  { label: `Fast (${TIMER_PRESETS.fast.clue}/${TIMER_PRESETS.fast.guess}s)`, value: "fast" },
+  { label: `Normal (${TIMER_PRESETS.normal.clue}/${TIMER_PRESETS.normal.guess}s)`, value: "normal" },
+  { label: `Relaxed (${TIMER_PRESETS.relaxed.clue}/${TIMER_PRESETS.relaxed.guess}s)`, value: "relaxed" },
 ];
 
-const wordPackOptions: { label: string; value: WordPack }[] = [
-  { label: "Classic", value: "classic" },
-  { label: "Kahoot!", value: "kahoot" },
-];
+// Word pack options with display names
+const wordPackOptions: { label: string; value: WordPack }[] = WORD_PACKS.map(pack => ({
+  label: getPackDisplayName(pack as WordPack),
+  value: pack as WordPack,
+}));
 
 export default function TeamLobby({
   players,
@@ -33,7 +36,7 @@ export default function TeamLobby({
   onSetRole,
   onRandomize,
   onStartGame,
-  onTurnDurationChange,
+  onTimerPresetChange,
   onWordPackChange,
   onResumeGame,
   showControls = true,
@@ -105,32 +108,77 @@ export default function TeamLobby({
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
               <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Words:</span>
               {isRoomOwner ? (
-                <select
-                  value={gameState.wordPack}
-                  onChange={(e) => onWordPackChange(e.target.value as WordPack)}
-                  className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium"
-                >
-                  {wordPackOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
+                <div className="relative group">
+                  <button
+                    type="button"
+                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 min-w-[120px]"
+                  >
+                    <span className="truncate max-w-[150px]">
+                      {gameState.wordPack.map(p => getPackDisplayName(p)).join(", ")}
+                    </span>
+                    <span className="text-gray-400 text-xs">({getWordCount(gameState.wordPack)})</span>
+                    <svg className="w-4 h-4 text-gray-500 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 min-w-[200px] hidden group-hover:block">
+                    <div className="p-2 space-y-1">
+                      {wordPackOptions.map((option) => {
+                        const isSelected = gameState.wordPack.includes(option.value);
+                        const packWordCount = getWordCount(option.value);
+                        return (
+                          <label
+                            key={option.value}
+                            className="flex items-center gap-2 px-2 py-1.5 rounded hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => {
+                                let newPacks: WordPack[];
+                                if (isSelected) {
+                                  // Don't allow deselecting the last pack
+                                  if (gameState.wordPack.length > 1) {
+                                    newPacks = gameState.wordPack.filter(p => p !== option.value);
+                                  } else {
+                                    return;
+                                  }
+                                } else {
+                                  newPacks = [...gameState.wordPack, option.value];
+                                }
+                                onWordPackChange(newPacks);
+                              }}
+                              className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                            />
+                            <span className="text-sm font-medium">{option.label}</span>
+                            <span className="text-xs text-gray-500 ml-auto">{packWordCount}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                    <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2">
+                      <span className="text-xs text-gray-500">
+                        Total: {getWordCount(gameState.wordPack)} words
+                      </span>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  {gameState.wordPack === "kahoot" ? "Kahoot!" : "Classic"}
+                  {gameState.wordPack.map(p => getPackDisplayName(p)).join(", ")}
+                  <span className="text-xs text-gray-500 ml-1">({getWordCount(gameState.wordPack)})</span>
                 </span>
               )}
             </div>
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Turn:</span>
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Timer:</span>
               {isRoomOwner ? (
                 <select
-                  value={gameState.turnDuration}
-                  onChange={(e) => onTurnDurationChange(Number(e.target.value))}
+                  value={gameState.timerPreset}
+                  onChange={(e) => onTimerPresetChange(e.target.value as TimerPreset)}
                   className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium"
                 >
-                  {turnOptions.map((option) => (
+                  {timerPresetOptions.map((option) => (
                     <option key={option.value} value={option.value}>
                       {option.label}
                     </option>
@@ -138,7 +186,7 @@ export default function TeamLobby({
                 </select>
               ) : (
                 <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                  {gameState.turnDuration}s
+                  {TIMER_PRESETS[gameState.timerPreset].label} ({TIMER_PRESETS[gameState.timerPreset].clue}/{TIMER_PRESETS[gameState.timerPreset].guess}s)
                 </span>
               )}
             </div>

@@ -22,11 +22,13 @@ import type {
   FirebaseRoomData,
 } from "@/shared/types";
 import {
-  TURN_DURATIONS,
-  DEFAULT_TURN_DURATION,
+  TIMER_PRESETS,
+  TIMER_PRESET_KEYS,
+  DEFAULT_TIMER_PRESET,
   WORD_PACKS,
   DEFAULT_WORD_PACK,
   MIN_PLAYERS_TO_START,
+  type TimerPreset,
 } from "@/shared/constants";
 import {
   sanitizePlayerName,
@@ -114,7 +116,9 @@ export async function joinRoom(
       currentClue: null,
       remainingGuesses: null,
       turnStartTime: null,
-      turnDuration: DEFAULT_TURN_DURATION,
+      timerPreset: DEFAULT_TIMER_PRESET,
+      redHasGivenClue: false,
+      blueHasGivenClue: false,
       gameStarted: false,
       gameOver: false,
       winner: null,
@@ -393,8 +397,11 @@ export async function startGame(roomCode: string, playerId: string): Promise<voi
     .map(([id]) => remove(ref(db, `rooms/${roomCode}/messages/${id}`)));
   await Promise.all(deletePromises);
 
-  const wordPack = (roomData.wordPack || "classic") as WordPack;
-  const boardWords = generateBoard(wordPack);
+  // Handle both legacy single pack and new array format
+  const wordPacks = roomData.wordPack 
+    ? (Array.isArray(roomData.wordPack) ? roomData.wordPack : [roomData.wordPack]) 
+    : DEFAULT_WORD_PACK;
+  const boardWords = generateBoard(wordPacks);
   const startingTeam = roomData.startingTeam as "red" | "blue";
   const board: BoardCard[] = assignTeams(boardWords, startingTeam).map((c) => ({
     word: c.word,
@@ -410,6 +417,8 @@ export async function startGame(roomCode: string, playerId: string): Promise<voi
     turnStartTime: serverTimestamp(),
     currentClue: null,
     remainingGuesses: null,
+    redHasGivenClue: false,
+    blueHasGivenClue: false,
     gameOver: false,
     winner: null,
     paused: false,
@@ -446,8 +455,11 @@ export async function rematch(roomCode: string, playerId: string): Promise<void>
 
   if (!teamsAreReady(players)) throw new Error("Teams not ready");
 
-  const wordPack = (roomData.wordPack || "classic") as WordPack;
-  const boardWords = generateBoard(wordPack);
+  // Handle both legacy single pack and new array format
+  const wordPacks = roomData.wordPack 
+    ? (Array.isArray(roomData.wordPack) ? roomData.wordPack : [roomData.wordPack]) 
+    : DEFAULT_WORD_PACK;
+  const boardWords = generateBoard(wordPacks);
   const startingTeam: Team = Math.random() < 0.5 ? "red" : "blue";
   const board: BoardCard[] = assignTeams(boardWords, startingTeam).map((c) => ({
     word: c.word,
@@ -466,6 +478,8 @@ export async function rematch(roomCode: string, playerId: string): Promise<void>
     turnStartTime: serverTimestamp(),
     currentClue: null,
     remainingGuesses: null,
+    redHasGivenClue: false,
+    blueHasGivenClue: false,
     gameOver: false,
     winner: null,
     paused: false,
@@ -563,8 +577,8 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
 // Lobby Actions
 // ============================================================================
 
-export async function setTurnDuration(roomCode: string, playerId: string, duration: number): Promise<void> {
-  if (!TURN_DURATIONS.includes(duration as typeof TURN_DURATIONS[number])) throw new Error("Invalid duration");
+export async function setTimerPreset(roomCode: string, playerId: string, preset: TimerPreset): Promise<void> {
+  if (!TIMER_PRESET_KEYS.includes(preset)) throw new Error("Invalid timer preset");
   
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
@@ -575,11 +589,15 @@ export async function setTurnDuration(roomCode: string, playerId: string, durati
   if (roomData.ownerId !== playerId) throw new Error("Not room owner");
   if (roomData.gameStarted) throw new Error("Game already started");
 
-  await update(roomRef, { turnDuration: duration });
+  await update(roomRef, { timerPreset: preset });
 }
 
-export async function setWordPack(roomCode: string, playerId: string, pack: WordPack): Promise<void> {
-  if (!WORD_PACKS.includes(pack)) throw new Error("Invalid word pack");
+export async function setWordPack(roomCode: string, playerId: string, packs: WordPack[]): Promise<void> {
+  // Validate all packs
+  if (!packs.length) throw new Error("At least one word pack required");
+  for (const pack of packs) {
+    if (!WORD_PACKS.includes(pack)) throw new Error(`Invalid word pack: ${pack}`);
+  }
   
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
@@ -590,7 +608,7 @@ export async function setWordPack(roomCode: string, playerId: string, pack: Word
   if (roomData.ownerId !== playerId) throw new Error("Not room owner");
   if (roomData.gameStarted) throw new Error("Game already started");
 
-  await update(roomRef, { wordPack: pack });
+  await update(roomRef, { wordPack: packs });
 }
 
 export async function setLobbyRole(
@@ -701,12 +719,22 @@ export async function giveClue(roomCode: string, playerId: string, word: string,
   // Clear votes and set clue
   const updatedBoard = board.map((c) => ({ ...c, votes: {} }));
 
-  await update(roomRef, {
+  // Build update object - mark team's first clue if this is it
+  const clueUpdate: Record<string, unknown> = {
     currentClue: { word: sanitized.toUpperCase(), count },
     remainingGuesses: count + 1,
     turnStartTime: serverTimestamp(),
     board: updatedBoard,
-  });
+  };
+  
+  // Mark that this team has given their first clue (for first clue bonus tracking)
+  if (roomData.currentTeam === "red" && !roomData.redHasGivenClue) {
+    clueUpdate.redHasGivenClue = true;
+  } else if (roomData.currentTeam === "blue" && !roomData.blueHasGivenClue) {
+    clueUpdate.blueHasGivenClue = true;
+  }
+
+  await update(roomRef, clueUpdate);
 
   await push(ref(db, `rooms/${roomCode}/messages`), {
     playerId,
