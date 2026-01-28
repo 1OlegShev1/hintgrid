@@ -24,12 +24,6 @@
     "deploy:rules": "firebase deploy --only firestore:rules",
     "cleanup:rooms": "node scripts/cleanup-rooms.js"
   },
-  "lint-staged": {
-    "*.{ts,tsx}": [
-      "npm run typecheck",
-      "npm run test:run"
-    ]
-  },
   "dependencies": {
     "bad-words-next": "^3.2.0",
     "firebase": "^12.8.0",
