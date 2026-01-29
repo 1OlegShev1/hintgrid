@@ -86,7 +86,7 @@ export default function RoomPage() {
   ]);
 
   const timer = useGameTimer(room.gameState, room.handleEndTurn, { shouldTriggerTimeout });
-  const overlays = useTransitionOverlays(room.gameState);
+  const overlays = useTransitionOverlays(room.gameState, room.currentPlayer?.team ?? null);
   
   // Timer tick sounds
   useTimerSound({
@@ -218,6 +218,7 @@ export default function RoomPage() {
         <TransitionOverlay
           type="gameOver"
           team={overlays.transitionTeam}
+          isWinner={overlays.isWinner}
           onComplete={overlays.dismissGameOver}
         />
       )}

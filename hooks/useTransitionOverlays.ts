@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from "react";
-import type { GameState } from "@/shared/types";
+import type { GameState, Team } from "@/shared/types";
 import { useSoundContextOptional, SoundName } from "@/contexts/SoundContext";
 
 export interface UseTransitionOverlaysReturn {
@@ -7,6 +7,7 @@ export interface UseTransitionOverlaysReturn {
   showTurnChange: boolean;
   showGameOver: boolean;
   transitionTeam: "red" | "blue" | null;
+  isWinner: boolean;
   clueAnimating: boolean;
   dismissGameStart: () => void;
   dismissTurnChange: () => void;
@@ -14,7 +15,8 @@ export interface UseTransitionOverlaysReturn {
 }
 
 export function useTransitionOverlays(
-  gameState: GameState | null
+  gameState: GameState | null,
+  currentPlayerTeam: Team | null = null
 ): UseTransitionOverlaysReturn {
   const soundContext = useSoundContextOptional();
   
@@ -22,6 +24,7 @@ export function useTransitionOverlays(
   const [showTurnChange, setShowTurnChange] = useState(false);
   const [showGameOver, setShowGameOver] = useState(false);
   const [transitionTeam, setTransitionTeam] = useState<"red" | "blue" | null>(null);
+  const [isWinner, setIsWinner] = useState(false);
   const [clueAnimating, setClueAnimating] = useState(false);
   
   // Refs for tracking state changes - use primitive values for comparison
@@ -107,11 +110,20 @@ export function useTransitionOverlays(
         // Dismiss any other overlays first
         setShowTurnChange(false);
         setShowGameStart(false);
+        // Determine if current player's team won
+        // Spectators (null/neutral/trap team) see the winner's celebration
+        const playerWon = currentPlayerTeam === winner || 
+          (currentPlayerTeam !== "red" && currentPlayerTeam !== "blue");
+        setIsWinner(playerWon);
         // Show game over
         setTransitionTeam(winner);
         setShowGameOver(true);
-        // Use winner + timestamp as unique identifier
-        playSoundOnce("gameOver", `over:${winner}:${Date.now()}`);
+        // Play appropriate sound based on win/lose
+        if (playerWon) {
+          playSoundOnce("gameOver", `over:${winner}:${Date.now()}`);
+        } else {
+          playSoundOnce("gameLose", `lose:${winner}:${Date.now()}`);
+        }
       }
     }
     
@@ -131,7 +143,7 @@ export function useTransitionOverlays(
     prevCurrentTeamRef.current = currentTeam;
     prevGameOverRef.current = gameOver;
     prevClueRef.current = currentClueWord;
-  }, [gameState, gameStarted, currentTeam, gameOver, winner, startingTeam, currentClueWord, turnStartTime, playSoundOnce]);
+  }, [gameState, gameStarted, currentTeam, gameOver, winner, startingTeam, currentClueWord, turnStartTime, playSoundOnce, currentPlayerTeam]);
 
   // Cleanup timeout on unmount
   useEffect(() => {
@@ -147,6 +159,7 @@ export function useTransitionOverlays(
     showTurnChange,
     showGameOver,
     transitionTeam,
+    isWinner,
     clueAnimating,
     dismissGameStart: () => setShowGameStart(false),
     dismissTurnChange: () => setShowTurnChange(false),

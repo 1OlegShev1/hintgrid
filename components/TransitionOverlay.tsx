@@ -6,6 +6,7 @@ interface TransitionOverlayProps {
   type: "gameStart" | "turnChange" | "gameOver";
   team?: "red" | "blue" | null;
   message?: string;
+  isWinner?: boolean;
   onComplete?: () => void;
 }
 
@@ -13,6 +14,7 @@ export default function TransitionOverlay({
   type,
   team,
   message,
+  isWinner = true,
   onComplete,
 }: TransitionOverlayProps) {
   const [phase, setPhase] = useState<"enter" | "visible" | "exit">("enter");
@@ -120,24 +122,42 @@ export default function TransitionOverlay({
         {/* Dark background to hide content behind */}
         <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
         
-        {/* Celebratory background particles */}
+        {/* Background particles - confetti for winners, rain for losers */}
         <div className="absolute inset-0 overflow-hidden">
-          {[...Array(20)].map((_, i) => (
-            <div
-              key={i}
-              className={`
-                absolute w-3 h-3 rounded-full
-                ${team === "red" ? "bg-red-400" : "bg-blue-400"}
-              `}
-              style={{
-                left: `${Math.random() * 100}%`,
-                top: `-10%`,
-                animation: `confetti-fall ${2 + Math.random() * 2}s ease-out forwards`,
-                animationDelay: `${Math.random() * 0.5}s`,
-                opacity: 0.8,
-              }}
-            />
-          ))}
+          {isWinner ? (
+            // Celebratory confetti
+            [...Array(20)].map((_, i) => (
+              <div
+                key={i}
+                className={`
+                  absolute w-3 h-3 rounded-full
+                  ${team === "red" ? "bg-red-400" : "bg-blue-400"}
+                `}
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `-10%`,
+                  animation: `confetti-fall ${2 + Math.random() * 2}s ease-out forwards`,
+                  animationDelay: `${Math.random() * 0.5}s`,
+                  opacity: 0.8,
+                }}
+              />
+            ))
+          ) : (
+            // Rain drops for losers
+            [...Array(30)].map((_, i) => (
+              <div
+                key={i}
+                className="absolute w-0.5 bg-gray-400/60 rounded-full"
+                style={{
+                  left: `${Math.random() * 100}%`,
+                  top: `-5%`,
+                  height: `${10 + Math.random() * 15}px`,
+                  animation: `rain-fall ${0.8 + Math.random() * 0.5}s linear infinite`,
+                  animationDelay: `${Math.random() * 1}s`,
+                }}
+              />
+            ))
+          )}
         </div>
         
         <div 
@@ -149,16 +169,16 @@ export default function TransitionOverlay({
           <div className={`
             px-12 py-8 rounded-3xl bg-linear-to-r ${teamColor}
             text-white shadow-2xl
-            ${phase === "visible" ? "game-over-glow" : ""}
+            ${phase === "visible" && isWinner ? "game-over-glow" : ""}
           `}
-          style={phase === "visible" ? {
+          style={phase === "visible" && isWinner ? {
             boxShadow: team === "red" 
               ? "0 0 60px rgba(239, 68, 68, 0.6), 0 0 120px rgba(239, 68, 68, 0.3)"
               : "0 0 60px rgba(59, 130, 246, 0.6), 0 0 120px rgba(59, 130, 246, 0.3)"
           } : undefined}
           >
             <div className="text-5xl font-bold mb-2">
-              🎉 Victory! 🎉
+              {isWinner ? "🎉 Victory! 🎉" : "😢 Victory! 😢"}
             </div>
             <div className="text-3xl font-semibold">
               {team?.toUpperCase()} TEAM WINS!

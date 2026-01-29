@@ -9,6 +9,7 @@ Sound effects in this folder are sourced from free, royalty-free libraries.
 | `game-start.mp3` | [Mixkit](https://mixkit.co) | Mixkit License | Fantasy game success notification |
 | `turn-change.mp3` | [Mixkit](https://mixkit.co) | Mixkit License | Success software tone |
 | `game-over.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Shouts and applause of teens |
+| `game-lose.mp3` | [OpenGameArt](https://opengameart.org/content/oooooooooooooo) | CC0 (Public Domain) | Crowd disappointed "ooh" by AuraVoice |
 | `tick.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Thermostat click |
 | `tick-urgent.mp3` | [BigSoundBank](https://bigsoundbank.com) | CC0 (Public Domain) | Mechanical alarm clock tic-tac |
 | `card-reveal.mp3` | [Mixkit](https://mixkit.co) | Mixkit License | Page turn single |

@@ -168,6 +168,21 @@ body {
   }
 }
 
+/* Rain falling animation for losing team */
+@keyframes rain-fall {
+  0% {
+    transform: translateY(-10px);
+    opacity: 0;
+  }
+  10% {
+    opacity: 0.6;
+  }
+  100% {
+    transform: translateY(100vh);
+    opacity: 0;
+  }
+}
+
 /* Timer urgency pulse */
 @keyframes timer-pulse {
   0%, 100% {
