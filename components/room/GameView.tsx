@@ -47,6 +47,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
         showGameOverOverlay={overlays.showGameOver}
         onEndTurn={room.handleEndTurn}
         onEndGame={room.handleEndGame}
+        onPauseGame={room.handlePauseGame}
         onResumeGame={room.handleResumeGame}
         onRematch={room.handleRematch}
         onGiveClue={room.handleGiveClue}
@@ -71,7 +72,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
       )}
 
       {/* Board and Chat */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-stretch overflow-hidden">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
         <div className="md:col-span-3">
           <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 ${turnGlowClass}`}>
             <GameBoard
@@ -115,11 +116,11 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           </div>
         </div>
 
-        <div className="md:col-span-2 flex flex-col gap-4 overflow-hidden">
+        <div className="md:col-span-2 flex flex-col gap-4 max-h-[600px]">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-0 overflow-hidden">
             <ClueHistory clues={messages} />
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-2 min-h-0 flex flex-col overflow-hidden">
             <ChatLog
               messages={messages}
               players={players}
@@ -162,8 +163,8 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
         </div>
       </div>
 
-      {/* Show compact teams only during active game, not on game over */}
-      {!gameState.gameOver && (
+      {/* Show compact teams only during active game (not paused, not game over) */}
+      {!gameState.gameOver && !gameState.paused && (
         <CompactTeams 
           players={players} 
           currentPlayerId={currentPlayer?.id}
@@ -184,8 +185,8 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           onStartGame={room.handleStartGame}
           onTimerPresetChange={room.handleTimerPresetChange}
           onWordPackChange={room.handleWordPackChange}
-          onResumeGame={room.handleResumeGame}
           showControls={true}
+          hidePauseHeader={true}
         />
       )}
     </>

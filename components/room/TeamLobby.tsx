@@ -15,6 +15,7 @@ interface TeamLobbyProps {
   onWordPackChange: (packs: WordPack[]) => void;
   onResumeGame?: () => void;
   showControls?: boolean; // Hide start button in rematch mode
+  hidePauseHeader?: boolean; // Hide pause header when GameStatusPanel already shows it
 }
 
 const timerPresetOptions: { label: string; value: TimerPreset }[] = [
@@ -41,6 +42,7 @@ export default function TeamLobby({
   onWordPackChange,
   onResumeGame,
   showControls = true,
+  hidePauseHeader = false,
 }: TeamLobbyProps) {
   // Dropdown states
   const [isWordPackOpen, setIsWordPackOpen] = useState(false);
@@ -90,13 +92,16 @@ export default function TeamLobby({
 
   return (
     <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
-      {/* Paused state header */}
-      {isPaused && (
+      {/* Paused state header - only show if not hidden (GameStatusPanel shows it instead) */}
+      {isPaused && !hidePauseHeader && (
         <div className="mb-6">
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
               <h2 className="text-xl font-semibold">Game Paused - Assign Roles</h2>
               <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+                {gameState.pauseReason === "ownerPaused" && (
+                  <>Game paused by room owner</>
+                )}
                 {gameState.pauseReason === "clueGiverDisconnected" && (
                   <>The {pausedTeam} team needs a hinter to continue</>
                 )}
