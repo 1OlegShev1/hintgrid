@@ -5,7 +5,7 @@
  */
 
 import { useEffect, useState, useRef } from "react";
-import { ref, onValue, query, orderByChild, limitToLast, off, DatabaseReference, update, serverTimestamp } from "firebase/database";
+import { ref, onValue, query, orderByChild, limitToLast, DatabaseReference, update, serverTimestamp } from "firebase/database";
 import { getDatabase } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import * as actions from "@/lib/rtdb-actions";
@@ -252,10 +252,13 @@ export function useRoomConnection(
       // Mark as cleaned up to prevent any further state updates
       isCleanedUp = true;
       
-      off(roomRef);
-      off(playersRef);
-      off(messagesRef);
-      off(connectedRef);
+      // Use unsubscribe functions instead of off() to avoid removing
+      // other listeners on the same paths (e.g., useFirebaseConnection
+      // also listens to .info/connected for the global offline indicator)
+      unsubRoom();
+      unsubPlayers();
+      unsubMessages();
+      unsubConnected();
       
       // Reset connection tracking ref
       wasConnectedRef.current = null;
