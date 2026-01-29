@@ -71,7 +71,7 @@ function QrCodeModal({ roomUrl, roomCode, onClose }: QrCodeModalProps) {
         <div className="bg-white p-4 rounded-xl inline-block mb-6">
           <QRCodeSVG 
             value={roomUrl} 
-            size={220}
+            size={330}
             level="M"
             includeMargin={false}
           />
