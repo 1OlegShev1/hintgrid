@@ -7,6 +7,7 @@ interface TransitionOverlayProps {
   team?: "red" | "blue" | null;
   message?: string;
   isWinner?: boolean;
+  lostByTrap?: boolean;
   onComplete?: () => void;
 }
 
@@ -15,6 +16,7 @@ export default function TransitionOverlay({
   team,
   message,
   isWinner = true,
+  lostByTrap = false,
   onComplete,
 }: TransitionOverlayProps) {
   const [phase, setPhase] = useState<"enter" | "visible" | "exit">("enter");
@@ -178,7 +180,7 @@ export default function TransitionOverlay({
           } : undefined}
           >
             <div className="text-5xl font-bold mb-2">
-              {isWinner ? "🎉 Victory! 🎉" : "😢 Victory! 😢"}
+              {isWinner ? "🎉 Victory! 🎉" : lostByTrap ? "💀 Victory! 💀" : "😢 Victory! 😢"}
             </div>
             <div className="text-3xl font-semibold">
               {team?.toUpperCase()} TEAM WINS!

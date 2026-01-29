@@ -250,6 +250,7 @@ All sounds use audio files via `use-sound`/Howler.js for realistic, high-quality
 - `turn-change.mp3` — Quick software tone when turn switches teams
 - `game-over.mp3` — Crowd applause celebration when a team wins (played for winning team)
 - `game-lose.mp3` — Crowd disappointed "ooh" (played for losing team)
+- `trap-snap.mp3` — Metal clang/snap (played for team that hit the trap)
 - `tick.mp3` — Soft click sound every 2s in the last 30 seconds
 - `tick-urgent.mp3` — Fast mechanical alarm clock tic-tac every 0.5s in the last 10 seconds
 - `card-reveal.mp3` — Subtle page turn/flick when a card is revealed

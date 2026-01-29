@@ -10,7 +10,7 @@ import {
   LOCAL_STORAGE_MUSIC_ENABLED_KEY,
 } from "@/shared/constants";
 
-export type SoundName = "gameStart" | "turnChange" | "gameOver" | "gameLose" | "tick" | "tickUrgent" | "cardReveal" | "clueSubmit";
+export type SoundName = "gameStart" | "turnChange" | "gameOver" | "gameLose" | "trapSnap" | "tick" | "tickUrgent" | "cardReveal" | "clueSubmit";
 export type MusicTrack = "lobby" | "game-30s" | "game-60s" | "game-90s" | "victory" | null;
 
 // Music plays at 30% of master volume
@@ -64,6 +64,7 @@ const playFunctionsRef: { current: {
   playTurnChange: () => void;
   playGameOver: () => void;
   playGameLose: () => void;
+  playTrapSnap: () => void;
   playTick: () => void;
   playTickUrgent: () => void;
   playCardReveal: () => void;
@@ -107,6 +108,11 @@ function PlayFunctionCapture({
     volume: volume * 0.6,
   });
 
+  // Bear trap snap sound for losing by trap
+  const [playTrapSnap] = useSound("/sounds/trap-snap.mp3", { 
+    volume: volume * 0.7,
+  });
+
   // Realistic clock tick sounds - interrupt prevents overlapping
   // Also expose stop functions to immediately halt playback
   const [playTick, { stop: stopTick }] = useSound("/sounds/tick.mp3", { 
@@ -134,11 +140,11 @@ function PlayFunctionCapture({
   // Update shared ref when play functions change
   useEffect(() => {
     playFunctionsRef.current = { 
-      playGameStart, playTurnChange, playGameOver, playGameLose,
+      playGameStart, playTurnChange, playGameOver, playGameLose, playTrapSnap,
       playTick, playTickUrgent, playCardReveal, playClueSubmit,
       stopTick, stopTickUrgent,
     };
-  }, [playGameStart, playTurnChange, playGameOver, playGameLose, playTick, playTickUrgent, playCardReveal, playClueSubmit, stopTick, stopTickUrgent]);
+  }, [playGameStart, playTurnChange, playGameOver, playGameLose, playTrapSnap, playTick, playTickUrgent, playCardReveal, playClueSubmit, stopTick, stopTickUrgent]);
 
   return <>{children}</>;
 }
@@ -356,6 +362,9 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         break;
       case "gameLose":
         playFunctionsRef.current?.playGameLose();
+        break;
+      case "trapSnap":
+        playFunctionsRef.current?.playTrapSnap();
         break;
       case "tick":
         playFunctionsRef.current?.playTick();

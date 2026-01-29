@@ -8,6 +8,7 @@ export interface UseTransitionOverlaysReturn {
   showGameOver: boolean;
   transitionTeam: "red" | "blue" | null;
   isWinner: boolean;
+  lostByTrap: boolean;
   clueAnimating: boolean;
   dismissGameStart: () => void;
   dismissTurnChange: () => void;
@@ -25,6 +26,7 @@ export function useTransitionOverlays(
   const [showGameOver, setShowGameOver] = useState(false);
   const [transitionTeam, setTransitionTeam] = useState<"red" | "blue" | null>(null);
   const [isWinner, setIsWinner] = useState(false);
+  const [lostByTrap, setLostByTrap] = useState(false);
   const [clueAnimating, setClueAnimating] = useState(false);
   
   // Refs for tracking state changes - use primitive values for comparison
@@ -115,12 +117,18 @@ export function useTransitionOverlays(
         const playerWon = currentPlayerTeam === winner || 
           (currentPlayerTeam !== "red" && currentPlayerTeam !== "blue");
         setIsWinner(playerWon);
+        // Check if game ended due to trap
+        const trapWasHit = gameState.board.some(c => c.team === "trap" && c.revealed);
+        const playerLostByTrap = !playerWon && trapWasHit;
+        setLostByTrap(playerLostByTrap);
         // Show game over
         setTransitionTeam(winner);
         setShowGameOver(true);
-        // Play appropriate sound based on win/lose
+        // Play appropriate sound based on win/lose/trap
         if (playerWon) {
           playSoundOnce("gameOver", `over:${winner}:${Date.now()}`);
+        } else if (playerLostByTrap) {
+          playSoundOnce("trapSnap", `trap:${winner}:${Date.now()}`);
         } else {
           playSoundOnce("gameLose", `lose:${winner}:${Date.now()}`);
         }
@@ -160,6 +168,7 @@ export function useTransitionOverlays(
     showGameOver,
     transitionTeam,
     isWinner,
+    lostByTrap,
     clueAnimating,
     dismissGameStart: () => setShowGameStart(false),
     dismissTurnChange: () => setShowTurnChange(false),

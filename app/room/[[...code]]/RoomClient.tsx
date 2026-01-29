@@ -219,6 +219,7 @@ export default function RoomPage() {
           type="gameOver"
           team={overlays.transitionTeam}
           isWinner={overlays.isWinner}
+          lostByTrap={overlays.lostByTrap}
           onComplete={overlays.dismissGameOver}
         />
       )}
