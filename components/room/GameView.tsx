@@ -72,7 +72,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
       )}
 
       {/* Board and Chat */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-start">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-stretch overflow-hidden">
         <div className="md:col-span-3">
           <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 ${turnGlowClass}`}>
             <GameBoard
@@ -116,11 +116,11 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           </div>
         </div>
 
-        <div className="md:col-span-2 flex flex-col gap-4 max-h-[600px]">
+        <div className="md:col-span-2 flex flex-col gap-4 overflow-hidden">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-0 overflow-hidden">
             <ClueHistory clues={messages} />
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-2 min-h-0 flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
             <ChatLog
               messages={messages}
               players={players}
