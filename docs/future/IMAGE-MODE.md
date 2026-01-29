@@ -10,6 +10,8 @@ A "Codenames Pictures" style game mode where cards show images instead of words.
 
 ## Image Requirements
 
+### Pack Size
+
 | Pack Size | Experience |
 |-----------|------------|
 | 100 images | Minimum — some repetition after 4-5 games |
@@ -17,6 +19,31 @@ A "Codenames Pictures" style game mode where cards show images instead of words.
 | 200+ images | Great replayability |
 
 **Target: 150-200 images per pack** to match word pack variety.
+
+### Image Specifications
+
+| Spec | Value | Rationale |
+|------|-------|-----------|
+| **Resolution** | 512×512px | 4x max card size, crisp on all displays |
+| **Aspect ratio** | 1:1 (square) | Matches current card layout |
+| **Format** | JPEG or WebP | WebP preferred (~30% smaller) |
+| **File size** | ~30-50KB each | 150 images ≈ 5-7MB total |
+
+### Why Single Resolution?
+
+Using one 512×512 file per image (no separate thumbnails):
+- Browser CSS scales down beautifully for the 65-128px grid cards
+- Popup zoom shows the full cached image instantly (no extra load)
+- Simpler asset management — one file per image
+- ~1.25MB for 25 cards is acceptable on any modern connection
+
+### Current Card Sizes (for reference)
+
+| Device | Card Size |
+|--------|-----------|
+| iPhone SE (375px) | ~67px |
+| iPhone 14 (390px) | ~70px |
+| Desktop (max-w-2xl) | ~128px |
 
 ## Data Model Changes
 
@@ -48,10 +75,32 @@ export interface ImagePack {
 
 ## Component Changes
 
-- `GameBoard.tsx` — Render `<img>` instead of text
+- `GameBoard.tsx` — Render `<img>` instead of text, add tap-to-zoom
 - `LobbyView.tsx` — Add Words/Images mode toggle
-- Card aspect ratio — Images likely need 4:3 or 16:9 vs current square
-- Mobile responsiveness adjustments
+- New `ImageZoomModal.tsx` — Fullscreen image popup
+- Card aspect ratio — Keep square (1:1) to match current layout
+
+## Tap-to-Zoom Feature
+
+Allow players to tap/click a card to see a larger version of the image.
+
+### UX Flow
+
+1. Player taps on any image card
+2. Modal overlay appears with:
+   - Larger image (512×512 or fills available space)
+   - Team color border (visible to clue giver)
+   - Vote count badge (if votes exist)
+   - "Vote" button (if player can vote)
+   - "Reveal" button (if threshold met)
+3. Tap outside, press Escape, or tap X to close
+
+### Why This Matters
+
+- Small 67-128px cards may not show enough detail
+- Abstract/surreal images benefit from closer inspection
+- Mobile users especially need zoom capability
+- Doesn't slow down experienced players (zoom is optional)
 
 ## Clue Validation
 
@@ -109,12 +158,13 @@ Best images for this game mode:
 - Single dominant subject/concept
 - Clear silhouettes and shapes
 - Not too busy or detailed
-- Works at small card size (~100×100px thumbnail)
+- Recognizable at 70px (mobile) but rewarding at 512px (zoomed)
 
 Bad choices:
-- Photos of text/words
+- Photos of text/words (defeats the purpose)
 - Very similar images (all sunsets, all cats)
-- Too abstract (just colors/gradients)
+- Too abstract (just colors/gradients — nothing to describe)
+- Fine details only visible when zoomed (frustrating on mobile)
 - Offensive or disturbing content
 
 ## Potential Image Pack Themes
