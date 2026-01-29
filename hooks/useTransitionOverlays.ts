@@ -35,15 +35,22 @@ export function useTransitionOverlays(
   // Key format: "soundName:gameStateIdentifier"
   const playedSoundsRef = useRef<Set<string>>(new Set());
 
+  // Use ref for soundContext to keep playSoundOnce stable
+  // This prevents the effect from re-running when soundContext changes
+  // (e.g., when clicking to unlock audio context after switching windows)
+  const soundContextRef = useRef(soundContext);
+  soundContextRef.current = soundContext;
+
   // Stable play sound function that checks for duplicates
+  // No dependencies - uses refs for all external values
   const playSoundOnce = useCallback((name: SoundName, stateKey: string) => {
     const key = `${name}:${stateKey}`;
     if (playedSoundsRef.current.has(key)) {
       return; // Already played this sound for this state
     }
     playedSoundsRef.current.add(key);
-    soundContext?.playSound(name);
-  }, [soundContext]);
+    soundContextRef.current?.playSound(name);
+  }, []);
 
   // Extract primitive values from gameState to use as stable dependencies
   const gameStarted = gameState?.gameStarted ?? false;
