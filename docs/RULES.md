@@ -38,6 +38,12 @@ This project follows standard word-guessing game rules, with the following clari
 
 ## Pause and Disconnection Handling
 
+**Manual pause:**
+- The room owner can pause the game at any time by clicking the "Pause" button.
+- This is useful when someone needs a break or there's something to discuss.
+- The timer stops immediately and the game enters paused state.
+
+**Automatic pause:**
 The game pauses automatically at **turn transitions** if the incoming team lacks required players:
 - The team's hinter is disconnected (needed to give clue).
 - The team has no connected seekers (needed to guess).

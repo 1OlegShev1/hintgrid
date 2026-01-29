@@ -14,6 +14,7 @@ interface GameStatusPanelProps {
   showGameOverOverlay?: boolean;
   onEndTurn: () => void;
   onEndGame: () => void;
+  onPauseGame: () => void;
   onResumeGame: () => void;
   onRematch?: () => void;
   onGiveClue: (word: string, count: number) => void;
@@ -30,6 +31,7 @@ export default function GameStatusPanel({
   showGameOverOverlay = false,
   onEndTurn,
   onEndGame,
+  onPauseGame,
   onResumeGame,
   onRematch,
   onGiveClue,
@@ -132,6 +134,14 @@ export default function GameStatusPanel({
               End Turn
             </button>
           )}
+          {isRoomOwner && !gameState.gameOver && !gameState.paused && (
+            <button
+              onClick={onPauseGame}
+              className="bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition-all"
+            >
+              Pause
+            </button>
+          )}
           {isRoomOwner && !gameState.gameOver && (
             <button
               onClick={() => setShowEndGameModal(true)}
@@ -162,6 +172,9 @@ export default function GameStatusPanel({
               <span className="text-lg font-bold text-amber-800 dark:text-amber-200">Game Paused</span>
             </div>
             <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+              {gameState.pauseReason === "ownerPaused" && (
+                <>Game paused by room owner. Click Resume when ready to continue.</>
+              )}
               {gameState.pauseReason === "teamDisconnected" && (
                 <>{gameState.pausedForTeam?.toUpperCase()} team has no connected players. Waiting for reconnection...</>
               )}

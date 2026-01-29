@@ -14,6 +14,7 @@ export interface UseGameActionsReturn {
   handleRandomizeTeams: () => void;
   handleRematch: () => void;
   handleEndGame: () => void;
+  handlePauseGame: () => void;
   handleResumeGame: () => void;
   handleVoteCard: (index: number) => void;
   handleConfirmReveal: (index: number) => void;
@@ -56,6 +57,10 @@ export function useGameActions(
     if (uid) actions.endGame(roomCode, uid).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
+  const handlePauseGame = useCallback(() => {
+    if (uid) actions.pauseGame(roomCode, uid).catch((e) => showError(e.message));
+  }, [roomCode, uid, showError]);
+
   const handleResumeGame = useCallback(() => {
     if (uid) actions.resumeGame(roomCode, uid).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
@@ -90,6 +95,7 @@ export function useGameActions(
     handleRandomizeTeams,
     handleRematch,
     handleEndGame,
+    handlePauseGame,
     handleResumeGame,
     handleVoteCard,
     handleConfirmReveal,

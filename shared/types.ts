@@ -28,7 +28,7 @@ export interface Player {
   lastSeen?: number | null;
 }
 
-export type PauseReason = "teamDisconnected" | "clueGiverDisconnected" | "noGuessers" | null;
+export type PauseReason = "teamDisconnected" | "clueGiverDisconnected" | "noGuessers" | "ownerPaused" | null;
 
 export interface GameState {
   roomCode: string;

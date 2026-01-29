@@ -534,6 +534,35 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
   });
 }
 
+export async function pauseGame(roomCode: string, playerId: string): Promise<void> {
+  const db = getDb();
+  const roomRef = ref(db, `rooms/${roomCode}`);
+
+  const roomSnap = await get(roomRef);
+  if (!roomSnap.exists()) throw new Error("Room not found");
+
+  const roomData = roomSnap.val() as RoomData;
+  if (roomData.ownerId !== playerId) throw new Error("Not room owner");
+  if (!roomData.gameStarted || roomData.gameOver || roomData.paused) {
+    throw new Error("Cannot pause: game not active");
+  }
+
+  await update(roomRef, {
+    paused: true,
+    pauseReason: "ownerPaused",
+    pausedForTeam: roomData.currentTeam,
+    turnStartTime: null, // Stop the timer
+  });
+
+  await push(ref(db, `rooms/${roomCode}/messages`), {
+    playerId: null,
+    playerName: "System",
+    message: "Game paused by room owner.",
+    timestamp: serverTimestamp(),
+    type: "game-system",
+  });
+}
+
 export async function resumeGame(roomCode: string, playerId: string): Promise<void> {
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);

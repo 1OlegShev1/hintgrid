@@ -110,7 +110,8 @@ Requires Firebase Admin credentials (`gcloud auth application-default login`).
 
 ### Pause Mechanism
 
-At turn transitions, the game checks if the incoming team has **connected** players:
+The game can be paused manually or automatically:
+- Room owner clicks Pause button → `pauseReason: "ownerPaused"`
 - No connected players at all → `pauseReason: "teamDisconnected"`
 - No connected hinter (before clue given) → `pauseReason: "clueGiverDisconnected"`
 - No connected seekers (after clue given) → `pauseReason: "noGuessers"`

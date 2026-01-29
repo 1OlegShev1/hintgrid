@@ -30,6 +30,7 @@ export interface UseRtdbRoomReturn {
   handleRandomizeTeams: () => void;
   handleRematch: () => void;
   handleEndGame: () => void;
+  handlePauseGame: () => void;
   handleResumeGame: () => void;
   handleVoteCard: (index: number) => void;
   handleConfirmReveal: (index: number) => void;
@@ -150,6 +151,7 @@ export function useRtdbRoom(
     handleRandomizeTeams: gameActions.handleRandomizeTeams,
     handleRematch: gameActions.handleRematch,
     handleEndGame: gameActions.handleEndGame,
+    handlePauseGame: gameActions.handlePauseGame,
     handleResumeGame: gameActions.handleResumeGame,
     handleVoteCard: gameActions.handleVoteCard,
     handleConfirmReveal: gameActions.handleConfirmReveal,
