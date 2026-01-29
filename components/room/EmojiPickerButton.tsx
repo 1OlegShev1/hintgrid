@@ -29,9 +29,9 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
     setIsOpen(true);
   }, []);
 
-  // Close picker when clicking outside
+  // Close picker when clicking/touching outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (
         pickerRef.current &&
         !pickerRef.current.contains(event.target as Node) &&
@@ -44,7 +44,11 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
 
     if (isOpen) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
+      };
     }
   }, [isOpen]);
 
@@ -74,7 +78,7 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
         type="button"
         onClick={() => (isOpen ? setIsOpen(false) : openPicker())}
         disabled={disabled}
-        className="p-2 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Open emoji picker"
         title="Add emoji"
       >
