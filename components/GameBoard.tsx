@@ -227,7 +227,7 @@ export default function GameBoard({
 
   return (
     <div 
-      className="grid grid-cols-5 gap-2 max-w-2xl mx-auto"
+      className="game-board-grid grid grid-cols-5 gap-2 max-w-2xl mx-auto"
       onKeyDown={handleKeyDown}
       role="grid"
       aria-label="Game board"
@@ -252,7 +252,7 @@ export default function GameBoard({
               data-testid={`board-card-${index}`}
               aria-label={`${card.revealed ? `Revealed: ${card.team}` : card.word}${hasVoted ? ", you voted" : ""}${votes.length > 0 ? `, ${votes.length} votes` : ""}`}
               className={`
-                aspect-square p-2 rounded-lg font-semibold text-sm w-full
+                aspect-square p-1 sm:p-2 rounded-lg font-semibold w-full
                 transition-all duration-200
                 ${getCardColor(card)}
                 ${card.revealed || !canVote
@@ -266,7 +266,9 @@ export default function GameBoard({
               `}
             >
               <div className="flex items-center justify-center h-full text-center">
-                {card.revealed ? renderCardBackIcon(card) : card.word}
+                {card.revealed ? renderCardBackIcon(card) : (
+                  <span className="card-text">{card.word}</span>
+                )}
               </div>
             </button>
             {votes.length > 0 && !card.revealed && (

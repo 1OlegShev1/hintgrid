@@ -258,3 +258,29 @@ body {
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-muted);
 }
+
+/* Fluid typography utilities */
+.text-fluid-winner {
+  font-size: clamp(1rem, 4cqw, 1.5rem);
+  white-space: nowrap;
+}
+
+.text-fluid-score {
+  font-size: clamp(1.5rem, 8cqw, 2.25rem);
+}
+
+.text-fluid-score-label {
+  font-size: clamp(0.75rem, 3cqw, 1rem);
+}
+
+/* Game board card container queries */
+.game-board-grid {
+  container-type: inline-size;
+}
+
+.card-text {
+  font-size: clamp(0.5rem, 3.5cqw, 0.875rem);
+  line-height: 1.2;
+  word-break: break-word;
+  hyphens: auto;
+}

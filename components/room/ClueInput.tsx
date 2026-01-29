@@ -115,17 +115,37 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
               }`}
             />
           </div>
-          <div className="w-20">
+          <div>
             <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Count</label>
-            <input
-              type="number"
-              min={0}
-              max={9}
-              value={clueCount}
-              onChange={(e) => setClueCount(Number(e.target.value))}
-              data-testid="game-clue-count"
-              className="w-full px-3 py-2 border-2 border-amber-300 dark:border-amber-600 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white"
-            />
+            <div className="flex items-center">
+              <button
+                type="button"
+                onClick={() => setClueCount(Math.max(0, clueCount - 1))}
+                disabled={clueCount <= 0}
+                className="w-9 h-10 flex items-center justify-center border-2 border-r-0 border-amber-300 dark:border-amber-600 rounded-l-lg bg-amber-50 dark:bg-gray-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-bold text-lg"
+                aria-label="Decrease count"
+              >
+                −
+              </button>
+              <input
+                type="number"
+                min={0}
+                max={9}
+                value={clueCount}
+                onChange={(e) => setClueCount(Math.min(9, Math.max(0, Number(e.target.value) || 0)))}
+                data-testid="game-clue-count"
+                className="w-12 h-10 px-1 text-center border-y-2 border-amber-300 dark:border-amber-600 focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white font-semibold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              />
+              <button
+                type="button"
+                onClick={() => setClueCount(Math.min(9, clueCount + 1))}
+                disabled={clueCount >= 9}
+                className="w-9 h-10 flex items-center justify-center border-2 border-l-0 border-amber-300 dark:border-amber-600 rounded-r-lg bg-amber-50 dark:bg-gray-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-bold text-lg"
+                aria-label="Increase count"
+              >
+                +
+              </button>
+            </div>
           </div>
           <div className="self-end">
             <button

@@ -67,36 +67,36 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
     <div className="space-y-4">
       {/* Game Summary */}
       <div className="grid grid-cols-2 gap-4">
-        <div className={`rounded-lg p-6 text-center ${
+        <div className={`rounded-lg p-4 sm:p-6 text-center ${
           winner === "red" 
             ? "bg-red-100 dark:bg-red-900/40 border-2 border-red-400" 
             : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
-        }`}>
-          <div className="text-4xl font-bold text-red-700 dark:text-red-300">
+        }`} style={{ containerType: 'inline-size' }}>
+          <div className="text-fluid-score font-bold text-red-700 dark:text-red-300">
             {redRevealed}/{redCards.length}
           </div>
-          <div className="text-base text-red-600 dark:text-red-400 mt-1">
+          <div className="text-fluid-score-label text-red-600 dark:text-red-400 mt-1">
             Red Cards Revealed
           </div>
           {winner === "red" && (
-            <div className="mt-3 text-2xl font-bold text-red-700 dark:text-red-300">
+            <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-red-700 dark:text-red-300">
               🎉 🏆 Winner! 🏆 🎉
             </div>
           )}
         </div>
-        <div className={`rounded-lg p-6 text-center ${
+        <div className={`rounded-lg p-4 sm:p-6 text-center ${
           winner === "blue" 
             ? "bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-400" 
             : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
-        }`}>
-          <div className="text-4xl font-bold text-blue-700 dark:text-blue-300">
+        }`} style={{ containerType: 'inline-size' }}>
+          <div className="text-fluid-score font-bold text-blue-700 dark:text-blue-300">
             {blueRevealed}/{blueCards.length}
           </div>
-          <div className="text-base text-blue-600 dark:text-blue-400 mt-1">
+          <div className="text-fluid-score-label text-blue-600 dark:text-blue-400 mt-1">
             Blue Cards Revealed
           </div>
           {winner === "blue" && (
-            <div className="mt-3 text-2xl font-bold text-blue-700 dark:text-blue-300">
+            <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-blue-700 dark:text-blue-300">
               🎉 🏆 Winner! 🏆 🎉
             </div>
           )}
