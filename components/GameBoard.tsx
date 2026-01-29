@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useRef, useState, useCallback, useMemo, memo, KeyboardEvent } from "react";
-import type { Card, Player } from "@/shared/types";
+import type { Card, Player, Team } from "@/shared/types";
 import { MaskIcon, TrapIcon, DustCloudIcon } from "@/components/icons/CardBackIcons";
 import { useSoundContextOptional } from "@/contexts/SoundContext";
 
 interface GameBoardProps {
   board: Card[];
   currentPlayer: Player | null;
+  currentTeam: Team;
   cardVotes: Record<number, string[]>;
   currentPlayerId: string | null;
   requiredVotes: number;
@@ -22,6 +23,7 @@ const GRID_ROWS = 5;
 export default function GameBoard({
   board,
   currentPlayer,
+  currentTeam,
   cardVotes,
   currentPlayerId,
   requiredVotes,
@@ -257,7 +259,7 @@ export default function GameBoard({
                   ? "cursor-default"
                   : "cursor-pointer hover:scale-105 active:scale-95"
                 }
-                ${hasVoted ? "ring-2 ring-blue-500" : ""}
+                ${hasVoted ? `ring-2 ${currentTeam === "red" ? "ring-red-500" : "ring-blue-500"}` : ""}
                 ${isFocused && !card.revealed ? "ring-2 ring-yellow-400 ring-offset-2" : ""}
                 ${isAnimating ? "card-flip" : ""}
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2
@@ -269,7 +271,7 @@ export default function GameBoard({
             </button>
             {votes.length > 0 && !card.revealed && (
               <div 
-                className={`absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-semibold ${isBadgeAnimating ? "badge-pop" : ""}`}
+                className={`absolute top-1 left-1 ${currentTeam === "red" ? "bg-red-600" : "bg-blue-600"} text-white text-xs px-2 py-0.5 rounded-full font-semibold ${isBadgeAnimating ? "badge-pop" : ""}`}
                 title={`Votes: ${votes.length}`}
                 aria-hidden="true"
               >
@@ -277,7 +279,7 @@ export default function GameBoard({
               </div>
             )}
             {hasVoted && !card.revealed && (
-              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded" title="You voted" aria-hidden="true">
+              <div className={`absolute top-1 right-1 ${currentTeam === "red" ? "bg-red-500" : "bg-blue-500"} text-white text-xs px-1.5 py-0.5 rounded`} title="You voted" aria-hidden="true">
                 ✓
               </div>
             )}

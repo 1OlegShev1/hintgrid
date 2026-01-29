@@ -77,6 +77,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
             <GameBoard
               board={gameState.board}
               currentPlayer={currentPlayer}
+              currentTeam={gameState.currentTeam}
               cardVotes={gameState.cardVotes}
               currentPlayerId={currentPlayer?.id ?? null}
               requiredVotes={requiredVotes}
