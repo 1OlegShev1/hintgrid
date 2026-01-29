@@ -117,10 +117,10 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
         </div>
 
         <div className="md:col-span-2 flex flex-col gap-4 overflow-hidden">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-0 overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-32 overflow-hidden">
             <ClueHistory clues={messages} />
           </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-0 flex flex-col overflow-hidden">
+          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-48 flex flex-col overflow-hidden">
             <ChatLog
               messages={messages}
               players={players}
