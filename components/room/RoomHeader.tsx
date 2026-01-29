@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { QRCodeSVG } from "qrcode.react";
 import type { Player } from "@/shared/types";
 
 interface RoomHeaderProps {
@@ -18,6 +19,76 @@ function CrownIcon({ className }: { className?: string }) {
     >
       <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
     </svg>
+  );
+}
+
+function QrCodeIcon({ className }: { className?: string }) {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth={2}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-label="Show QR code"
+    >
+      <rect x="3" y="3" width="7" height="7" />
+      <rect x="14" y="3" width="7" height="7" />
+      <rect x="3" y="14" width="7" height="7" />
+      <rect x="14" y="14" width="3" height="3" />
+      <rect x="18" y="14" width="3" height="3" />
+      <rect x="14" y="18" width="3" height="3" />
+      <rect x="18" y="18" width="3" height="3" />
+    </svg>
+  );
+}
+
+interface QrCodeModalProps {
+  roomUrl: string;
+  roomCode: string;
+  onClose: () => void;
+}
+
+function QrCodeModal({ roomUrl, roomCode, onClose }: QrCodeModalProps) {
+  return (
+    <div 
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
+      onClick={onClose}
+    >
+      <div 
+        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+          Join Room
+        </h2>
+        <p className="text-gray-600 dark:text-gray-400 mb-6">
+          Scan this QR code to join room <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{roomCode}</span>
+        </p>
+        
+        <div className="bg-white p-4 rounded-xl inline-block mb-6">
+          <QRCodeSVG 
+            value={roomUrl} 
+            size={220}
+            level="M"
+            includeMargin={false}
+          />
+        </div>
+
+        <div className="text-sm text-gray-500 dark:text-gray-400 mb-6 break-all">
+          {roomUrl}
+        </div>
+
+        <button
+          onClick={onClose}
+          className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
+        >
+          Close
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -52,6 +123,11 @@ async function copyToClipboard(text: string): Promise<boolean> {
 export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, onLeaveRoom }: RoomHeaderProps) {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
+  const [showQrModal, setShowQrModal] = useState(false);
+  
+  const roomUrl = typeof window !== "undefined" 
+    ? `${window.location.origin}/room/${roomCode}` 
+    : "";
 
   const handleCopyRoomCode = async () => {
     const success = await copyToClipboard(roomCode);
@@ -75,6 +151,13 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, onLea
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
+            <button
+              onClick={() => setShowQrModal(true)}
+              className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400 transition-colors"
+              title="Show QR code to join room"
+            >
+              <QrCodeIcon className="w-5 h-5" />
+            </button>
             <h1 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Room:{" "}
             </h1>
@@ -143,6 +226,14 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, onLea
           )}
         </div>
       </div>
+
+      {showQrModal && roomUrl && (
+        <QrCodeModal 
+          roomUrl={roomUrl} 
+          roomCode={roomCode} 
+          onClose={() => setShowQrModal(false)} 
+        />
+      )}
     </div>
   );
 }
