@@ -30,18 +30,27 @@ export function MessageReactions({
   const openPicker = useCallback(() => {
     if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      // Position above the button, aligned to the left
+      const viewportWidth = window.innerWidth;
+      const pickerWidth = 200; // approximate picker width
+      
+      // Position above the button, but ensure it stays within viewport
+      let left = rect.left;
+      if (left + pickerWidth > viewportWidth - 8) {
+        left = viewportWidth - pickerWidth - 8;
+      }
+      if (left < 8) left = 8;
+      
       setPickerPosition({
         top: rect.top - 8, // 8px gap above button
-        left: rect.left,
+        left: left,
       });
     }
     setShowPicker(true);
   }, []);
 
-  // Close picker when clicking outside
+  // Close picker when clicking/touching outside
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
+    function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (
         pickerRef.current &&
         !pickerRef.current.contains(event.target as Node) &&
@@ -54,7 +63,11 @@ export function MessageReactions({
 
     if (showPicker) {
       document.addEventListener("mousedown", handleClickOutside);
-      return () => document.removeEventListener("mousedown", handleClickOutside);
+      document.addEventListener("touchstart", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("touchstart", handleClickOutside);
+      };
     }
   }, [showPicker]);
 
@@ -111,7 +124,7 @@ export function MessageReactions({
         onClick={() => (showPicker ? setShowPicker(false) : openPicker())}
         disabled={!currentPlayerId}
         title="Add reaction"
-        className="inline-flex items-center justify-center w-5 h-5 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-0 group-hover:opacity-100 focus:opacity-100"
+        className="inline-flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-60 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -164,12 +177,12 @@ export function MessageReactions({
             transform: "translateY(-100%)",
           }}
         >
-          <div className="grid grid-cols-5 gap-1" style={{ width: "180px" }}>
+          <div className="grid grid-cols-5 gap-1">
             {REACTION_EMOJIS.map((emoji) => (
               <button
                 key={emoji}
                 onClick={() => handlePickerSelect(emoji)}
-                className="w-8 h-8 flex items-center justify-center text-lg hover:bg-gray-100 dark:hover:bg-gray-700 rounded transition-colors"
+                className="w-9 h-9 flex items-center justify-center text-xl hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 rounded transition-colors"
               >
                 {emoji}
               </button>
