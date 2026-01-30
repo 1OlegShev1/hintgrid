@@ -2,9 +2,10 @@
 
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
+import { ref, get } from "firebase/database";
 import TransitionOverlay from "@/components/TransitionOverlay";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
-import { goOffline, goOnline } from "@/lib/firebase";
+import { goOffline, goOnline, getDatabase } from "@/lib/firebase";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useFirebaseConnection } from "@/hooks/useFirebaseConnection";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
@@ -23,6 +24,7 @@ import {
 } from "@/components/room";
 import OfflineBanner from "@/components/OfflineBanner";
 import { useIdleTimeout } from "@/hooks/useIdleTimeout";
+import { useAuth } from "@/contexts/AuthContext";
 
 // 1 hour idle timeout (only active in lobby, not during game)
 const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
@@ -31,6 +33,7 @@ export default function RoomPage() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { uid } = useAuth();
   
   // Extract room code from pathname: /room/ABC123 -> ABC123
   const roomCode = pathname?.split("/room/")[1]?.split("/")[0] || "";
@@ -48,6 +51,52 @@ export default function RoomPage() {
       localStorage.setItem(LOCAL_STORAGE_AVATAR_KEY, random);
     }
   }, []);
+
+  // Pre-check if room is locked (before asking for name)
+  // This prevents asking for a name just to tell them the room is locked
+  const [preJoinCheck, setPreJoinCheck] = useState<{
+    checked: boolean;
+    isLocked: boolean;
+    roomExists: boolean;
+    isExistingPlayer: boolean;
+  }>({ checked: false, isLocked: false, roomExists: true, isExistingPlayer: false });
+
+  useEffect(() => {
+    // Only check when we don't have a player name yet and have uid
+    if (playerName || !roomCode || !uid) return;
+
+    const checkRoomLock = async () => {
+      try {
+        const db = getDatabase();
+        if (!db) return;
+
+        const roomRef = ref(db, `rooms/${roomCode}`);
+        const roomSnap = await get(roomRef);
+
+        if (!roomSnap.exists()) {
+          // Room doesn't exist - will be created when they join
+          setPreJoinCheck({ checked: true, isLocked: false, roomExists: false, isExistingPlayer: false });
+          return;
+        }
+
+        const roomData = roomSnap.val();
+        const isLocked = roomData.locked === true;
+
+        // Check if this user already has a player record (can rejoin locked rooms)
+        const playersRef = ref(db, `rooms/${roomCode}/players/${uid}`);
+        const playerSnap = await get(playersRef);
+        const isExistingPlayer = playerSnap.exists();
+
+        setPreJoinCheck({ checked: true, isLocked, roomExists: true, isExistingPlayer });
+      } catch (err) {
+        console.warn("[PreJoinCheck] Failed to check room lock status:", err);
+        // On error, allow them to try joining (will fail properly in joinRoom)
+        setPreJoinCheck({ checked: true, isLocked: false, roomExists: true, isExistingPlayer: false });
+      }
+    };
+
+    checkRoomLock();
+  }, [roomCode, playerName, uid]);
 
   // Custom hooks - only join room once avatar is loaded to prevent re-join race condition
   const room = useRtdbRoom(roomCode, playerName, playerAvatar || "");
@@ -177,6 +226,27 @@ export default function RoomPage() {
   }
 
   if (!playerName) {
+    // Check if room is locked before asking for name
+    // (existing players can still rejoin locked rooms)
+    if (preJoinCheck.checked && preJoinCheck.isLocked && !preJoinCheck.isExistingPlayer) {
+      return (
+        <ConnectionStatus
+          isConnecting={false}
+          connectionError="Room is locked"
+        />
+      );
+    }
+
+    // Still checking lock status - show loading
+    if (!preJoinCheck.checked && preJoinCheck.roomExists) {
+      return (
+        <ConnectionStatus
+          isConnecting={true}
+          connectionError={null}
+        />
+      );
+    }
+
     return (
       <JoinRoomForm
         roomCode={roomCode}
@@ -188,7 +258,18 @@ export default function RoomPage() {
     );
   }
 
-  if (!room.gameState) {
+  // Check for connection errors BEFORE checking gameState
+  // (Firebase listeners may populate gameState even if joinRoom fails)
+  if (room.connectionError) {
+    return (
+      <ConnectionStatus
+        isConnecting={false}
+        connectionError={room.connectionError}
+      />
+    );
+  }
+
+  if (!room.gameState || room.isConnecting) {
     return (
       <ConnectionStatus
         isConnecting={room.isConnecting}

@@ -130,15 +130,14 @@ export async function joinRoom(
       board: [],
     });
   } else {
-    // Room exists - check for duplicate names
+    // Room exists - check lock status FIRST before anything else
+    const roomData = roomSnap.val() as RoomData;
     const playersSnap = await get(playersRef);
     const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
     
     // Check if room is locked (existing players can still rejoin)
-    const roomData = roomSnap.val() as RoomData;
     const existingPlayer = players[playerId];
-    console.log("[joinRoom] Lock check:", { locked: roomData.locked, playerId, existingPlayer: !!existingPlayer });
-    if (roomData.locked && !existingPlayer) {
+    if (roomData.locked === true && !existingPlayer) {
       throw new Error("Room is locked");
     }
     
