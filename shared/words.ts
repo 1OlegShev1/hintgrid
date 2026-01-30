@@ -1,6 +1,7 @@
 // Word lists for HintGrid game
 
 import { shuffle } from "./game-utils";
+import { MAX_CUSTOM_WORDS_ON_BOARD } from "./constants";
 import type { WordPack } from "./types";
 
 // Re-export WordPack type for convenience
@@ -338,13 +339,35 @@ export function getWordCount(selection: WordPackSelection): number {
   return getWordList(selection).length;
 }
 
-// Generate a board from a single pack or multiple packs
-export function generateBoard(packs: WordPackSelection = "classic"): string[] {
-  const wordList = Array.isArray(packs) 
+/**
+ * Generate a board from word packs and optional custom words.
+ * Uses PRIORITY FILL: custom words fill first (up to MAX_CUSTOM_WORDS_ON_BOARD),
+ * then pack words fill remaining slots.
+ * This guarantees custom words appear while maintaining variety from packs.
+ */
+export function generateBoard(
+  packs: WordPackSelection = "classic",
+  customWords: string[] = []
+): string[] {
+  const packWords = Array.isArray(packs) 
     ? getCombinedWordList(packs) 
     : getWordList(packs);
-  const shuffled = shuffle(wordList);
-  return shuffled.slice(0, 25);
+  
+  // Priority fill: custom words first (up to limit), then pack words
+  const shuffledCustom = shuffle([...customWords]);
+  const customToUse = shuffledCustom.slice(0, MAX_CUSTOM_WORDS_ON_BOARD);
+  const customSet = new Set(customToUse.map(w => w.toUpperCase()));
+  
+  // Filter out any pack words that match custom words (avoid duplicates)
+  const filteredPacks = packWords.filter(w => !customSet.has(w.toUpperCase()));
+  const shuffledPacks = shuffle(filteredPacks);
+  
+  // Fill remaining slots with pack words
+  const slotsFromPacks = 25 - customToUse.length;
+  const packWordsToUse = shuffledPacks.slice(0, slotsFromPacks);
+  
+  // Combine and shuffle final board (so custom words aren't grouped together)
+  return shuffle([...customToUse, ...packWordsToUse]);
 }
 
 export function assignTeams(

@@ -86,6 +86,7 @@ export function toGameState(
     wordPack: roomData.wordPack 
       ? (Array.isArray(roomData.wordPack) ? roomData.wordPack : [roomData.wordPack])
       : ["classic"],
+    customWords: roomData.customWords || [],
     currentClue: roomData.currentClue || null,
     remainingGuesses: roomData.remainingGuesses ?? null,
     turnStartTime: roomData.turnStartTime || null,

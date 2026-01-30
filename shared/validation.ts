@@ -7,6 +7,8 @@ import {
   MAX_PLAYER_NAME_LENGTH,
   MAX_CLUE_LENGTH,
   MAX_CHAT_MESSAGE_LENGTH,
+  MAX_CUSTOM_WORD_LENGTH,
+  MAX_CUSTOM_WORDS,
 } from "./constants";
 import { containsProfanity, censorProfanity } from "./profanity";
 
@@ -115,4 +117,70 @@ export function isValidClueFormat(clue: string): boolean {
 export function isValidChatMessage(message: string): boolean {
   const trimmed = message.trim();
   return trimmed.length > 0 && trimmed.length <= MAX_CHAT_MESSAGE_LENGTH;
+}
+
+/**
+ * Validate a single custom word with detailed error messages.
+ * Checks: non-empty, length limit, profanity.
+ * Note: Words can contain spaces (like "ICE CREAM").
+ */
+export function validateCustomWord(word: string): ValidationResult {
+  const trimmed = word.trim();
+  if (trimmed.length === 0) {
+    return { valid: false, error: "Word cannot be empty" };
+  }
+  if (trimmed.length > MAX_CUSTOM_WORD_LENGTH) {
+    return { valid: false, error: `Word must be ${MAX_CUSTOM_WORD_LENGTH} characters or less` };
+  }
+  if (containsProfanity(trimmed)) {
+    return { valid: false, error: "Word contains inappropriate content" };
+  }
+  return { valid: true };
+}
+
+/**
+ * Parse and sanitize custom words input from textarea.
+ * Accepts comma or newline separated words.
+ * Returns: { words: valid uppercase words, errors: error messages for rejected words }
+ */
+export function parseCustomWordsInput(
+  input: string,
+  existingWords: string[] = []
+): { words: string[]; errors: string[] } {
+  const errors: string[] = [];
+  const existingSet = new Set(existingWords.map(w => w.toUpperCase()));
+  const newWords: string[] = [];
+
+  // Split by comma or newline, filter empty
+  const parts = input
+    .split(/[,\n]+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  for (const part of parts) {
+    const validation = validateCustomWord(part);
+    if (!validation.valid) {
+      errors.push(`"${part.slice(0, 20)}${part.length > 20 ? '...' : ''}": ${validation.error}`);
+      continue;
+    }
+
+    const upper = part.toUpperCase();
+    
+    // Check for duplicates
+    if (existingSet.has(upper) || newWords.some(w => w.toUpperCase() === upper)) {
+      errors.push(`"${part}": Already added`);
+      continue;
+    }
+
+    // Check total limit
+    if (existingWords.length + newWords.length >= MAX_CUSTOM_WORDS) {
+      errors.push(`Maximum ${MAX_CUSTOM_WORDS} custom words allowed`);
+      break;
+    }
+
+    newWords.push(upper);
+    existingSet.add(upper);
+  }
+
+  return { words: newWords, errors };
 }

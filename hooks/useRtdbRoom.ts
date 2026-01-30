@@ -42,6 +42,7 @@ export interface UseRtdbRoomReturn {
   handleGiveClue: (word: string, count: number) => void;
   handleTimerPresetChange: (preset: TimerPreset) => void;
   handleWordPackChange: (packs: WordPack[]) => void;
+  handleCustomWordsChange: (words: string[]) => void;
   handleSetRoomLocked: (locked: boolean) => void;
   handleKickPlayer: (targetPlayerId: string) => void;
   handleSetRoomName: (roomName: string) => void;
@@ -163,6 +164,7 @@ export function useRtdbRoom(
     handleGiveClue: gameActions.handleGiveClue,
     handleTimerPresetChange: gameActions.handleTimerPresetChange,
     handleWordPackChange: gameActions.handleWordPackChange,
+    handleCustomWordsChange: gameActions.handleCustomWordsChange,
     handleSetRoomLocked: gameActions.handleSetRoomLocked,
     handleKickPlayer: gameActions.handleKickPlayer,
     handleSetRoomName: gameActions.handleSetRoomName,

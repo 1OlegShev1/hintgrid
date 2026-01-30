@@ -22,6 +22,7 @@ export interface UseGameActionsReturn {
   handleGiveClue: (word: string, count: number) => void;
   handleTimerPresetChange: (preset: TimerPreset) => void;
   handleWordPackChange: (packs: WordPack[]) => void;
+  handleCustomWordsChange: (words: string[]) => void;
   handleSetRoomLocked: (locked: boolean) => void;
   handleKickPlayer: (targetPlayerId: string) => void;
   handleSetRoomName: (roomName: string) => void;
@@ -92,6 +93,10 @@ export function useGameActions(
     if (uid) actions.setWordPack(roomCode, uid, packs).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
+  const handleCustomWordsChange = useCallback((words: string[]) => {
+    if (uid) actions.setCustomWords(roomCode, uid, words).catch((e) => showError(e.message));
+  }, [roomCode, uid, showError]);
+
   const handleSetRoomLocked = useCallback((locked: boolean) => {
     if (uid) actions.setRoomLocked(roomCode, uid, locked).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
@@ -118,6 +123,7 @@ export function useGameActions(
     handleGiveClue,
     handleTimerPresetChange,
     handleWordPackChange,
+    handleCustomWordsChange,
     handleSetRoomLocked,
     handleKickPlayer,
     handleSetRoomName,

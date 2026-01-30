@@ -109,6 +109,11 @@
           ".validate": "newData.exists()"
         },
 
+        "customWords": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid && root.child('rooms').child($roomCode).child('gameStarted').val() !== true",
+          ".validate": "!newData.exists() || newData.isString() || (newData.hasChildren() && newData.val().length <= 100)"
+        },
+
         "currentClue": {
           ".write": "auth != null && (root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid || root.child('rooms').child($roomCode).child('players').child(auth.uid).child('role').val() === 'clueGiver' || root.child('rooms').child($roomCode).child('players').child(auth.uid).child('role').val() === 'guesser')",
           ".validate": "!newData.exists() || (newData.child('word').isString() && newData.child('word').val().length > 0 && newData.child('word').val().length <= 30 && newData.child('count').isNumber() && newData.child('count').val() >= 0)"

@@ -32,6 +32,11 @@ export const MAX_CHAT_MESSAGE_LENGTH = 200;
 export const MAX_ROOM_NAME_LENGTH = 40;
 export const MIN_PLAYERS_TO_START = 4;
 
+// Custom words limits
+export const MAX_CUSTOM_WORDS = 100; // Max words owner can store
+export const MAX_CUSTOM_WORD_LENGTH = 30; // Same as clue limit
+export const MAX_CUSTOM_WORDS_ON_BOARD = 15; // Max custom words that appear on board (10 slots reserved for packs)
+
 // Public rooms
 export const DEFAULT_VISIBILITY = "public" as const;
 export const MAX_PLAYERS_DEFAULT = 300; // High limit for DDoS protection

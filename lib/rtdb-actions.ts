@@ -455,7 +455,9 @@ export async function startGame(roomCode: string, playerId: string): Promise<voi
   const wordPacks = roomData.wordPack 
     ? (Array.isArray(roomData.wordPack) ? roomData.wordPack : [roomData.wordPack]) 
     : DEFAULT_WORD_PACK;
-  const boardWords = generateBoard(wordPacks);
+  // Get custom words (defaults to empty array)
+  const customWords = roomData.customWords || [];
+  const boardWords = generateBoard(wordPacks, customWords);
   const startingTeam = roomData.startingTeam as "red" | "blue";
   const board: BoardCard[] = assignTeams(boardWords, startingTeam).map((c) => ({
     word: c.word,
@@ -517,7 +519,9 @@ export async function rematch(roomCode: string, playerId: string): Promise<void>
   const wordPacks = roomData.wordPack 
     ? (Array.isArray(roomData.wordPack) ? roomData.wordPack : [roomData.wordPack]) 
     : DEFAULT_WORD_PACK;
-  const boardWords = generateBoard(wordPacks);
+  // Get custom words (defaults to empty array)
+  const customWords = roomData.customWords || [];
+  const boardWords = generateBoard(wordPacks, customWords);
   const startingTeam: Team = Math.random() < 0.5 ? "red" : "blue";
   const board: BoardCard[] = assignTeams(boardWords, startingTeam).map((c) => ({
     word: c.word,
@@ -727,6 +731,20 @@ export async function setWordPack(roomCode: string, playerId: string, packs: Wor
   if (roomData.gameStarted) throw new Error("Game already started");
 
   await update(roomRef, { wordPack: packs });
+}
+
+export async function setCustomWords(roomCode: string, playerId: string, customWords: string[]): Promise<void> {
+  const db = getDb();
+  const roomRef = ref(db, `rooms/${roomCode}`);
+  const roomSnap = await get(roomRef);
+
+  if (!roomSnap.exists()) throw new Error("Room not found");
+  const roomData = roomSnap.val() as RoomData;
+  if (roomData.ownerId !== playerId) throw new Error("Not room owner");
+  if (roomData.gameStarted) throw new Error("Game already started");
+
+  // Store custom words (validation happens client-side, we just store the array)
+  await update(roomRef, { customWords: customWords.length > 0 ? customWords : null });
 }
 
 export async function setRoomLocked(roomCode: string, playerId: string, locked: boolean): Promise<void> {

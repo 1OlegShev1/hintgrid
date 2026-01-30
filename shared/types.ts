@@ -41,6 +41,7 @@ export interface GameState {
   currentTeam: Team;
   startingTeam: Team;
   wordPack: WordPack[]; // Selected word pack(s) for this game
+  customWords: string[]; // Room owner's custom words (uppercase, deduplicated)
   currentClue: { word: string; count: number } | null;
   remainingGuesses: number | null;
   turnStartTime: number | null;
@@ -165,6 +166,7 @@ export interface FirebaseRoomData {
   currentTeam: Team;
   startingTeam: Team;
   wordPack: WordPack | WordPack[]; // Can be single (legacy) or array (new)
+  customWords?: string[]; // Room owner's custom words (uppercase, deduplicated)
   currentClue: { word: string; count: number } | null;
   remainingGuesses: number | null;
   turnStartTime: number | null;

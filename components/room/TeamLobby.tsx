@@ -1,7 +1,8 @@
 import { useState, useRef, useEffect } from "react";
 import type { GameState, Player, WordPack, TimerPreset } from "@/shared/types";
-import { TIMER_PRESETS, WORD_PACKS } from "@/shared/constants";
+import { TIMER_PRESETS, WORD_PACKS, MAX_CUSTOM_WORDS_ON_BOARD } from "@/shared/constants";
 import { getPackDisplayName, getWordCount } from "@/shared/words";
+import { parseCustomWordsInput } from "@/shared/validation";
 
 interface TeamLobbyProps {
   players: Player[];
@@ -13,6 +14,7 @@ interface TeamLobbyProps {
   onStartGame: () => void;
   onTimerPresetChange: (preset: TimerPreset) => void;
   onWordPackChange: (packs: WordPack[]) => void;
+  onCustomWordsChange?: (words: string[]) => void;
   onResumeGame?: () => void;
   onKickPlayer?: (playerId: string) => void;
   showControls?: boolean; // Hide start button in rematch mode
@@ -41,6 +43,7 @@ export default function TeamLobby({
   onStartGame,
   onTimerPresetChange,
   onWordPackChange,
+  onCustomWordsChange,
   onResumeGame,
   onKickPlayer,
   showControls = true,
@@ -49,8 +52,14 @@ export default function TeamLobby({
   // Dropdown states
   const [isWordPackOpen, setIsWordPackOpen] = useState(false);
   const [isTimerOpen, setIsTimerOpen] = useState(false);
+  const [isCustomWordsOpen, setIsCustomWordsOpen] = useState(false);
   const wordPackRef = useRef<HTMLDivElement>(null);
   const timerRef = useRef<HTMLDivElement>(null);
+  const customWordsRef = useRef<HTMLDivElement>(null);
+  
+  // Custom words state
+  const [customWordsInput, setCustomWordsInput] = useState("");
+  const [customWordsErrors, setCustomWordsErrors] = useState<string[]>([]);
 
   // Close dropdowns when clicking outside
   useEffect(() => {
@@ -61,12 +70,39 @@ export default function TeamLobby({
       if (timerRef.current && !timerRef.current.contains(event.target as Node)) {
         setIsTimerOpen(false);
       }
+      if (customWordsRef.current && !customWordsRef.current.contains(event.target as Node)) {
+        setIsCustomWordsOpen(false);
+      }
     }
-    if (isWordPackOpen || isTimerOpen) {
+    if (isWordPackOpen || isTimerOpen || isCustomWordsOpen) {
       document.addEventListener("mousedown", handleClickOutside);
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
-  }, [isWordPackOpen, isTimerOpen]);
+  }, [isWordPackOpen, isTimerOpen, isCustomWordsOpen]);
+  
+  // Custom words handlers
+  const handleAddCustomWords = () => {
+    if (!customWordsInput.trim() || !onCustomWordsChange) return;
+    
+    const { words, errors } = parseCustomWordsInput(customWordsInput, gameState.customWords);
+    setCustomWordsErrors(errors);
+    
+    if (words.length > 0) {
+      onCustomWordsChange([...gameState.customWords, ...words]);
+      setCustomWordsInput("");
+    }
+  };
+  
+  const handleRemoveCustomWord = (word: string) => {
+    if (!onCustomWordsChange) return;
+    onCustomWordsChange(gameState.customWords.filter(w => w !== word));
+  };
+  
+  const handleClearAllCustomWords = () => {
+    if (!onCustomWordsChange) return;
+    onCustomWordsChange([]);
+    setCustomWordsErrors([]);
+  };
 
   // Check if game is paused (mid-game role reassignment mode)
   const isPaused = gameState.gameStarted && gameState.paused && !gameState.gameOver;
@@ -220,6 +256,110 @@ export default function TeamLobby({
                     ? getPackDisplayName(gameState.wordPack[0])
                     : gameState.wordPack.map(p => getPackDisplayName(p)).join(", ")}
                   <span className="text-xs text-gray-500 ml-1">({getWordCount(gameState.wordPack)})</span>
+                </span>
+              )}
+            </div>
+            {/* Custom Words */}
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
+              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Custom:</span>
+              {isRoomOwner && onCustomWordsChange ? (
+                <div className="relative" ref={customWordsRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsCustomWordsOpen(!isCustomWordsOpen)}
+                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1.5 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                  >
+                    <span>{gameState.customWords.length || "0"}</span>
+                    <svg 
+                      className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isCustomWordsOpen ? 'rotate-180' : ''}`} 
+                      fill="none" 
+                      stroke="currentColor" 
+                      viewBox="0 0 24 24"
+                    >
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                    </svg>
+                  </button>
+                  {isCustomWordsOpen && (
+                    <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 w-[320px]">
+                      <div className="p-3 space-y-3">
+                        {/* Input section */}
+                        <div>
+                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                            Add words (comma or newline separated):
+                          </label>
+                          <textarea
+                            value={customWordsInput}
+                            onChange={(e) => setCustomWordsInput(e.target.value)}
+                            placeholder="pizza, rocket, unicorn..."
+                            className="w-full h-16 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                          <button
+                            type="button"
+                            onClick={handleAddCustomWords}
+                            disabled={!customWordsInput.trim()}
+                            className="mt-2 w-full px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                          >
+                            Add Words
+                          </button>
+                        </div>
+                        
+                        {/* Errors */}
+                        {customWordsErrors.length > 0 && (
+                          <div className="text-xs text-red-600 dark:text-red-400 space-y-0.5">
+                            {customWordsErrors.slice(0, 3).map((err, i) => (
+                              <p key={i}>{err}</p>
+                            ))}
+                            {customWordsErrors.length > 3 && (
+                              <p>...and {customWordsErrors.length - 3} more</p>
+                            )}
+                          </div>
+                        )}
+                        
+                        {/* Word chips */}
+                        {gameState.customWords.length > 0 && (
+                          <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
+                            {gameState.customWords.map((word) => (
+                              <span
+                                key={word}
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs rounded-full"
+                              >
+                                {word}
+                                <button
+                                  type="button"
+                                  onClick={() => handleRemoveCustomWord(word)}
+                                  className="hover:text-purple-600 dark:hover:text-purple-400"
+                                >
+                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                  </svg>
+                                </button>
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                      </div>
+                      
+                      {/* Footer */}
+                      <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2 flex justify-between items-center">
+                        <span className="text-xs text-gray-500">
+                          {gameState.customWords.length} words (up to {MAX_CUSTOM_WORDS_ON_BOARD} appear)
+                        </span>
+                        {gameState.customWords.length > 0 && (
+                          <button
+                            type="button"
+                            onClick={handleClearAllCustomWords}
+                            className="text-xs text-red-600 hover:text-red-700 font-medium"
+                          >
+                            Clear All
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ) : (
+                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                  {gameState.customWords.length || "0"}
                 </span>
               )}
             </div>
