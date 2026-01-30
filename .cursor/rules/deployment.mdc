@@ -1,0 +1,29 @@
+---
+description: Deployment commands for HintGrid
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# Deployment Commands
+
+When deploying HintGrid, ALWAYS use the npm scripts:
+
+## Full Deploy (hosting + database rules)
+```bash
+npm run deploy
+```
+This runs: `npm run build && firebase deploy`
+
+## Hosting Only
+```bash
+npm run deploy:hosting
+```
+This runs: `npm run build && firebase deploy --only hosting`
+
+## Database Rules Only
+```bash
+npm run deploy:rules
+```
+This runs: `firebase deploy --only firestore:rules`
+
+**NEVER** run `firebase deploy` or `npm run build` separately. Always use the combined scripts.
