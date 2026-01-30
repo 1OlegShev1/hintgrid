@@ -85,9 +85,22 @@ function LockIcon({ className }: { className?: string }) {
   );
 }
 
+// Check if error looks like a rate limit / quota error from Firebase
+function isRateLimitError(error: string): boolean {
+  const lower = error.toLowerCase();
+  return (
+    lower.includes("quota") ||
+    lower.includes("rate") ||
+    lower.includes("too many") ||
+    lower.includes("resource_exhausted") ||
+    lower.includes("exceeded")
+  );
+}
+
 export default function ConnectionStatus({ isConnecting, connectionError }: ConnectionStatusProps) {
   const isNameTaken = connectionError === "Name already taken";
   const isRoomLocked = connectionError === "Room is locked";
+  const isRateLimit = connectionError ? isRateLimitError(connectionError) : false;
   
   const handleChooseDifferentName = () => {
     // Remove name param from URL to show the name form again
@@ -123,6 +136,18 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
           iconBg: "bg-amber-100 dark:bg-amber-900/30",
           title: "Room is Locked",
           message: "This room is currently locked by the owner. New players cannot join at this time.",
+        };
+      }
+      if (isRateLimit) {
+        return {
+          icon: (
+            <svg className="w-8 h-8 text-orange-600 dark:text-orange-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+          iconBg: "bg-orange-100 dark:bg-orange-900/30",
+          title: "Too Many Requests",
+          message: "Please wait a moment before trying again.",
         };
       }
       return {
@@ -166,6 +191,13 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
                 >
                   Go Home
+                </button>
+              ) : isRateLimit ? (
+                <button
+                  onClick={() => window.location.reload()}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
+                >
+                  Try Again
                 </button>
               ) : (
                 <>
