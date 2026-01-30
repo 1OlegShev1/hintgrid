@@ -28,6 +28,11 @@
           ".write": "auth != null && (root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid || root.child('rooms').child($roomCode).child('players').child(auth.uid).child('role').val() === 'guesser')"
         },
 
+        "locked": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid",
+          ".validate": "newData.isBoolean()"
+        },
+
         "currentTeam": {
           ".write": "auth != null && (root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid || root.child('rooms').child($roomCode).child('players').child(auth.uid).child('role').val() === 'guesser')"
         },

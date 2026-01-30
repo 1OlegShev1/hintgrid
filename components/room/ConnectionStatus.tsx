@@ -68,8 +68,26 @@ function LoadingSkeleton() {
   );
 }
 
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg 
+      className={className} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth={2} 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  );
+}
+
 export default function ConnectionStatus({ isConnecting, connectionError }: ConnectionStatusProps) {
   const isNameTaken = connectionError === "Name already taken";
+  const isRoomLocked = connectionError === "Room is locked";
   
   const handleChooseDifferentName = () => {
     // Remove name param from URL to show the name form again
@@ -85,23 +103,54 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
 
   // Show error state
   if (connectionError) {
+    // Determine error type for customized UI
+    const getErrorDetails = () => {
+      if (isNameTaken) {
+        return {
+          icon: (
+            <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+          ),
+          iconBg: "bg-red-100 dark:bg-red-900/30",
+          title: "Name Already Taken",
+          message: "Someone in this room is already using that name. Please choose a different one.",
+        };
+      }
+      if (isRoomLocked) {
+        return {
+          icon: <LockIcon className="w-8 h-8 text-amber-600 dark:text-amber-400" />,
+          iconBg: "bg-amber-100 dark:bg-amber-900/30",
+          title: "Room is Locked",
+          message: "This room is currently locked by the owner. New players cannot join at this time.",
+        };
+      }
+      return {
+        icon: (
+          <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        ),
+        iconBg: "bg-red-100 dark:bg-red-900/30",
+        title: "Connection Failed",
+        message: connectionError,
+      };
+    };
+
+    const { icon, iconBg, title, message } = getErrorDetails();
+
     return (
       <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center max-w-md">
           <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
-            <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
-              <svg className="w-8 h-8 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
+            <div className={`w-16 h-16 mx-auto mb-4 ${iconBg} rounded-full flex items-center justify-center`}>
+              {icon}
             </div>
             <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
-              {isNameTaken ? "Name Already Taken" : "Connection Failed"}
+              {title}
             </h2>
             <p className="text-gray-600 dark:text-gray-400 mb-6">
-              {isNameTaken 
-                ? "Someone in this room is already using that name. Please choose a different one."
-                : connectionError
-              }
+              {message}
             </p>
             <div className="flex gap-3 justify-center">
               {isNameTaken ? (
@@ -110,6 +159,13 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
                   className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
                 >
                   Choose Different Name
+                </button>
+              ) : isRoomLocked ? (
+                <button
+                  onClick={() => window.location.href = "/"}
+                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
+                >
+                  Go Home
                 </button>
               ) : (
                 <>

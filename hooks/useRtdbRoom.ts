@@ -42,6 +42,7 @@ export interface UseRtdbRoomReturn {
   handleGiveClue: (word: string, count: number) => void;
   handleTimerPresetChange: (preset: TimerPreset) => void;
   handleWordPackChange: (packs: WordPack[]) => void;
+  handleSetRoomLocked: (locked: boolean) => void;
 }
 
 export function useRtdbRoom(
@@ -159,5 +160,6 @@ export function useRtdbRoom(
     handleGiveClue: gameActions.handleGiveClue,
     handleTimerPresetChange: gameActions.handleTimerPresetChange,
     handleWordPackChange: gameActions.handleWordPackChange,
+    handleSetRoomLocked: gameActions.handleSetRoomLocked,
   };
 }

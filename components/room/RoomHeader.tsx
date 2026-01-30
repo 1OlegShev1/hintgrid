@@ -6,6 +6,7 @@ interface RoomHeaderProps {
   roomCode: string;
   currentPlayer: Player | null;
   isRoomOwner: boolean;
+  isLocked?: boolean;
   onLeaveRoom?: () => void;
 }
 
@@ -41,6 +42,24 @@ function QrCodeIcon({ className }: { className?: string }) {
       <rect x="18" y="14" width="3" height="3" />
       <rect x="14" y="18" width="3" height="3" />
       <rect x="18" y="18" width="3" height="3" />
+    </svg>
+  );
+}
+
+function LockIcon({ className }: { className?: string }) {
+  return (
+    <svg 
+      className={className} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth={2} 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      aria-label="Room locked"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
     </svg>
   );
 }
@@ -120,7 +139,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, onLeaveRoom }: RoomHeaderProps) {
+export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLocked, onLeaveRoom }: RoomHeaderProps) {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -168,6 +187,15 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, onLea
             >
               {roomCode}
             </button>
+            {isLocked && (
+              <span 
+                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium"
+                title="Room is locked - new players cannot join"
+              >
+                <LockIcon className="w-3 h-3" />
+                Locked
+              </span>
+            )}
           </div>
           <button
             onClick={handleShareRoom}

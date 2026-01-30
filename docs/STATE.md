@@ -29,6 +29,7 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
       "paused": false,
       "pauseReason": null,
       "pausedForTeam": null,
+      "locked": false,
       "createdAt": 1234567890,
       "board": [
         { "word": "...", "team": "red", "revealed": false, "revealedBy": null, "votes": {} }

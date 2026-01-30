@@ -98,4 +98,20 @@ Team management operates in two modes based on game state:
 
 *During active game, owner can only add spectators as seekers (not hinter).
 
+## Room Locking
+
+The room owner can lock the room to prevent new players from joining:
+
+**Behavior:**
+- When locked, new players attempting to join see "Room is locked" error
+- Existing players who disconnect can still rejoin (they have a player record)
+- The owner can lock/unlock at any time (lobby, during game, paused, game over)
+
+**UI:**
+- Lock toggle button appears in lobby header for the room owner
+- Lock indicator badge shows next to room code in header when locked
+- Non-owners see the lock status but cannot change it
+
+**Future consideration:** Room locking (joinability) is separate from room visibility (public/private). A public room can be locked (visible but not joinable), and a private room can be unlocked (not visible but joinable via direct link).
+
 If we introduce deviations or house rules, list them here explicitly.

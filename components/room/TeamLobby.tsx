@@ -13,6 +13,7 @@ interface TeamLobbyProps {
   onStartGame: () => void;
   onTimerPresetChange: (preset: TimerPreset) => void;
   onWordPackChange: (packs: WordPack[]) => void;
+  onSetRoomLocked?: (locked: boolean) => void;
   onResumeGame?: () => void;
   showControls?: boolean; // Hide start button in rematch mode
   hidePauseHeader?: boolean; // Hide pause header when GameStatusPanel already shows it
@@ -30,6 +31,20 @@ const wordPackOptions: { label: string; value: WordPack }[] = WORD_PACKS.map(pac
   value: pack as WordPack,
 }));
 
+function LockIcon({ className, locked }: { className?: string; locked: boolean }) {
+  return locked ? (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  ) : (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
+    </svg>
+  );
+}
+
 export default function TeamLobby({
   players,
   currentPlayer,
@@ -40,6 +55,7 @@ export default function TeamLobby({
   onStartGame,
   onTimerPresetChange,
   onWordPackChange,
+  onSetRoomLocked,
   onResumeGame,
   showControls = true,
   hidePauseHeader = false,
@@ -283,6 +299,27 @@ export default function TeamLobby({
                 </span>
               )}
             </div>
+            {isRoomOwner && onSetRoomLocked && (
+              <button
+                onClick={() => onSetRoomLocked(!gameState.locked)}
+                data-testid="lobby-lock-btn"
+                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                  gameState.locked
+                    ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+                    : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                }`}
+                title={gameState.locked ? "Room is locked - click to unlock" : "Room is open - click to lock"}
+              >
+                <LockIcon className="w-4 h-4" locked={gameState.locked} />
+                <span>{gameState.locked ? "Locked" : "Open"}</span>
+              </button>
+            )}
+            {!isRoomOwner && gameState.locked && (
+              <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium">
+                <LockIcon className="w-4 h-4" locked={true} />
+                <span>Locked</span>
+              </div>
+            )}
             {isRoomOwner && (
               <button
                 onClick={onRandomize}

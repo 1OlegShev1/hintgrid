@@ -233,7 +233,7 @@ export default function RoomPage() {
       )}
       
       <div className="max-w-6xl mx-auto">
-        <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} onLeaveRoom={handleLeaveRoom} />
+        <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} isLocked={room.gameState.locked} onLeaveRoom={handleLeaveRoom} />
         <OfflineBanner />
 
         {room.gameState.gameStarted ? (

@@ -22,6 +22,7 @@ export interface UseGameActionsReturn {
   handleGiveClue: (word: string, count: number) => void;
   handleTimerPresetChange: (preset: TimerPreset) => void;
   handleWordPackChange: (packs: WordPack[]) => void;
+  handleSetRoomLocked: (locked: boolean) => void;
 }
 
 export function useGameActions(
@@ -89,6 +90,10 @@ export function useGameActions(
     if (uid) actions.setWordPack(roomCode, uid, packs).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
+  const handleSetRoomLocked = useCallback((locked: boolean) => {
+    if (uid) actions.setRoomLocked(roomCode, uid, locked).catch((e) => showError(e.message));
+  }, [roomCode, uid, showError]);
+
   return {
     handleStartGame,
     handleSetLobbyRole,
@@ -103,5 +108,6 @@ export function useGameActions(
     handleGiveClue,
     handleTimerPresetChange,
     handleWordPackChange,
+    handleSetRoomLocked,
   };
 }

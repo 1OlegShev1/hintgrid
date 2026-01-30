@@ -125,6 +125,7 @@ export async function joinRoom(
       paused: false,
       pauseReason: null,
       pausedForTeam: null,
+      locked: false,
       createdAt: serverTimestamp(),
       board: [],
     });
@@ -132,6 +133,13 @@ export async function joinRoom(
     // Room exists - check for duplicate names
     const playersSnap = await get(playersRef);
     const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
+    
+    // Check if room is locked (existing players can still rejoin)
+    const roomData = roomSnap.val() as RoomData;
+    const existingPlayer = players[playerId];
+    if (roomData.locked && !existingPlayer) {
+      throw new Error("Room is locked");
+    }
     
     // Check if another connected player has the same name
     const duplicateName = Object.entries(players).find(
@@ -655,6 +663,18 @@ export async function setWordPack(roomCode: string, playerId: string, packs: Wor
   if (roomData.gameStarted) throw new Error("Game already started");
 
   await update(roomRef, { wordPack: packs });
+}
+
+export async function setRoomLocked(roomCode: string, playerId: string, locked: boolean): Promise<void> {
+  const db = getDb();
+  const roomRef = ref(db, `rooms/${roomCode}`);
+  const roomSnap = await get(roomRef);
+
+  if (!roomSnap.exists()) throw new Error("Room not found");
+  const roomData = roomSnap.val() as RoomData;
+  if (roomData.ownerId !== playerId) throw new Error("Not room owner");
+
+  await update(roomRef, { locked });
 }
 
 export async function setLobbyRole(

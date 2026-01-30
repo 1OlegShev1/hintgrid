@@ -96,6 +96,7 @@ export function toGameState(
     paused: roomData.paused || false,
     pauseReason: roomData.pauseReason || null,
     pausedForTeam: roomData.pausedForTeam || null,
+    locked: roomData.locked || false,
   };
 }
 

@@ -54,6 +54,7 @@ export interface GameState {
   paused: boolean;
   pauseReason: PauseReason;
   pausedForTeam: Team | null;
+  locked: boolean; // Whether new players can join (existing players can still rejoin)
 }
 
 export interface ChatMessage {
@@ -145,6 +146,7 @@ export interface FirebaseRoomData {
   paused: boolean;
   pauseReason: PauseReason;
   pausedForTeam: Team | null;
+  locked?: boolean; // Whether new players can join (optional for backwards compatibility)
   createdAt: number;
   board: FirebaseBoardCard[];
   players?: Record<string, FirebasePlayerData>;
