@@ -212,7 +212,9 @@ export async function joinRoom(
     const updatedRoomData = updatedRoomSnap.val() as RoomData;
     const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
     // Fire and forget - don't block join on index update
-    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
+    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch((err) => {
+      console.warn("[PublicRooms] Failed to update index on join:", err?.message || err);
+    });
   }
 
   return { disconnectRef: playerRef };
