@@ -30,6 +30,7 @@ export function LobbyView({ room, derived }: LobbyViewProps) {
       onStartGame={room.handleStartGame}
       onTimerPresetChange={room.handleTimerPresetChange}
       onWordPackChange={room.handleWordPackChange}
+      onKickPlayer={room.handleKickPlayer}
       showControls={true}
     />
   );

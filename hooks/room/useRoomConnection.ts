@@ -27,7 +27,8 @@ export interface UseRoomConnectionReturn {
 export function useRoomConnection(
   roomCode: string,
   playerName: string,
-  playerAvatar: string
+  playerAvatar: string,
+  visibility?: "public" | "private"
 ): UseRoomConnectionReturn {
   const { uid, isLoading: authLoading } = useAuth();
 
@@ -236,7 +237,7 @@ export function useRoomConnection(
     });
 
     // Join room and set up onDisconnect
-    actions.joinRoom(roomCode, playerId, playerName, playerAvatar)
+    actions.joinRoom(roomCode, playerId, playerName, playerAvatar, visibility)
       .then(({ disconnectRef }) => {
         if (isCleanedUp) return;
         disconnectRefRef.current = disconnectRef;

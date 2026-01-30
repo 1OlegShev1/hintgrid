@@ -29,7 +29,15 @@ export const DEFAULT_WORD_PACK: typeof WORD_PACKS[number][] = ["classic"];
 export const MAX_PLAYER_NAME_LENGTH = 20;
 export const MAX_CLUE_LENGTH = 30;
 export const MAX_CHAT_MESSAGE_LENGTH = 200;
+export const MAX_ROOM_NAME_LENGTH = 40;
 export const MIN_PLAYERS_TO_START = 4;
+
+// Public rooms
+export const DEFAULT_VISIBILITY = "public" as const;
+export const MAX_PLAYERS_DEFAULT = 300; // High limit for DDoS protection
+export const MIN_PLAYERS_FOR_PUBLIC_LIST = 4; // Rooms need 4+ players to show in public list
+export const PUBLIC_ROOMS_DISPLAY_LIMIT = 6; // Show top 6 on home page
+export const BAN_DURATION_MS = 2 * 60 * 1000; // 2 minutes kick/ban duration
 
 // Presence cleanup
 export const STALE_PLAYER_GRACE_MS = 2 * 60 * 1000; // 2 minutes

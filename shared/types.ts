@@ -7,6 +7,8 @@ export type WordPackSelection = WordPack | WordPack[];
 
 export type TimerPreset = "fast" | "normal" | "relaxed";
 
+export type Visibility = "public" | "private";
+
 export type Role = "clueGiver" | "guesser";
 export type LobbyTeam = "red" | "blue" | null;
 export type LobbyRole = "clueGiver" | "guesser" | null;
@@ -55,6 +57,11 @@ export interface GameState {
   pauseReason: PauseReason;
   pausedForTeam: Team | null;
   locked: boolean; // Whether new players can join (existing players can still rejoin)
+  // Public rooms feature
+  visibility: Visibility;
+  roomName: string; // Display name for public rooms (auto-generated if not set)
+  maxPlayers: number; // Maximum players allowed in room
+  bannedPlayers: Record<string, number>; // playerId -> ban expiry timestamp
 }
 
 export interface ChatMessage {
@@ -74,6 +81,33 @@ export interface ChatMessage {
 }
 
 export type RoomClosedReason = "abandoned" | "allPlayersLeft" | "timeout";
+
+/**
+ * Public room info stored in /publicRooms index for discovery.
+ * This is a denormalized view for efficient querying on the home page.
+ */
+export interface PublicRoomInfo {
+  roomCode: string; // Included when reading from index
+  roomName: string;
+  ownerName: string;
+  playerCount: number;
+  status: "lobby" | "playing" | "paused";
+  timerPreset: TimerPreset;
+  createdAt: number;
+}
+
+/**
+ * Public room data as stored in Firebase /publicRooms/{roomCode}.
+ * Note: roomCode is the key, not stored in the value.
+ */
+export interface FirebasePublicRoomData {
+  roomName: string;
+  ownerName: string;
+  playerCount: number;
+  status: "lobby" | "playing" | "paused";
+  timerPreset: TimerPreset;
+  createdAt: number;
+}
 
 // ============================================================================
 // Firebase Data Structures (matches RTDB schema exactly)
@@ -147,6 +181,11 @@ export interface FirebaseRoomData {
   pauseReason: PauseReason;
   pausedForTeam: Team | null;
   locked?: boolean; // Whether new players can join (optional for backwards compatibility)
+  // Public rooms feature
+  visibility?: Visibility; // default "public" for new rooms
+  roomName?: string; // Display name for public rooms
+  maxPlayers?: number; // Maximum players allowed (default from constants)
+  bannedPlayers?: Record<string, number>; // playerId -> ban expiry timestamp
   createdAt: number;
   board: FirebaseBoardCard[];
   players?: Record<string, FirebasePlayerData>;

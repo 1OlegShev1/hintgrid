@@ -11,12 +11,15 @@ import type {
   WordPack,
   WordPackSelection,
   TimerPreset,
+  Visibility,
   FirebaseBoardCard,
   FirebasePlayerData,
   FirebaseMessageData,
   FirebaseRoomData,
+  PublicRoomInfo,
+  FirebasePublicRoomData,
 } from "@/shared/types";
-import { DEFAULT_TIMER_PRESET, TIMER_PRESETS } from "@/shared/constants";
+import { DEFAULT_TIMER_PRESET, TIMER_PRESETS, DEFAULT_VISIBILITY, MAX_PLAYERS_DEFAULT } from "@/shared/constants";
 
 // Re-export Firebase types for convenience
 export type { FirebaseBoardCard, FirebasePlayerData, FirebaseMessageData, FirebaseRoomData };
@@ -97,7 +100,21 @@ export function toGameState(
     pauseReason: roomData.pauseReason || null,
     pausedForTeam: roomData.pausedForTeam || null,
     locked: roomData.locked || false,
+    // Public rooms feature
+    visibility: roomData.visibility || DEFAULT_VISIBILITY,
+    roomName: roomName(roomData, players),
+    maxPlayers: roomData.maxPlayers || MAX_PLAYERS_DEFAULT,
+    bannedPlayers: roomData.bannedPlayers || {},
   };
+}
+
+/**
+ * Get room name, with fallback to owner's name + "'s Room"
+ */
+function roomName(roomData: FirebaseRoomData, players: Player[]): string {
+  if (roomData.roomName) return roomData.roomName;
+  const owner = players.find(p => p.id === roomData.ownerId);
+  return owner ? `${owner.name}'s Room` : "Game Room";
 }
 
 /**
@@ -157,4 +174,4 @@ export function toMessages(messagesData: Record<string, FirebaseMessageData> | n
 }
 
 // Re-export client types for convenience
-export type { GameState, Player, ChatMessage, RoomClosedReason, WordPack, WordPackSelection, TimerPreset };
+export type { GameState, Player, ChatMessage, RoomClosedReason, WordPack, WordPackSelection, TimerPreset, Visibility, PublicRoomInfo, FirebasePublicRoomData };

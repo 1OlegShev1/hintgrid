@@ -5,9 +5,10 @@ interface CompactTeamsProps {
   currentPlayerId?: string | null;
   isRoomOwner?: boolean;
   onAddSpectator?: (team: "red" | "blue", playerId: string) => void;
+  onKickPlayer?: (playerId: string) => void;
 }
 
-export default function CompactTeams({ players, currentPlayerId, isRoomOwner, onAddSpectator }: CompactTeamsProps) {
+export default function CompactTeams({ players, currentPlayerId, isRoomOwner, onAddSpectator, onKickPlayer }: CompactTeamsProps) {
   // Spectators are players without a team or role
   const spectators = players.filter((p) => !p.team || !p.role);
 
@@ -123,20 +124,33 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
                       <span className="text-[10px] uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
                     )}
                   </div>
-                  {isRoomOwner && onAddSpectator && (
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => onAddSpectator("red", p.id)}
-                        className="px-2 py-1 rounded text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
-                      >
-                        Join Red
-                      </button>
-                      <button
-                        onClick={() => onAddSpectator("blue", p.id)}
-                        className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
-                      >
-                        Join Blue
-                      </button>
+                  {isRoomOwner && (onAddSpectator || onKickPlayer) && (
+                    <div className="flex gap-2 flex-wrap">
+                      {onAddSpectator && (
+                        <>
+                          <button
+                            onClick={() => onAddSpectator("red", p.id)}
+                            className="px-2 py-1 rounded text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                          >
+                            Join Red
+                          </button>
+                          <button
+                            onClick={() => onAddSpectator("blue", p.id)}
+                            className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                          >
+                            Join Blue
+                          </button>
+                        </>
+                      )}
+                      {onKickPlayer && !isMe && (
+                        <button
+                          onClick={() => onKickPlayer(p.id)}
+                          className="px-2 py-1 rounded text-xs font-medium bg-gray-200 dark:bg-gray-600 text-red-600 dark:text-red-400 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          title="Kick from room (2 min ban)"
+                        >
+                          Kick
+                        </button>
+                      )}
                     </div>
                   )}
                 </div>

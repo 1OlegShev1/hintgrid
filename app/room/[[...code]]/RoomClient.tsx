@@ -38,6 +38,8 @@ export default function RoomPage() {
   // Extract room code from pathname: /room/ABC123 -> ABC123
   const roomCode = pathname?.split("/room/")[1]?.split("/")[0] || "";
   const playerName = searchParams.get("name") || "";
+  const visibilityParam = searchParams.get("visibility");
+  const visibility = visibilityParam === "private" ? "private" : undefined; // undefined = default (public)
 
   // Get avatar from localStorage (or random default)
   const [playerAvatar, setPlayerAvatar] = useState<string | null>(null);
@@ -99,7 +101,7 @@ export default function RoomPage() {
   }, [roomCode, playerName, uid]);
 
   // Custom hooks - only join room once avatar is loaded to prevent re-join race condition
-  const room = useRtdbRoom(roomCode, playerName, playerAvatar || "");
+  const room = useRtdbRoom(roomCode, playerName, playerAvatar || "", visibility);
   const derived = useRoomDerivedState(room.gameState, room.currentPlayer, room.players);
   const firebaseConnection = useFirebaseConnection();
 
@@ -314,7 +316,7 @@ export default function RoomPage() {
       )}
       
       <div className="max-w-6xl mx-auto">
-        <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} isLocked={room.gameState.locked} onSetRoomLocked={room.handleSetRoomLocked} onLeaveRoom={handleLeaveRoom} />
+        <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} isLocked={room.gameState.locked} roomName={room.gameState.roomName} visibility={room.gameState.visibility} onSetRoomLocked={room.handleSetRoomLocked} onSetRoomName={room.handleSetRoomName} onLeaveRoom={handleLeaveRoom} />
         <OfflineBanner />
 
         {room.gameState.gameStarted ? (

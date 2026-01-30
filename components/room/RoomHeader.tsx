@@ -7,7 +7,10 @@ interface RoomHeaderProps {
   currentPlayer: Player | null;
   isRoomOwner: boolean;
   isLocked?: boolean;
+  roomName?: string;
+  visibility?: "public" | "private";
   onSetRoomLocked?: (locked: boolean) => void;
+  onSetRoomName?: (name: string) => void;
   onLeaveRoom?: () => void;
 }
 
@@ -154,10 +157,30 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLocked, onSetRoomLocked, onLeaveRoom }: RoomHeaderProps) {
+function GlobeIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
+    </svg>
+  );
+}
+
+function EyeOffIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
+      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
+      <line x1="1" y1="1" x2="23" y2="23" />
+    </svg>
+  );
+}
+
+export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLocked, roomName, visibility, onSetRoomLocked, onSetRoomName, onLeaveRoom }: RoomHeaderProps) {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
+  const [isEditingName, setIsEditingName] = useState(false);
+  const [editedName, setEditedName] = useState(roomName || "");
   
   const roomUrl = typeof window !== "undefined" 
     ? `${window.location.origin}/room/${roomCode}` 
@@ -267,18 +290,87 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
           )}
         </div>
         <div className="flex items-center gap-3">
+          {/* Room name with crown for owner - editable */}
+          {roomName && (
+            <div className="flex items-center gap-1.5">
+              {isRoomOwner && <CrownIcon className="w-4 h-4 text-yellow-500" />}
+              {isEditingName && isRoomOwner && onSetRoomName ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (editedName.trim()) {
+                      onSetRoomName(editedName.trim());
+                    }
+                    setIsEditingName(false);
+                  }}
+                  className="flex items-center"
+                >
+                  <input
+                    type="text"
+                    value={editedName}
+                    onChange={(e) => setEditedName(e.target.value)}
+                    className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    maxLength={40}
+                    autoFocus
+                    onBlur={() => {
+                      if (editedName.trim() && editedName.trim() !== roomName) {
+                        onSetRoomName(editedName.trim());
+                      }
+                      setIsEditingName(false);
+                    }}
+                    onKeyDown={(e) => {
+                      if (e.key === "Escape") {
+                        setEditedName(roomName);
+                        setIsEditingName(false);
+                      }
+                    }}
+                  />
+                </form>
+              ) : (
+                <button
+                  onClick={() => {
+                    if (isRoomOwner && onSetRoomName) {
+                      setEditedName(roomName);
+                      setIsEditingName(true);
+                    }
+                  }}
+                  className={`text-gray-700 dark:text-gray-300 font-medium ${
+                    isRoomOwner && onSetRoomName 
+                      ? "hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" 
+                      : "cursor-default"
+                  }`}
+                  title={isRoomOwner && onSetRoomName ? "Click to edit room name" : undefined}
+                  disabled={!isRoomOwner || !onSetRoomName}
+                >
+                  {roomName}
+                </button>
+              )}
+              {/* Visibility indicator */}
+              {visibility === "private" ? (
+                <span 
+                  title="Private room - not listed publicly" 
+                  className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"
+                >
+                  <EyeOffIcon className="w-3.5 h-3.5" />
+                  <span>Private</span>
+                </span>
+              ) : (
+                <span 
+                  title="Public room - visible to everyone" 
+                  className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"
+                >
+                  <GlobeIcon className="w-3.5 h-3.5" />
+                  <span>Public</span>
+                </span>
+              )}
+            </div>
+          )}
+          {/* Team badge */}
           {currentPlayer?.team && (
-            <span className={`flex items-center gap-1.5 px-3 py-1.5 rounded text-white text-sm font-medium ${
+            <span className={`px-3 py-1.5 rounded text-white text-sm font-medium ${
               currentPlayer.team === "red" ? "bg-red-team" : "bg-blue-team"
             }`}>
-              {isRoomOwner && <CrownIcon className="w-4 h-4 text-yellow-300" />}
-              {currentPlayer.name} • {currentPlayer.team} {currentPlayer.role === "clueGiver" ? "hinter" : "seeker"}
-            </span>
-          )}
-          {!currentPlayer?.team && (
-            <span className="flex items-center gap-1.5 text-gray-600 dark:text-gray-400 text-base">
-              {isRoomOwner && <CrownIcon className="w-4 h-4 text-yellow-500" />}
-              {currentPlayer?.name}
+              {currentPlayer.team} {currentPlayer.role === "clueGiver" ? "hinter" : "seeker"}
             </span>
           )}
         </div>

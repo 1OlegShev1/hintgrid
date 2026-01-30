@@ -11,6 +11,16 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
 
 ```json
 {
+  "publicRooms": {
+    "{roomCode}": {
+      "roomName": "Friday Game",
+      "ownerName": "Alex",
+      "playerCount": 7,
+      "status": "lobby|playing|paused",
+      "timerPreset": "fast|normal|relaxed",
+      "createdAt": 1234567890
+    }
+  },
   "rooms": {
     "{roomCode}": {
       "ownerId": "...",
@@ -30,6 +40,10 @@ Core state lives in `shared/types.ts` and is stored in Firebase Realtime Databas
       "pauseReason": null,
       "pausedForTeam": null,
       "locked": false,
+      "visibility": "public|private",
+      "roomName": "Friday Game",
+      "maxPlayers": 300,
+      "bannedPlayers": { "{playerId}": 1234567890 },
       "createdAt": 1234567890,
       "board": [
         { "word": "...", "team": "red", "revealed": false, "revealedBy": null, "votes": {} }
@@ -99,6 +113,37 @@ This is **reliable** because it's server-side — no client cooperation needed.
 **Backup manual cleanup**:
 Run `npm run cleanup:rooms -- --hours 24` to delete rooms older than 24 hours.
 Requires Firebase Admin credentials (`gcloud auth application-default login`).
+
+### Public Rooms
+
+Rooms can be public or private, controlled by the `visibility` field (default: `"public"`).
+
+**Public room discovery**:
+- Public rooms are indexed at `/publicRooms/{roomCode}` for efficient home page queries
+- Home page shows top 6 public rooms with 4+ players, sorted by player count
+- Locked rooms are removed from the public index
+- Index is updated client-side by the room owner on state changes
+
+**Public room data** (stored in `/publicRooms/{roomCode}`):
+| Field | Description |
+|-------|-------------|
+| `roomName` | Display name (auto-generated as "{OwnerName}'s Room" if not set) |
+| `ownerName` | Name of the room owner |
+| `playerCount` | Number of connected players |
+| `status` | Current state: `lobby`, `playing`, or `paused` |
+| `timerPreset` | Timer setting for the room |
+| `createdAt` | Room creation timestamp |
+
+**Player limits**:
+- `maxPlayers` field limits total players (default: 300)
+- New players are rejected with "Room is full" if at capacity
+- Existing players can always rejoin
+
+**Kick and ban**:
+- Room owner can kick players, removing them entirely from the room
+- Kicked players are added to `bannedPlayers` with a 2-minute expiry timestamp
+- Banned players cannot rejoin until the ban expires
+- Ban is checked on join: `bannedPlayers[uid] > Date.now()` = blocked
 
 ### Turn Flow
 
@@ -221,10 +266,16 @@ Defined in `shared/constants.ts`:
 | `MAX_PLAYER_NAME_LENGTH` | `20` | Maximum player name length |
 | `MAX_CLUE_LENGTH` | `30` | Maximum clue word length |
 | `MAX_CHAT_MESSAGE_LENGTH` | `200` | Maximum chat message length |
+| `MAX_ROOM_NAME_LENGTH` | `40` | Maximum room name length |
 | `MIN_PLAYERS_TO_START` | `4` | Minimum players to start game |
 | `STALE_PLAYER_GRACE_MS` | `120000` (2 min) | Time before disconnected player is demoted to spectator |
 | `STALE_PLAYER_CHECK_INTERVAL_MS` | `30000` (30s) | How often to check for stale players |
 | `REACTION_EMOJIS` | `[20 emojis]` | Curated set of reaction emojis for chat messages |
+| `DEFAULT_VISIBILITY` | `"public"` | Default room visibility |
+| `MAX_PLAYERS_DEFAULT` | `300` | Default max players per room |
+| `MIN_PLAYERS_FOR_PUBLIC_LIST` | `4` | Minimum players for a room to appear in public list |
+| `PUBLIC_ROOMS_DISPLAY_LIMIT` | `6` | Number of public rooms to show on home page |
+| `BAN_DURATION_MS` | `120000` (2 min) | Duration of temporary ban after being kicked |
 
 **Timer Presets:**
 

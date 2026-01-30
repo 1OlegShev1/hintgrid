@@ -43,17 +43,20 @@ export interface UseRtdbRoomReturn {
   handleTimerPresetChange: (preset: TimerPreset) => void;
   handleWordPackChange: (packs: WordPack[]) => void;
   handleSetRoomLocked: (locked: boolean) => void;
+  handleKickPlayer: (targetPlayerId: string) => void;
+  handleSetRoomName: (roomName: string) => void;
 }
 
 export function useRtdbRoom(
   roomCode: string,
   playerName: string,
-  playerAvatar: string
+  playerAvatar: string,
+  visibility?: "public" | "private"
 ): UseRtdbRoomReturn {
   const { setIsLastPlayer, setIsActiveGame, setLeaveRoom } = useGameContext();
 
   // Room connection and state
-  const connection = useRoomConnection(roomCode, playerName, playerAvatar);
+  const connection = useRoomConnection(roomCode, playerName, playerAvatar, visibility);
 
   // Game actions (uses ErrorContext internally)
   const gameActions = useGameActions(roomCode, connection.uid);
@@ -161,5 +164,7 @@ export function useRtdbRoom(
     handleTimerPresetChange: gameActions.handleTimerPresetChange,
     handleWordPackChange: gameActions.handleWordPackChange,
     handleSetRoomLocked: gameActions.handleSetRoomLocked,
+    handleKickPlayer: gameActions.handleKickPlayer,
+    handleSetRoomName: gameActions.handleSetRoomName,
   };
 }

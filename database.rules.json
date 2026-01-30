@@ -1,5 +1,31 @@
 {
   "rules": {
+    "publicRooms": {
+      ".read": "auth != null",
+      ".indexOn": ["playerCount", "createdAt"],
+      "$roomCode": {
+        ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid",
+        ".validate": "newData.hasChildren(['roomName', 'ownerName', 'playerCount', 'status', 'timerPreset', 'createdAt'])",
+        "roomName": {
+          ".validate": "newData.isString() && newData.val().length <= 40"
+        },
+        "ownerName": {
+          ".validate": "newData.isString() && newData.val().length <= 20"
+        },
+        "playerCount": {
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "status": {
+          ".validate": "newData.isString() && (newData.val() === 'lobby' || newData.val() === 'playing' || newData.val() === 'paused')"
+        },
+        "timerPreset": {
+          ".validate": "newData.isString() && (newData.val() === 'fast' || newData.val() === 'normal' || newData.val() === 'relaxed')"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        }
+      }
+    },
     "rooms": {
       "$roomCode": {
         ".read": "auth != null",
@@ -31,6 +57,25 @@
         "locked": {
           ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid",
           ".validate": "newData.isBoolean()"
+        },
+
+        "visibility": {
+          ".write": "auth != null && (!root.child('rooms').child($roomCode).exists() || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid)",
+          ".validate": "newData.isString() && (newData.val() === 'public' || newData.val() === 'private')"
+        },
+        "roomName": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid",
+          ".validate": "!newData.exists() || (newData.isString() && newData.val().length <= 40)"
+        },
+        "maxPlayers": {
+          ".write": "auth != null && (!root.child('rooms').child($roomCode).exists() || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid)",
+          ".validate": "newData.isNumber() && newData.val() > 0 && newData.val() <= 300"
+        },
+        "bannedPlayers": {
+          ".write": "auth != null && root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid",
+          "$playerId": {
+            ".validate": "newData.isNumber()"
+          }
         },
 
         "currentTeam": {

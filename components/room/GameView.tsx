@@ -66,6 +66,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
             onStartGame={room.handleStartGame}
             onTimerPresetChange={room.handleTimerPresetChange}
             onWordPackChange={room.handleWordPackChange}
+            onKickPlayer={room.handleKickPlayer}
             showControls={true}
           />
         </div>
@@ -170,6 +171,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           currentPlayerId={currentPlayer?.id}
           isRoomOwner={isRoomOwner}
           onAddSpectator={(team, playerId) => room.handleSetLobbyRole(team, "guesser", playerId)}
+          onKickPlayer={room.handleKickPlayer}
         />
       )}
 
@@ -185,6 +187,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           onStartGame={room.handleStartGame}
           onTimerPresetChange={room.handleTimerPresetChange}
           onWordPackChange={room.handleWordPackChange}
+          onKickPlayer={room.handleKickPlayer}
           showControls={true}
           hidePauseHeader={true}
         />

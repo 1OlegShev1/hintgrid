@@ -14,6 +14,7 @@ interface TeamLobbyProps {
   onTimerPresetChange: (preset: TimerPreset) => void;
   onWordPackChange: (packs: WordPack[]) => void;
   onResumeGame?: () => void;
+  onKickPlayer?: (playerId: string) => void;
   showControls?: boolean; // Hide start button in rematch mode
   hidePauseHeader?: boolean; // Hide pause header when GameStatusPanel already shows it
 }
@@ -41,6 +42,7 @@ export default function TeamLobby({
   onTimerPresetChange,
   onWordPackChange,
   onResumeGame,
+  onKickPlayer,
   showControls = true,
   hidePauseHeader = false,
 }: TeamLobbyProps) {
@@ -88,6 +90,12 @@ export default function TeamLobby({
   const canRemovePlayer = (playerId?: string) => {
     if (!isRoomOwner || !playerId || playerId === currentPlayer?.id) return false;
     return isTeamManagementAllowed;
+  };
+
+  // Owner can kick any player from the room (except themselves)
+  const canKickPlayer = (playerId?: string) => {
+    if (!isRoomOwner || !onKickPlayer || !playerId || playerId === currentPlayer?.id) return false;
+    return true;
   };
 
   return (
@@ -374,9 +382,20 @@ export default function TeamLobby({
                         <button
                           type="button"
                           onClick={() => onSetRole(null, null, clueGiver.id)}
-                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          title="Remove from team"
                         >
                           Remove
+                        </button>
+                      )}
+                      {canKickPlayer(clueGiver.id) && (
+                        <button
+                          type="button"
+                          onClick={() => onKickPlayer!(clueGiver.id)}
+                          className={`${canRemovePlayer(clueGiver.id) ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700`}
+                          title="Kick from room (2 min ban)"
+                        >
+                          Kick
                         </button>
                       )}
                     </div>
@@ -436,9 +455,20 @@ export default function TeamLobby({
                         <button
                           type="button"
                           onClick={() => onSetRole(null, null, player.id)}
-                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          title="Remove from team"
                         >
                           Remove
+                        </button>
+                      )}
+                      {canKickPlayer(player.id) && (
+                        <button
+                          type="button"
+                          onClick={() => onKickPlayer!(player.id)}
+                          className={`${canRemovePlayer(player.id) ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700`}
+                          title="Kick from room (2 min ban)"
+                        >
+                          Kick
                         </button>
                       )}
                     </div>
@@ -489,9 +519,20 @@ export default function TeamLobby({
                       <button
                         type="button"
                         onClick={() => onSetRole(null, null, player.id)}
-                        className="ml-auto text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700"
+                        className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        title="Remove from team"
                       >
                         Remove
+                      </button>
+                    )}
+                    {canKickPlayer(player.id) && (
+                      <button
+                        type="button"
+                        onClick={() => onKickPlayer!(player.id)}
+                        className={`${canRemovePlayer(player.id) && player.team && player.role ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700`}
+                        title="Kick from room (2 min ban)"
+                      >
+                        Kick
                       </button>
                     )}
                   </div>

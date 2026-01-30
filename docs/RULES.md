@@ -106,12 +106,51 @@ The room owner can lock the room to prevent new players from joining:
 - When locked, new players attempting to join see "Room is locked" error
 - Existing players who disconnect can still rejoin (they have a player record)
 - The owner can lock/unlock at any time (lobby, during game, paused, game over)
+- Locked rooms are removed from the public room list
 
 **UI:**
-- Lock toggle button appears in lobby header for the room owner
-- Lock indicator badge shows next to room code in header when locked
+- Lock toggle button appears in room header for the room owner
+- Lock indicator badge shows next to room code when locked
 - Non-owners see the lock status but cannot change it
 
-**Future consideration:** Room locking (joinability) is separate from room visibility (public/private). A public room can be locked (visible but not joinable), and a private room can be unlocked (not visible but joinable via direct link).
+## Public Rooms
+
+Rooms can be **public** (default) or **private**:
+
+**Public rooms:**
+- Listed on the home page for other players to discover
+- Home page shows top 6 public rooms with 4+ players, sorted by player count
+- Players can join by clicking "Join" or "Watch" (for games in progress)
+- Locked public rooms are hidden from the list
+
+**Private rooms:**
+- Not listed on the home page
+- Players join via room code only (shared directly)
+
+**Room name:**
+- Public rooms have a display name (auto-generated as "{OwnerName}'s Room" if not set)
+- Shown on home page and in room header
+
+**Player limits:**
+- Rooms have a max player limit (default: 300)
+- New players are rejected with "Room is full" if at capacity
+
+## Kick and Ban
+
+The room owner can kick players from the room:
+
+**Kick behavior:**
+- Kicked players are removed entirely from the room (not just demoted to spectator)
+- Their votes are cleared from the board
+- A system message announces the removal
+
+**Temporary ban:**
+- Kicked players are banned from rejoining for 2 minutes
+- After the ban expires, they can rejoin normally
+- Ban is per-room (doesn't affect other rooms)
+
+**Limitations:**
+- Players can bypass the ban by using an incognito window (new anonymous session)
+- Owner can kick again or lock the room to prevent this
 
 If we introduce deviations or house rules, list them here explicitly.

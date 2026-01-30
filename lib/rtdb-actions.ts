@@ -28,6 +28,9 @@ import {
   WORD_PACKS,
   DEFAULT_WORD_PACK,
   MIN_PLAYERS_TO_START,
+  DEFAULT_VISIBILITY,
+  MAX_PLAYERS_DEFAULT,
+  BAN_DURATION_MS,
   type TimerPreset,
 } from "@/shared/constants";
 import {
@@ -87,12 +90,14 @@ function arrayToVotes(arr: string[]): Record<string, boolean> {
 /**
  * Join a room. Sets up onDisconnect to handle cleanup when player leaves.
  * Returns the onDisconnect reference so the caller can cancel it if needed.
+ * @param visibility - Optional visibility for new rooms (default: public)
  */
 export async function joinRoom(
   roomCode: string,
   playerId: string,
   playerName: string,
-  playerAvatar: string
+  playerAvatar: string,
+  visibility?: "public" | "private"
 ): Promise<{ disconnectRef: DatabaseReference }> {
   const db = getDb();
   const roomRef = ref(db, `rooms/${roomCode}`);
@@ -126,6 +131,10 @@ export async function joinRoom(
       pauseReason: null,
       pausedForTeam: null,
       locked: false,
+      // Public rooms feature
+      visibility: visibility || DEFAULT_VISIBILITY,
+      maxPlayers: MAX_PLAYERS_DEFAULT,
+      // roomName is optional - auto-generated from owner name in client
       createdAt: serverTimestamp(),
       board: [],
     });
@@ -135,10 +144,24 @@ export async function joinRoom(
     const playersSnap = await get(playersRef);
     const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
     
+    // Check if player is banned (temporary ban with expiry)
+    const banExpiry = roomData.bannedPlayers?.[playerId];
+    if (banExpiry && banExpiry > Date.now()) {
+      const remainingSecs = Math.ceil((banExpiry - Date.now()) / 1000);
+      throw new Error(`You are temporarily banned from this room (${remainingSecs}s remaining)`);
+    }
+    
     // Check if room is locked (existing players can still rejoin)
     const existingPlayer = players[playerId];
     if (roomData.locked === true && !existingPlayer) {
       throw new Error("Room is locked");
+    }
+    
+    // Check if room is at max capacity (existing players can still rejoin)
+    const maxPlayers = roomData.maxPlayers || MAX_PLAYERS_DEFAULT;
+    const connectedCount = Object.values(players).filter(p => p.connected).length;
+    if (!existingPlayer && connectedCount >= maxPlayers) {
+      throw new Error("Room is full");
     }
     
     // Check if another connected player has the same name
@@ -180,6 +203,17 @@ export async function joinRoom(
     connected: false,
     lastSeen: serverTimestamp(),
   });
+  
+  // Update public room index (player count changed)
+  // Need to re-fetch room data since we may have created it
+  const updatedRoomSnap = await get(roomRef);
+  const updatedPlayersSnap = await get(playersRef);
+  if (updatedRoomSnap.exists()) {
+    const updatedRoomData = updatedRoomSnap.val() as RoomData;
+    const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
+    // Fire and forget - don't block join on index update
+    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
+  }
 
   return { disconnectRef: playerRef };
 }
@@ -331,8 +365,11 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
   ).length;
 
   if (connectedCount === 0) {
-    // Last player leaving - delete the room
-    await remove(roomRef);
+    // Last player leaving - delete the room and remove from public index
+    await Promise.all([
+      remove(roomRef),
+      removeFromPublicRoomIndex(roomCode),
+    ]);
   } else {
     // Mark as disconnected
     await update(playerRef, { connected: false, lastSeen: serverTimestamp() });
@@ -352,6 +389,15 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
     // Reassign owner if the leaving player was the owner (add message since this is explicit leave)
     // Skip grace period since this is an explicit leave action
     await reassignOwnerIfNeeded(roomCode, true, true);
+    
+    // Update public room index (player count changed)
+    const updatedRoomSnap = await get(roomRef);
+    const updatedPlayersSnap = await get(playersRef);
+    if (updatedRoomSnap.exists()) {
+      const updatedRoomData = updatedRoomSnap.val() as RoomData;
+      const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
+      updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
+    }
   }
 }
 
@@ -512,6 +558,10 @@ export async function rematch(roomCode: string, playerId: string): Promise<void>
     pausedForTeam: null,
     board,
   });
+  
+  // Update public room index (status changed to "playing")
+  const updatedRoomData = { ...roomData, gameStarted: true, gameOver: false, paused: false };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
 }
 
 export async function endGame(roomCode: string, playerId: string): Promise<void> {
@@ -557,6 +607,10 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
     timestamp: serverTimestamp(),
     type: "game-system",
   });
+  
+  // Update public room index (status changed to "lobby")
+  const updatedRoomData = { ...roomData, gameStarted: false, gameOver: false, paused: false };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
 }
 
 export async function pauseGame(roomCode: string, playerId: string): Promise<void> {
@@ -586,6 +640,12 @@ export async function pauseGame(roomCode: string, playerId: string): Promise<voi
     timestamp: serverTimestamp(),
     type: "game-system",
   });
+  
+  // Update public room index (status changed to "paused")
+  const playersSnap = await get(ref(db, `rooms/${roomCode}/players`));
+  const playersData = (playersSnap.val() || {}) as Record<string, PlayerData>;
+  const updatedRoomData = { ...roomData, paused: true };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
 }
 
 export async function resumeGame(roomCode: string, playerId: string): Promise<void> {
@@ -625,6 +685,10 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
     timestamp: serverTimestamp(),
     type: "game-system",
   });
+  
+  // Update public room index (status changed to "playing")
+  const updatedRoomData = { ...roomData, paused: false, pauseReason: null };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
 }
 
 // ============================================================================
@@ -675,6 +739,205 @@ export async function setRoomLocked(roomCode: string, playerId: string, locked: 
   if (roomData.ownerId !== playerId) throw new Error("Not room owner");
 
   await update(roomRef, { locked });
+  
+  // Update public room index (locked rooms should be hidden)
+  if (roomData.visibility === "public") {
+    if (locked) {
+      await removeFromPublicRoomIndex(roomCode);
+    } else {
+      // Re-add to index when unlocked
+      const playersSnap = await get(ref(db, `rooms/${roomCode}/players`));
+      const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
+      await updatePublicRoomIndex(roomCode, roomData, players);
+    }
+  }
+}
+
+export async function setRoomName(roomCode: string, playerId: string, roomName: string): Promise<void> {
+  const db = getDb();
+  const roomRef = ref(db, `rooms/${roomCode}`);
+  const playersRef = ref(db, `rooms/${roomCode}/players`);
+
+  const [roomSnap, playersSnap] = await Promise.all([get(roomRef), get(playersRef)]);
+  if (!roomSnap.exists()) throw new Error("Room not found");
+  
+  const roomData = roomSnap.val() as RoomData;
+  if (roomData.ownerId !== playerId) throw new Error("Not room owner");
+  
+  // Sanitize room name (trim, limit length)
+  const sanitized = roomName.trim().slice(0, 40);
+  if (!sanitized) throw new Error("Room name cannot be empty");
+  
+  await update(roomRef, { roomName: sanitized });
+  
+  // Update public room index if room is public
+  if (roomData.visibility === "public" && !roomData.locked) {
+    const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
+    const updatedRoomData = { ...roomData, roomName: sanitized };
+    await updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, players);
+  }
+}
+
+// ============================================================================
+// Public Room Index
+// ============================================================================
+
+/**
+ * Update the public room index entry for a room.
+ * Called when room state changes (player count, game status, etc.)
+ * Only updates if room is public and not locked.
+ */
+export async function updatePublicRoomIndex(
+  roomCode: string,
+  roomData: RoomData,
+  players: Record<string, PlayerData>
+): Promise<void> {
+  // Only index public, unlocked rooms
+  if (roomData.visibility !== "public" || roomData.locked) {
+    return;
+  }
+  
+  const db = getDb();
+  const publicRoomRef = ref(db, `publicRooms/${roomCode}`);
+  
+  // Get owner name for display
+  const owner = players[roomData.ownerId];
+  const ownerName = owner?.name || "Unknown";
+  
+  // Count connected players
+  const playerCount = Object.values(players).filter(p => p.connected).length;
+  
+  // Determine room status
+  let status: "lobby" | "playing" | "paused" = "lobby";
+  if (roomData.gameStarted && !roomData.gameOver) {
+    status = roomData.paused ? "paused" : "playing";
+  }
+  
+  // Room name with fallback
+  const roomName = roomData.roomName || `${ownerName}'s Room`;
+  
+  await set(publicRoomRef, {
+    roomName,
+    ownerName,
+    playerCount,
+    status,
+    timerPreset: roomData.timerPreset || DEFAULT_TIMER_PRESET,
+    createdAt: roomData.createdAt || Date.now(),
+  });
+}
+
+/**
+ * Remove a room from the public index.
+ * Called when room is deleted, locked, or made private.
+ */
+export async function removeFromPublicRoomIndex(roomCode: string): Promise<void> {
+  const db = getDb();
+  const publicRoomRef = ref(db, `publicRooms/${roomCode}`);
+  await remove(publicRoomRef);
+}
+
+/**
+ * Get list of public rooms for the home page.
+ * Returns rooms sorted by player count (descending), limited to top N.
+ */
+export async function getPublicRooms(limit: number = 6): Promise<Array<{
+  roomCode: string;
+  roomName: string;
+  ownerName: string;
+  playerCount: number;
+  status: "lobby" | "playing" | "paused";
+  timerPreset: string;
+  createdAt: number;
+}>> {
+  const db = getDb();
+  const publicRoomsRef = ref(db, "publicRooms");
+  const snapshot = await get(publicRoomsRef);
+  
+  if (!snapshot.exists()) return [];
+  
+  const rooms = snapshot.val() as Record<string, {
+    roomName: string;
+    ownerName: string;
+    playerCount: number;
+    status: "lobby" | "playing" | "paused";
+    timerPreset: string;
+    createdAt: number;
+  }>;
+  
+  // Convert to array, filter by min players, sort by count, limit
+  return Object.entries(rooms)
+    .map(([roomCode, data]) => ({ roomCode, ...data }))
+    .filter(room => room.playerCount >= 4) // Only show rooms with 4+ players
+    .sort((a, b) => b.playerCount - a.playerCount)
+    .slice(0, limit);
+}
+
+/**
+ * Kick a player from the room and temporarily ban them.
+ * - Removes player from room entirely
+ * - Adds to bannedPlayers with 2-minute expiry
+ * - Clears their votes from the board
+ * - Transfers ownership if they were the owner
+ */
+export async function kickPlayer(
+  roomCode: string,
+  requesterId: string,
+  targetPlayerId: string
+): Promise<void> {
+  const db = getDb();
+  const roomRef = ref(db, `rooms/${roomCode}`);
+  const playerRef = ref(db, `rooms/${roomCode}/players/${targetPlayerId}`);
+  const playersRef = ref(db, `rooms/${roomCode}/players`);
+
+  const [roomSnap, playersSnap] = await Promise.all([get(roomRef), get(playersRef)]);
+  if (!roomSnap.exists()) throw new Error("Room not found");
+
+  const roomData = roomSnap.val() as RoomData;
+  if (roomData.ownerId !== requesterId) throw new Error("Not room owner");
+  if (requesterId === targetPlayerId) throw new Error("Cannot kick yourself");
+
+  const playersData = (playersSnap.val() || {}) as Record<string, PlayerData>;
+  const targetPlayer = playersData[targetPlayerId];
+  if (!targetPlayer) throw new Error("Player not found");
+
+  // Calculate ban expiry (2 minutes from now)
+  const banExpiry = Date.now() + BAN_DURATION_MS;
+
+  // Clear votes from board
+  const board = roomData.board || [];
+  const voteRemovals = board.map((_, index) =>
+    remove(ref(db, `rooms/${roomCode}/board/${index}/votes/${targetPlayerId}`))
+  );
+  await Promise.all(voteRemovals);
+
+  // Remove player and add to ban list
+  await Promise.all([
+    remove(playerRef),
+    update(roomRef, { [`bannedPlayers/${targetPlayerId}`]: banExpiry }),
+  ]);
+
+  // Add system message
+  await push(ref(db, `rooms/${roomCode}/messages`), {
+    playerId: null,
+    playerName: "System",
+    message: `${targetPlayer.name} was removed from the room.`,
+    timestamp: serverTimestamp(),
+    type: "system",
+  });
+
+  // Transfer ownership if the kicked player was somehow the owner
+  // (shouldn't happen since owner can't kick themselves, but be safe)
+  if (roomData.ownerId === targetPlayerId) {
+    await reassignOwnerIfNeeded(roomCode, true, true);
+  }
+
+  // Update public room index (player count changed)
+  const updatedPlayersSnap = await get(playersRef);
+  const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
+  const updatedRoomSnap = await get(roomRef);
+  if (updatedRoomSnap.exists()) {
+    updatePublicRoomIndex(roomCode, updatedRoomSnap.val() as RoomData, updatedPlayers).catch(() => {});
+  }
 }
 
 export async function setLobbyRole(

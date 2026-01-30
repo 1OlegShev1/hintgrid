@@ -23,6 +23,8 @@ export interface UseGameActionsReturn {
   handleTimerPresetChange: (preset: TimerPreset) => void;
   handleWordPackChange: (packs: WordPack[]) => void;
   handleSetRoomLocked: (locked: boolean) => void;
+  handleKickPlayer: (targetPlayerId: string) => void;
+  handleSetRoomName: (roomName: string) => void;
 }
 
 export function useGameActions(
@@ -94,6 +96,14 @@ export function useGameActions(
     if (uid) actions.setRoomLocked(roomCode, uid, locked).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
+  const handleKickPlayer = useCallback((targetPlayerId: string) => {
+    if (uid) actions.kickPlayer(roomCode, uid, targetPlayerId).catch((e) => showError(e.message));
+  }, [roomCode, uid, showError]);
+
+  const handleSetRoomName = useCallback((roomName: string) => {
+    if (uid) actions.setRoomName(roomCode, uid, roomName).catch((e) => showError(e.message));
+  }, [roomCode, uid, showError]);
+
   return {
     handleStartGame,
     handleSetLobbyRole,
@@ -109,5 +119,7 @@ export function useGameActions(
     handleTimerPresetChange,
     handleWordPackChange,
     handleSetRoomLocked,
+    handleKickPlayer,
+    handleSetRoomName,
   };
 }
