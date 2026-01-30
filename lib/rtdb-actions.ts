@@ -212,9 +212,7 @@ export async function joinRoom(
     const updatedRoomData = updatedRoomSnap.val() as RoomData;
     const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
     // Fire and forget - don't block join on index update
-    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch((err) => {
-      console.warn("[PublicRooms] Failed to update index on join:", err?.message || err);
-    });
+    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
   }
 
   return { disconnectRef: playerRef };
@@ -853,12 +851,9 @@ export async function getPublicRooms(limit: number = 6): Promise<Array<{
   timerPreset: string;
   createdAt: number;
 }>> {
-  console.log("[PublicRooms] Fetching public rooms...");
   const db = getDb();
   const publicRoomsRef = ref(db, "publicRooms");
   const snapshot = await get(publicRoomsRef);
-  
-  console.log("[PublicRooms] Snapshot exists:", snapshot.exists(), "val:", snapshot.val());
   
   if (!snapshot.exists()) return [];
   
@@ -872,14 +867,11 @@ export async function getPublicRooms(limit: number = 6): Promise<Array<{
   }>;
   
   // Convert to array, filter by min players, sort by count, limit
-  const result = Object.entries(rooms)
+  return Object.entries(rooms)
     .map(([roomCode, data]) => ({ roomCode, ...data }))
     .filter(room => room.playerCount >= 4) // Only show rooms with 4+ players
     .sort((a, b) => b.playerCount - a.playerCount)
     .slice(0, limit);
-  
-  console.log("[PublicRooms] Filtered result:", result.length, "rooms");
-  return result;
 }
 
 /**
