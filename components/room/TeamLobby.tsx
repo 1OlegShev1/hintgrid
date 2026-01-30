@@ -130,7 +130,7 @@ export default function TeamLobby({
       {showControls && !isPaused && (
         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 mb-6">
           <h2 className="text-xl font-semibold">
-            {gameState.gameOver ? "Teams — Reassign for Rematch" : `Teams (${players.length}/8)`}
+            {gameState.gameOver ? "Teams — Reassign for Rematch" : "Team Selection"}
           </h2>
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
