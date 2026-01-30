@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
@@ -25,7 +25,6 @@ export default function Home() {
   const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const router = useRouter();
-  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize avatar from localStorage or random on mount
   useEffect(() => {
@@ -149,11 +148,11 @@ export default function Home() {
                       </div>
                       <button
                         onClick={() => {
-                          if (!playerName.trim()) {
-                            nameInputRef.current?.focus();
-                            nameInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          // Always redirect to room - name entry happens there if needed
+                          if (playerName.trim()) {
+                            window.location.href = `/room/${room.roomCode}?name=${encodeURIComponent(playerName)}`;
                           } else {
-                            handleJoinPublicRoom(room.roomCode);
+                            window.location.href = `/room/${room.roomCode}`;
                           }
                         }}
                         data-testid={`public-room-join-${room.roomCode}`}
@@ -189,7 +188,6 @@ export default function Home() {
                   <AvatarPicker selected={avatar} onSelect={handleAvatarSelect} />
                   <input
                     id="name"
-                    ref={nameInputRef}
                     data-testid="home-name-input"
                     type="text"
                     value={playerName}
