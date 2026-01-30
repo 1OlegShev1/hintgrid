@@ -793,7 +793,9 @@ export async function updatePublicRoomIndex(
   players: Record<string, PlayerData>
 ): Promise<void> {
   // Only index public, unlocked rooms
-  if (roomData.visibility !== "public" || roomData.locked) {
+  // Default to public if visibility is not set (for backwards compatibility)
+  const isPublic = roomData.visibility === "public" || roomData.visibility === undefined;
+  if (!isPublic || roomData.locked) {
     return;
   }
   
