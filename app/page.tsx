@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
@@ -25,6 +25,7 @@ export default function Home() {
   const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const router = useRouter();
+  const nameInputRef = useRef<HTMLInputElement>(null);
 
   // Initialize avatar from localStorage or random on mount
   useEffect(() => {
@@ -146,21 +147,20 @@ export default function Home() {
                           <span>{getTimerLabel(room.timerPreset)}</span>
                         </div>
                       </div>
-                      <div className="relative group shrink-0">
-                        <button
-                          onClick={() => handleJoinPublicRoom(room.roomCode)}
-                          disabled={!playerName.trim()}
-                          data-testid={`public-room-join-${room.roomCode}`}
-                          className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                        >
-                          {room.status === "lobby" ? "Join" : "Watch"}
-                        </button>
-                        {!playerName.trim() && (
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-xs bg-gray-900 text-white rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none">
-                            Enter your name first
-                          </div>
-                        )}
-                      </div>
+                      <button
+                        onClick={() => {
+                          if (!playerName.trim()) {
+                            nameInputRef.current?.focus();
+                            nameInputRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+                          } else {
+                            handleJoinPublicRoom(room.roomCode);
+                          }
+                        }}
+                        data-testid={`public-room-join-${room.roomCode}`}
+                        className="px-3 py-1.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shrink-0"
+                      >
+                        {room.status === "lobby" ? "Join" : "Watch"}
+                      </button>
                     </div>
                   </div>
                 ))}
@@ -189,6 +189,7 @@ export default function Home() {
                   <AvatarPicker selected={avatar} onSelect={handleAvatarSelect} />
                   <input
                     id="name"
+                    ref={nameInputRef}
                     data-testid="home-name-input"
                     type="text"
                     value={playerName}
