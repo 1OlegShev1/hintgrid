@@ -160,6 +160,25 @@ const isTeamManagementAllowed = !isActiveGame;
 
 3 listeners per client: room document, players collection, messages collection.
 
+### Message Management
+
+**Message Types:**
+- `clue` — Clue given by hinter (shown in Game Log)
+- `reveal` — Card reveal (shown in Game Log)
+- `game-system` — Game paused/resumed/ended (shown in Game Log)
+- `chat` — User chat messages (shown in Chat)
+- `system` — User-related system messages like player joined, owner changed (shown in Chat)
+
+**Clearing Behavior:**
+- **New game (lobby→start, rematch):** Clears game messages (`clue`, `reveal`, `game-system`), keeps chat messages
+- **Pause/resume:** No clearing (timer stops, messages preserved)
+- **End game:** No clearing (adds system message)
+
+**Message Limits:**
+- Query limit: 300 messages (enough for spectator-heavy rooms)
+- Auto-prune threshold: 400 messages (deletes oldest, keeps 300)
+- Pruning happens in background on ~10% of chat sends to avoid unbounded growth
+
 ## Client-Side State
 
 Some state is stored locally on the client (not synced to Firebase).

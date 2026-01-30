@@ -434,7 +434,11 @@ export async function rematch(roomCode: string, playerId: string): Promise<void>
   const playersRef = ref(db, `rooms/${roomCode}/players`);
   const messagesRef = ref(db, `rooms/${roomCode}/messages`);
 
-  const [roomSnap, playersSnap] = await Promise.all([get(roomRef), get(playersRef)]);
+  const [roomSnap, playersSnap, messagesSnap] = await Promise.all([
+    get(roomRef),
+    get(playersRef),
+    get(messagesRef),
+  ]);
   if (!roomSnap.exists()) throw new Error("Room not found");
 
   const roomData = roomSnap.val() as RoomData;
@@ -469,8 +473,21 @@ export async function rematch(roomCode: string, playerId: string): Promise<void>
     votes: {},
   }));
 
-  // Clear messages and update room
-  await remove(messagesRef);
+  // Clear game-related messages (keep chat and user system messages)
+  // Same logic as startGame() for consistency
+  const messagesData = (messagesSnap.val() || {}) as Record<string, MessageData>;
+  const gameMessageTypes = ["clue", "reveal", "game-system"];
+  const isGameMessage = (msg: MessageData) => {
+    if (gameMessageTypes.includes(msg.type)) return true;
+    // Old-format reveal messages were type "system" with "revealed" in message
+    if (msg.type === "system" && msg.message.includes("revealed")) return true;
+    return false;
+  };
+  const deletePromises = Object.entries(messagesData)
+    .filter(([, msg]) => isGameMessage(msg))
+    .map(([id]) => remove(ref(db, `rooms/${roomCode}/messages/${id}`)));
+  await Promise.all(deletePromises);
+
   await update(roomRef, {
     gameStarted: true,
     currentTeam: startingTeam,
@@ -989,6 +1006,39 @@ export async function endTurn(roomCode: string): Promise<void> {
 // Chat
 // ============================================================================
 
+// Message limits - query limit (300) is in useRoomConnection.ts
+const MESSAGE_PRUNE_THRESHOLD = 400; // Start pruning when we exceed this
+const MESSAGE_PRUNE_TARGET = 300; // Prune down to this count
+
+/**
+ * Prune old messages if count exceeds threshold.
+ * Keeps chat flowing without unbounded database growth.
+ * Only deletes oldest messages beyond the target count.
+ */
+export async function pruneOldMessages(roomCode: string): Promise<number> {
+  const db = getDb();
+  const messagesRef = ref(db, `rooms/${roomCode}/messages`);
+  
+  const messagesSnap = await get(messagesRef);
+  if (!messagesSnap.exists()) return 0;
+  
+  const messagesData = messagesSnap.val() as Record<string, MessageData>;
+  const messageEntries = Object.entries(messagesData);
+  
+  if (messageEntries.length <= MESSAGE_PRUNE_THRESHOLD) return 0;
+  
+  // Sort by timestamp (oldest first) and delete excess
+  const sorted = messageEntries.sort(([, a], [, b]) => (a.timestamp || 0) - (b.timestamp || 0));
+  const toDelete = sorted.slice(0, messageEntries.length - MESSAGE_PRUNE_TARGET);
+  
+  const deletePromises = toDelete.map(([id]) => 
+    remove(ref(db, `rooms/${roomCode}/messages/${id}`))
+  );
+  await Promise.all(deletePromises);
+  
+  return toDelete.length;
+}
+
 export async function sendMessage(
   roomCode: string,
   playerId: string,
@@ -1012,6 +1062,14 @@ export async function sendMessage(
     timestamp: serverTimestamp(),
     type,
   });
+  
+  // Prune old messages in background (don't block the send)
+  // Only check occasionally to avoid extra reads on every message
+  if (Math.random() < 0.1) { // ~10% of messages trigger a prune check
+    pruneOldMessages(roomCode).catch((err) => {
+      console.warn("[Chat] Failed to prune old messages:", err.message);
+    });
+  }
 }
 
 /**

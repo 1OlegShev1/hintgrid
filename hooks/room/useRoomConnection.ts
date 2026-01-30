@@ -187,8 +187,8 @@ export function useRoomConnection(
       }
     });
 
-    // Messages listener (limited to last 100)
-    const messagesQuery = query(messagesRef, orderByChild("timestamp"), limitToLast(100));
+    // Messages listener (limited to last 300 - enough for spectator-heavy rooms)
+    const messagesQuery = query(messagesRef, orderByChild("timestamp"), limitToLast(300));
     const unsubMessages = onValue(messagesQuery, (snap) => {
       if (isCleanedUp) return;
       setMessages(toMessages(snap.val()));
