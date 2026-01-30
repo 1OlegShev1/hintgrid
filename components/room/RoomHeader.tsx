@@ -7,6 +7,7 @@ interface RoomHeaderProps {
   currentPlayer: Player | null;
   isRoomOwner: boolean;
   isLocked?: boolean;
+  onSetRoomLocked?: (locked: boolean) => void;
   onLeaveRoom?: () => void;
 }
 
@@ -46,8 +47,8 @@ function QrCodeIcon({ className }: { className?: string }) {
   );
 }
 
-function LockIcon({ className }: { className?: string }) {
-  return (
+function LockIcon({ className, locked }: { className?: string; locked: boolean }) {
+  return locked ? (
     <svg 
       className={className} 
       viewBox="0 0 24 24" 
@@ -60,6 +61,20 @@ function LockIcon({ className }: { className?: string }) {
     >
       <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
       <path d="M7 11V7a5 5 0 0 1 10 0v4" />
+    </svg>
+  ) : (
+    <svg 
+      className={className} 
+      viewBox="0 0 24 24" 
+      fill="none" 
+      stroke="currentColor" 
+      strokeWidth={2} 
+      strokeLinecap="round" 
+      strokeLinejoin="round"
+      aria-label="Room unlocked"
+    >
+      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
+      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
     </svg>
   );
 }
@@ -139,7 +154,7 @@ async function copyToClipboard(text: string): Promise<boolean> {
   }
 }
 
-export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLocked, onLeaveRoom }: RoomHeaderProps) {
+export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLocked, onSetRoomLocked, onLeaveRoom }: RoomHeaderProps) {
   const [copiedUrl, setCopiedUrl] = useState(false);
   const [codeCopied, setCodeCopied] = useState(false);
   const [showQrModal, setShowQrModal] = useState(false);
@@ -187,16 +202,30 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
             >
               {roomCode}
             </button>
-            {isLocked && (
-              <span 
-                className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-xs font-medium"
-                title="Room is locked - new players cannot join"
-              >
-                <LockIcon className="w-3 h-3" />
-                Locked
-              </span>
-            )}
           </div>
+          {isRoomOwner && onSetRoomLocked ? (
+            <button
+              onClick={() => onSetRoomLocked(!isLocked)}
+              data-testid="room-lock-btn"
+              className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
+                isLocked
+                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50"
+                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+              }`}
+              title={isLocked ? "Room is locked - click to unlock" : "Room is open - click to lock"}
+            >
+              <LockIcon className="w-4 h-4" locked={!!isLocked} />
+              <span>{isLocked ? "Locked" : "Open"}</span>
+            </button>
+          ) : isLocked ? (
+            <span 
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium"
+              title="Room is locked - new players cannot join"
+            >
+              <LockIcon className="w-4 h-4" locked={true} />
+              <span>Locked</span>
+            </span>
+          ) : null}
           <button
             onClick={handleShareRoom}
             className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium transition-all"

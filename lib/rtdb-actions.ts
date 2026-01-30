@@ -137,6 +137,7 @@ export async function joinRoom(
     // Check if room is locked (existing players can still rejoin)
     const roomData = roomSnap.val() as RoomData;
     const existingPlayer = players[playerId];
+    console.log("[joinRoom] Lock check:", { locked: roomData.locked, playerId, existingPlayer: !!existingPlayer });
     if (roomData.locked && !existingPlayer) {
       throw new Error("Room is locked");
     }
