@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import type { Player } from "@/shared/types";
+import { Card, Button, Badge } from "@/components/ui";
 
 interface RoomHeaderProps {
   roomCode: string;
@@ -94,15 +95,17 @@ function QrCodeModal({ roomUrl, roomCode, onClose }: QrCodeModalProps) {
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
       onClick={onClose}
     >
-      <div 
-        className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center"
+      <Card 
+        variant="elevated"
+        padding="lg"
+        className="max-w-md mx-4 text-center"
         onClick={(e) => e.stopPropagation()}
       >
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-2xl font-bold text-foreground mb-2">
           Join Room
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          Scan this QR code to join room <span className="font-mono font-bold text-blue-600 dark:text-blue-400">{roomCode}</span>
+        <p className="text-muted mb-6">
+          Scan this QR code to join room <span className="font-mono font-bold text-primary">{roomCode}</span>
         </p>
         
         <div className="bg-white p-4 rounded-xl inline-block mb-6">
@@ -114,17 +117,14 @@ function QrCodeModal({ roomUrl, roomCode, onClose }: QrCodeModalProps) {
           />
         </div>
 
-        <div className="text-sm text-gray-500 dark:text-gray-400 mb-6 break-all">
+        <div className="text-sm text-muted mb-6 break-all">
           {roomUrl}
         </div>
 
-        <button
-          onClick={onClose}
-          className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
-        >
+        <Button onClick={onClose} variant="secondary" size="lg">
           Close
-        </button>
-      </div>
+        </Button>
+      </Card>
     </div>
   );
 }
@@ -204,17 +204,19 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 mb-4">
+    <Card variant="elevated" className="mb-4">
       <div className="flex justify-between items-center">
         <div className="flex items-center gap-3 flex-wrap">
           <div className="flex items-center gap-2">
-            <button
+            <Button
               onClick={() => setShowQrModal(true)}
-              className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400 transition-colors"
+              variant="ghost"
+              size="icon"
+              className="bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400"
               title="Show QR code to join room"
             >
               <QrCodeIcon className="w-5 h-5" />
-            </button>
+            </Button>
             <h1 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
               Room:{" "}
             </h1>
@@ -366,12 +368,10 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
             </div>
           )}
           {/* Team badge */}
-          {currentPlayer?.team && (
-            <span className={`px-3 py-1.5 rounded text-white text-sm font-medium ${
-              currentPlayer.team === "red" ? "bg-red-team" : "bg-blue-team"
-            }`}>
+          {currentPlayer?.team && (currentPlayer.team === "red" || currentPlayer.team === "blue") && (
+            <Badge variant={currentPlayer.team}>
               {currentPlayer.team} {currentPlayer.role === "clueGiver" ? "hinter" : "seeker"}
-            </span>
+            </Badge>
           )}
         </div>
       </div>
@@ -383,6 +383,6 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
           onClose={() => setShowQrModal(false)} 
         />
       )}
-    </div>
+    </Card>
   );
 }
