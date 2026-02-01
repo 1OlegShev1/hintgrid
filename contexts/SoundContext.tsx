@@ -323,6 +323,14 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // Try to resume audio context if suspended (browser may suspend during navigation)
+    const ctx = Howler.ctx;
+    if (ctx && ctx.state === "suspended") {
+      ctx.resume().catch(() => {
+        // If resume fails, user gesture is required - music won't play until click
+      });
+    }
+
     // Create new Howl for the track
     const howl = new Howl({
       src: [MUSIC_TRACKS[currentTrack]],
