@@ -253,15 +253,19 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
           ) : null}
           <button
             onClick={handleShareRoom}
-            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all"
+            className={`flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all ${
+              copiedUrl
+                ? "bg-success/20 text-success"
+                : "bg-primary text-primary-foreground hover:bg-primary/90"
+            }`}
             title="Copy room URL"
           >
             {copiedUrl ? (
               <>
-                <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-success">URL Copied!</span>
+                <span>URL Copied!</span>
               </>
             ) : (
               <>
