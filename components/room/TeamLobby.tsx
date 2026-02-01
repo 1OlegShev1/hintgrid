@@ -143,7 +143,7 @@ export default function TeamLobby({
           <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
             <div>
               <h2 className="text-xl font-semibold">Game Paused - Assign Roles</h2>
-              <p className="text-sm text-amber-600 dark:text-amber-400 mt-1">
+              <p className="text-sm text-warning mt-1">
                 {gameState.pauseReason === "ownerPaused" && (
                   <>Game paused by room owner</>
                 )}
@@ -178,14 +178,14 @@ export default function TeamLobby({
             {gameState.gameOver ? "Teams — Reassign for Rematch" : "Team Selection"}
           </h2>
           <div className="flex flex-wrap items-center gap-3">
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Words:</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface">
+              <span className="text-sm font-medium text-muted">Words:</span>
               {isRoomOwner ? (
                 <div className="relative" ref={wordPackRef}>
                   <button
                     type="button"
                     onClick={() => setIsWordPackOpen(!isWordPackOpen)}
-                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 w-[160px] hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                    className="px-2 py-1 border border-border rounded-lg bg-surface-elevated text-sm font-medium flex items-center gap-1 w-[160px] hover:border-primary/50 transition-colors"
                   >
                     <span className="truncate flex-1 text-left">
                       {gameState.wordPack.length === 1 
@@ -193,7 +193,7 @@ export default function TeamLobby({
                         : `${gameState.wordPack.length} packs selected`}
                     </span>
                     <svg 
-                      className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isWordPackOpen ? 'rotate-180' : ''}`} 
+                      className={`w-4 h-4 text-muted shrink-0 transition-transform ${isWordPackOpen ? 'rotate-180' : ''}`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -202,7 +202,7 @@ export default function TeamLobby({
                     </svg>
                   </button>
                   {isWordPackOpen && (
-                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 min-w-[220px]">
+                    <div className="absolute top-full left-0 mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 min-w-[220px]">
                       <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto">
                         {wordPackOptions.map((option) => {
                           const isSelected = gameState.wordPack.includes(option.value);
@@ -214,7 +214,7 @@ export default function TeamLobby({
                               className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer ${
                                 isLastSelected 
                                   ? 'opacity-50 cursor-not-allowed' 
-                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                  : 'hover:bg-surface'
                               }`}
                             >
                               <input
@@ -228,22 +228,22 @@ export default function TeamLobby({
                                     : [...gameState.wordPack, option.value];
                                   onWordPackChange(newPacks);
                                 }}
-                                className="w-4 h-4 rounded border-gray-300 dark:border-gray-600 text-blue-600 focus:ring-blue-500"
+                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
                               />
                               <span className="text-sm font-medium flex-1">{option.label}</span>
-                              <span className="text-xs text-gray-500">{packWordCount}</span>
+                              <span className="text-xs text-muted">{packWordCount}</span>
                             </label>
                           );
                         })}
                       </div>
-                      <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2 flex justify-between items-center">
-                        <span className="text-xs text-gray-500">
+                      <div className="border-t border-border px-3 py-2 flex justify-between items-center">
+                        <span className="text-xs text-muted">
                           Total: {getWordCount(gameState.wordPack)} words
                         </span>
                         <button
                           type="button"
                           onClick={() => setIsWordPackOpen(false)}
-                          className="text-xs text-blue-600 hover:text-blue-700 font-medium"
+                          className="text-xs text-primary hover:text-primary/80 font-medium"
                         >
                           Done
                         </button>
@@ -252,27 +252,27 @@ export default function TeamLobby({
                   )}
                 </div>
               ) : (
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                <span className="text-sm font-semibold text-foreground">
                   {gameState.wordPack.length === 1 
                     ? getPackDisplayName(gameState.wordPack[0])
                     : gameState.wordPack.map(p => getPackDisplayName(p)).join(", ")}
-                  <span className="text-xs text-gray-500 ml-1">({getWordCount(gameState.wordPack)})</span>
+                  <span className="text-xs text-muted ml-1">({getWordCount(gameState.wordPack)})</span>
                 </span>
               )}
             </div>
             {/* Custom Words */}
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Custom:</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface">
+              <span className="text-sm font-medium text-muted">Custom:</span>
               {isRoomOwner && onCustomWordsChange ? (
                 <div className="relative" ref={customWordsRef}>
                   <button
                     type="button"
                     onClick={() => setIsCustomWordsOpen(!isCustomWordsOpen)}
-                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1.5 hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                    className="px-2 py-1 border border-border rounded-lg bg-surface-elevated text-sm font-medium flex items-center gap-1.5 hover:border-muted transition-colors"
                   >
                     <span>{gameState.customWords.length || "0"}</span>
                     <svg 
-                      className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isCustomWordsOpen ? 'rotate-180' : ''}`} 
+                      className={`w-4 h-4 text-muted shrink-0 transition-transform ${isCustomWordsOpen ? 'rotate-180' : ''}`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -281,24 +281,24 @@ export default function TeamLobby({
                     </svg>
                   </button>
                   {isCustomWordsOpen && (
-                    <div className="absolute top-full right-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 w-[320px]">
+                    <div className="absolute top-full right-0 mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 w-[320px]">
                       <div className="p-3 space-y-3">
                         {/* Input section */}
                         <div>
-                          <label className="block text-xs text-gray-500 dark:text-gray-400 mb-1">
+                          <label className="block text-xs text-muted mb-1">
                             Add words (comma or newline separated):
                           </label>
                           <textarea
                             value={customWordsInput}
                             onChange={(e) => setCustomWordsInput(e.target.value)}
                             placeholder="pizza, rocket, unicorn..."
-                            className="w-full h-16 px-2 py-1.5 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-900 resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            className="w-full h-16 px-2 py-1.5 text-sm border border-border rounded-lg bg-surface resize-none focus:outline-none focus:ring-2 focus:ring-primary"
                           />
                           <button
                             type="button"
                             onClick={handleAddCustomWords}
                             disabled={!customWordsInput.trim()}
-                            className="mt-2 w-full px-3 py-1.5 bg-blue-600 text-white text-sm font-medium rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            className="mt-2 w-full px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
                             Add Words
                           </button>
@@ -306,7 +306,7 @@ export default function TeamLobby({
                         
                         {/* Errors */}
                         {customWordsErrors.length > 0 && (
-                          <div className="text-xs text-red-600 dark:text-red-400 space-y-0.5">
+                          <div className="text-xs text-error space-y-0.5">
                             {customWordsErrors.slice(0, 3).map((err, i) => (
                               <p key={i}>{err}</p>
                             ))}
@@ -322,13 +322,13 @@ export default function TeamLobby({
                             {gameState.customWords.map((word) => (
                               <span
                                 key={word}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs rounded-full"
+                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/20 text-accent text-xs rounded-full"
                               >
                                 {word}
                                 <button
                                   type="button"
                                   onClick={() => handleRemoveCustomWord(word)}
-                                  className="hover:text-purple-600 dark:hover:text-purple-400"
+                                  className="hover:text-accent/80"
                                 >
                                   <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -341,15 +341,15 @@ export default function TeamLobby({
                       </div>
                       
                       {/* Footer */}
-                      <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2 flex justify-between items-center">
-                        <span className="text-xs text-gray-500">
+                      <div className="border-t border-border px-3 py-2 flex justify-between items-center">
+                        <span className="text-xs text-muted">
                           {gameState.customWords.length} words (up to {MAX_CUSTOM_WORDS_ON_BOARD} appear)
                         </span>
                         {gameState.customWords.length > 0 && (
                           <button
                             type="button"
                             onClick={handleClearAllCustomWords}
-                            className="text-xs text-red-600 hover:text-red-700 font-medium"
+                            className="text-xs text-error hover:text-error/80 font-medium"
                           >
                             Clear All
                           </button>
@@ -359,23 +359,23 @@ export default function TeamLobby({
                   )}
                 </div>
               ) : (
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                <span className="text-sm font-semibold text-foreground">
                   {gameState.customWords.length || "0"}
                 </span>
               )}
             </div>
-            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-gray-100 dark:bg-gray-700">
-              <span className="text-sm font-medium text-gray-600 dark:text-gray-400">Timer:</span>
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-surface">
+              <span className="text-sm font-medium text-muted">Timer:</span>
               {isRoomOwner ? (
                 <div className="relative" ref={timerRef}>
                   <button
                     type="button"
                     onClick={() => setIsTimerOpen(!isTimerOpen)}
-                    className="px-2 py-1 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-sm font-medium flex items-center gap-1 min-w-[100px] hover:border-gray-400 dark:hover:border-gray-500 transition-colors"
+                    className="px-2 py-1 border border-border rounded-lg bg-surface-elevated text-sm font-medium flex items-center gap-1 min-w-[100px] hover:border-muted transition-colors"
                   >
                     <span>{TIMER_PRESETS[gameState.timerPreset].label}</span>
                     <svg 
-                      className={`w-4 h-4 text-gray-500 shrink-0 transition-transform ${isTimerOpen ? 'rotate-180' : ''}`} 
+                      className={`w-4 h-4 text-muted shrink-0 transition-transform ${isTimerOpen ? 'rotate-180' : ''}`} 
                       fill="none" 
                       stroke="currentColor" 
                       viewBox="0 0 24 24"
@@ -384,7 +384,7 @@ export default function TeamLobby({
                     </svg>
                   </button>
                   {isTimerOpen && (
-                    <div className="absolute top-full left-0 mt-1 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-lg shadow-lg z-50 min-w-[200px]">
+                    <div className="absolute top-full left-0 mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 min-w-[200px]">
                       <div className="p-2 space-y-1">
                         {timerPresetOptions.map((option) => {
                           const isSelected = gameState.timerPreset === option.value;
@@ -399,18 +399,18 @@ export default function TeamLobby({
                               }}
                               className={`w-full text-left px-3 py-2 rounded flex items-center justify-between ${
                                 isSelected 
-                                  ? 'bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300' 
-                                  : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                                  ? 'bg-primary/20 text-primary' 
+                                  : 'hover:bg-surface'
                               }`}
                             >
                               <div>
                                 <div className="text-sm font-medium">{preset.label}</div>
-                                <div className="text-xs text-gray-500 dark:text-gray-400">
+                                <div className="text-xs text-muted">
                                   {preset.clue}s clue / {preset.guess}s guess
                                 </div>
                               </div>
                               {isSelected && (
-                                <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                                 </svg>
                               )}
@@ -418,8 +418,8 @@ export default function TeamLobby({
                           );
                         })}
                       </div>
-                      <div className="border-t border-gray-200 dark:border-gray-700 px-3 py-2">
-                        <p className="text-xs text-gray-500">
+                      <div className="border-t border-border px-3 py-2">
+                        <p className="text-xs text-muted">
                           First clue gets +{TIMER_PRESETS[gameState.timerPreset].firstClueBonus}s bonus
                         </p>
                       </div>
@@ -427,7 +427,7 @@ export default function TeamLobby({
                   )}
                 </div>
               ) : (
-                <span className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                <span className="text-sm font-semibold text-foreground">
                   {TIMER_PRESETS[gameState.timerPreset].label}
                 </span>
               )}
@@ -510,13 +510,13 @@ export default function TeamLobby({
                       <span className="text-xl">{clueGiver.avatar}</span>
                       <span>{clueGiver.name}{clueGiver.id === currentPlayer?.id ? " (you)" : ""}</span>
                       {clueGiverOffline && (
-                        <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                        <span className="text-xs uppercase tracking-wide text-muted">offline</span>
                       )}
                       {clueGiver.id === currentPlayer?.id && showControls && (
                         <button
                           type="button"
                           onClick={() => onSetRole(null, null)}
-                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-muted hover:text-foreground"
                         >
                           Leave
                         </button>
@@ -525,7 +525,7 @@ export default function TeamLobby({
                         <button
                           type="button"
                           onClick={() => onSetRole(null, null, clueGiver.id)}
-                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-muted hover:text-foreground"
                           title="Remove from team"
                         >
                           Remove
@@ -535,7 +535,7 @@ export default function TeamLobby({
                         <button
                           type="button"
                           onClick={() => onKickPlayer!(clueGiver.id)}
-                          className={`${canRemovePlayer(clueGiver.id) ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700`}
+                          className={`${canRemovePlayer(clueGiver.id) ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-error hover:text-error/80`}
                           title="Kick from room (2 min ban)"
                         >
                           Kick
@@ -556,8 +556,8 @@ export default function TeamLobby({
                     Join as Hinter
                   </button>
                 ) : (
-                  <div className="rounded-lg p-3 text-base border border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-800">
-                    <span className="text-gray-500 dark:text-gray-400">Open</span>
+                  <div className="rounded-lg p-3 text-base border border-border bg-surface">
+                    <span className="text-muted">Open</span>
                   </div>
                 )}
               </div>
@@ -583,13 +583,13 @@ export default function TeamLobby({
                       <span className="text-xl">{player.avatar}</span>
                       <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
                       {player.connected === false && (
-                        <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                        <span className="text-xs uppercase tracking-wide text-muted">offline</span>
                       )}
                       {player.id === currentPlayer?.id && showControls && (
                         <button
                           type="button"
                           onClick={() => onSetRole(null, null)}
-                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-muted hover:text-foreground"
                         >
                           Leave
                         </button>
@@ -598,7 +598,7 @@ export default function TeamLobby({
                         <button
                           type="button"
                           onClick={() => onSetRole(null, null, player.id)}
-                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                          className="ml-auto text-xs font-semibold uppercase tracking-wide text-muted hover:text-foreground"
                           title="Remove from team"
                         >
                           Remove
@@ -608,7 +608,7 @@ export default function TeamLobby({
                         <button
                           type="button"
                           onClick={() => onKickPlayer!(player.id)}
-                          className={`${canRemovePlayer(player.id) ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700`}
+                          className={`${canRemovePlayer(player.id) ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-error hover:text-error/80`}
                           title="Kick from room (2 min ban)"
                         >
                           Kick
@@ -656,13 +656,13 @@ export default function TeamLobby({
                     <span className="text-2xl">{player.avatar}</span>
                     <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
                     {player.connected === false && (
-                      <span className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">offline</span>
+                      <span className="text-xs uppercase tracking-wide text-muted">offline</span>
                     )}
                     {canRemovePlayer(player.id) && player.team && player.role && (
                       <button
                         type="button"
                         onClick={() => onSetRole(null, null, player.id)}
-                        className="ml-auto text-xs font-semibold uppercase tracking-wide text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200"
+                        className="ml-auto text-xs font-semibold uppercase tracking-wide text-muted hover:text-foreground"
                         title="Remove from team"
                       >
                         Remove
@@ -672,7 +672,7 @@ export default function TeamLobby({
                       <button
                         type="button"
                         onClick={() => onKickPlayer!(player.id)}
-                        className={`${canRemovePlayer(player.id) && player.team && player.role ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-red-600 hover:text-red-700`}
+                        className={`${canRemovePlayer(player.id) && player.team && player.role ? '' : 'ml-auto'} text-xs font-semibold uppercase tracking-wide text-error hover:text-error/80`}
                         title="Kick from room (2 min ban)"
                       >
                         Kick
@@ -696,7 +696,7 @@ export default function TeamLobby({
             </div>
           </div>
           {!isPaused && players.filter(p => p.team && p.role).length < 4 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-3">
+            <p className="text-sm text-muted mt-3">
               Waiting for {4 - players.filter(p => p.team && p.role).length} more player{4 - players.filter(p => p.team && p.role).length !== 1 ? "s" : ""} to join teams...
             </p>
           )}

@@ -40,8 +40,8 @@ export default function GameStatusPanel({
 }: GameStatusPanelProps) {
   const [showEndGameModal, setShowEndGameModal] = useState(false);
   const turnHighlightClass = gameState.currentTeam === "red"
-    ? "border-red-400 bg-red-50/70 dark:bg-red-900/20"
-    : "border-blue-400 bg-blue-50/70 dark:bg-blue-900/20";
+    ? "border-red-team bg-red-team-light/70"
+    : "border-blue-team bg-blue-team-light/70";
   
   const turnBannerClass = gameState.currentTeam === "red"
     ? "bg-red-team text-white"
@@ -79,14 +79,14 @@ export default function GameStatusPanel({
             <span className={`px-3 py-1 rounded font-bold ${
               !gameState.gameOver && gameState.currentTeam === "red" 
                 ? "bg-red-team text-white" 
-                : "bg-red-100 dark:bg-red-900/40 text-red-800 dark:text-red-200"
+                : "bg-red-team-light text-red-team-text"
             }`}>
               Red: {redRemaining}
             </span>
             <span className={`px-3 py-1 rounded font-bold ${
               !gameState.gameOver && gameState.currentTeam === "blue" 
                 ? "bg-blue-team text-white" 
-                : "bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-200"
+                : "bg-blue-team-light text-blue-team-text"
             }`}>
               Blue: {blueRemaining}
             </span>
@@ -94,12 +94,12 @@ export default function GameStatusPanel({
           {timeRemaining !== null && (
             <div className={`
               text-lg font-mono flex items-center gap-2
-              ${gameState.paused ? "text-amber-600 dark:text-amber-400" : ""}
-              ${!gameState.paused && timeRemaining <= 10 && timeRemaining > 0 ? "timer-urgent text-red-600 font-bold" : ""}
+              ${gameState.paused ? "text-warning" : ""}
+              ${!gameState.paused && timeRemaining <= 10 && timeRemaining > 0 ? "timer-urgent text-error font-bold" : ""}
             `}>
               {Math.floor(timeRemaining / 60)}:{(timeRemaining % 60).toString().padStart(2, "0")}
               {gameState.paused && (
-                <span className="text-xs font-semibold bg-amber-100 dark:bg-amber-900/50 px-2 py-0.5 rounded">
+                <span className="text-xs font-semibold bg-warning/20 text-warning px-2 py-0.5 rounded">
                   PAUSED
                 </span>
               )}
@@ -107,21 +107,21 @@ export default function GameStatusPanel({
           )}
           {gameState.currentClue && (
             <div className={`
-              flex items-center gap-3 bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-400 dark:border-amber-600 rounded-lg px-4 py-2
+              flex items-center gap-3 bg-warning/20 border-2 border-warning rounded-lg px-4 py-2
               ${clueAnimating ? "clue-announce" : ""}
             `}>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">Clue</span>
-              <span className="font-bold text-xl text-amber-900 dark:text-amber-100">{gameState.currentClue.word}</span>
-              <span className="bg-amber-600 text-white text-sm font-bold px-2 py-0.5 rounded-full">{gameState.currentClue.count}</span>
+              <span className="text-xs font-medium text-warning uppercase tracking-wide">Clue</span>
+              <span className="font-bold text-xl text-highlight-text">{gameState.currentClue.word}</span>
+              <span className="bg-warning text-warning-foreground text-sm font-bold px-2 py-0.5 rounded-full">{gameState.currentClue.count}</span>
               {gameState.remainingGuesses !== null && (
-                <span className="text-sm text-amber-700 dark:text-amber-300 ml-2">
+                <span className="text-sm text-warning ml-2">
                   {gameState.remainingGuesses} guess{gameState.remainingGuesses !== 1 ? 'es' : ''} left
                 </span>
               )}
             </div>
           )}
           {gameState.remainingGuesses !== null && !gameState.currentClue && (
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-muted">
               Guesses left: {gameState.remainingGuesses}
             </div>
           )}
@@ -166,14 +166,14 @@ export default function GameStatusPanel({
         const canResume = hasClueGiver && hasGuesser;
         
         return (
-          <div className="bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400 dark:border-amber-600 rounded-lg p-4 text-center mb-4">
+          <div className="bg-warning/20 border-2 border-warning rounded-lg p-4 text-center mb-4">
             <div className="flex items-center justify-center gap-2 mb-2">
-              <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5 text-warning animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              <span className="text-lg font-bold text-amber-800 dark:text-amber-200">Game Paused</span>
+              <span className="text-lg font-bold text-highlight-text">Game Paused</span>
             </div>
-            <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
+            <p className="text-sm text-warning mb-3">
               {gameState.pauseReason === "ownerPaused" && (
                 <>Game paused by room owner. Click Resume when ready to continue.</>
               )}
@@ -197,7 +197,7 @@ export default function GameStatusPanel({
                     Resume Game
                   </Button>
                 ) : (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
+                  <p className="text-xs text-warning">
                     Need a connected hinter and at least one connected seeker to resume
                   </p>
                 )}
@@ -210,13 +210,13 @@ export default function GameStatusPanel({
       {gameState.gameStarted && !gameState.gameOver && !gameState.paused && !gameState.currentClue && !canGiveClue && (
         <div className={`rounded-lg p-3 text-center mb-4 border-2 ${
           gameState.currentTeam === "red"
-            ? "bg-red-100 dark:bg-red-900/30 border-red-300 dark:border-red-700"
-            : "bg-blue-100 dark:bg-blue-900/30 border-blue-300 dark:border-blue-700"
+            ? "bg-red-team-light border-red-team/50"
+            : "bg-blue-team-light border-blue-team/50"
         }`}>
           <p className={`text-sm font-medium ${
             gameState.currentTeam === "red"
-              ? "text-red-800 dark:text-red-200"
-              : "text-blue-800 dark:text-blue-200"
+              ? "text-red-team-text"
+              : "text-blue-team-text"
           }`}>
             ⏳ Waiting for {gameState.currentTeam} team hinter to give a hint...
           </p>
@@ -224,8 +224,8 @@ export default function GameStatusPanel({
       )}
       
       {gameState.gameOver && !showGameOverOverlay && (
-        <div data-testid="game-over-panel" className="bg-white dark:bg-gray-800 border-2 border-yellow-400 rounded-lg p-6">
-          <h3 data-testid="game-winner-text" className="text-2xl font-bold text-center mb-6">
+        <div data-testid="game-over-panel" className="bg-surface-elevated border-2 border-warning rounded-lg p-6">
+          <h3 data-testid="game-winner-text" className="text-2xl font-bold text-center mb-6 text-foreground">
             🎮 Game Over! {gameState.winner?.toUpperCase()} Team Wins!
           </h3>
           
@@ -237,7 +237,7 @@ export default function GameStatusPanel({
           />
           
           {/* Action Buttons */}
-          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
+          <div className="mt-6 pt-4 border-t border-border">
             {isRoomOwner && (
               <div className="flex items-center justify-center gap-3">
                 {onRematch && (
@@ -258,7 +258,7 @@ export default function GameStatusPanel({
               </div>
             )}
             {!isRoomOwner && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+              <p className="text-sm text-muted text-center">
                 Waiting for room owner to start rematch or return to lobby...
               </p>
             )}

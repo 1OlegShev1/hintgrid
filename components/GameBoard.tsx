@@ -146,20 +146,20 @@ export default function GameBoard({
   // Front face color (unrevealed card - what guessers/clue givers see)
   const getFrontFaceColor = useCallback((card: Card) => {
     if (!isClueGiver) {
-      // Guesser view - neutral gray
-      return "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100";
+      // Guesser view - neutral surface
+      return "bg-surface-elevated text-foreground";
     }
 
     // Clue giver view - colored hints
     switch (card.team) {
       case "red":
-        return "bg-red-100 dark:bg-red-900 border-2 border-red-500 text-red-900 dark:text-red-100";
+        return "bg-red-team-light border-2 border-red-team text-red-team-text";
       case "blue":
-        return "bg-blue-100 dark:bg-blue-900 border-2 border-blue-500 text-blue-900 dark:text-blue-100";
+        return "bg-blue-team-light border-2 border-blue-team text-blue-team-text";
       case "trap":
-        return "bg-gray-800 border-2 border-gray-600 text-white";
+        return "bg-trap border-2 border-muted text-trap-text";
       default:
-        return "bg-yellow-50 dark:bg-yellow-900 border-2 border-yellow-400 text-yellow-900 dark:text-yellow-100";
+        return "bg-neutral-card/30 border-2 border-neutral-card text-neutral-card-text";
     }
   }, [isClueGiver]);
 
@@ -181,13 +181,13 @@ export default function GameBoard({
   const getCardBackIconColor = useCallback((card: Card) => {
     switch (card.team) {
       case "red":
-        return "text-red-900/60";
+        return "text-white/40";
       case "blue":
-        return "text-blue-900/60";
+        return "text-white/40";
       case "trap":
-        return "text-gray-400/50";
+        return "text-muted/50";
       default:
-        return "text-yellow-700/60 dark:text-yellow-900/60";
+        return "text-neutral-card-text/50";
     }
   }, []);
 
@@ -236,9 +236,9 @@ export default function GameBoard({
                   ? "cursor-default"
                   : "cursor-pointer hover:scale-105 active:scale-95"
                 }
-                ${hasVoted ? `ring-2 ${currentTeam === "red" ? "ring-red-500" : "ring-blue-500"}` : ""}
-                ${isFocused && !card.revealed ? "ring-2 ring-yellow-400 ring-offset-2" : ""}
-                focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2
+                ${hasVoted ? `ring-2 ${currentTeam === "red" ? "ring-red-team" : "ring-blue-team"}` : ""}
+                ${isFocused && !card.revealed ? "ring-2 ring-warning ring-offset-2" : ""}
+                focus:outline-none focus-visible:ring-2 focus-visible:ring-warning focus-visible:ring-offset-2
                 transition-transform duration-200
               `}
             >
@@ -255,7 +255,7 @@ export default function GameBoard({
             </button>
             {votes.length > 0 && !card.revealed && (
               <div 
-                className={`absolute top-1 left-1 z-10 ${currentTeam === "red" ? "bg-red-600" : "bg-blue-600"} text-white text-xs px-2 py-0.5 rounded-full font-semibold ${isBadgeAnimating ? "badge-pop" : ""}`}
+                className={`absolute top-1 left-1 z-10 ${currentTeam === "red" ? "bg-red-team" : "bg-blue-team"} text-white text-xs px-2 py-0.5 rounded-full font-semibold ${isBadgeAnimating ? "badge-pop" : ""}`}
                 title={`Votes: ${votes.length}`}
                 aria-hidden="true"
               >
@@ -263,7 +263,7 @@ export default function GameBoard({
               </div>
             )}
             {hasVoted && !card.revealed && (
-              <div className={`absolute top-1 right-1 z-10 ${currentTeam === "red" ? "bg-red-500" : "bg-blue-500"} text-white text-xs px-1.5 py-0.5 rounded`} title="You voted" aria-hidden="true">
+              <div className={`absolute top-1 right-1 z-10 ${currentTeam === "red" ? "bg-red-team" : "bg-blue-team"} text-white text-xs px-1.5 py-0.5 rounded`} title="You voted" aria-hidden="true">
                 ✓
               </div>
             )}
@@ -271,7 +271,7 @@ export default function GameBoard({
               <button
                 onClick={() => onConfirmReveal(index)}
                 data-testid={`board-reveal-${index}`}
-                className="absolute bottom-1 right-1 z-10 bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700 font-semibold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="absolute bottom-1 right-1 z-10 bg-success text-success-foreground text-xs px-2 py-1 rounded hover:opacity-90 font-semibold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 title="Click to reveal this card"
                 aria-label={`Reveal ${card.word}`}
               >

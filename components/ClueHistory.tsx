@@ -16,17 +16,17 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   const getClueTeamClasses = (team?: string) => {
     if (team === "red") {
       return {
-        container: "bg-red-50 dark:bg-red-900/30 border-l-4 border-red-500",
-        badge: "bg-red-500 text-white",
-        text: "text-red-900 dark:text-red-100",
-        clue: "text-red-800 dark:text-red-200",
+        container: "bg-red-team-light border-l-4 border-red-team",
+        badge: "bg-red-team text-white",
+        text: "text-red-team-text",
+        clue: "text-red-team",
       };
     }
     return {
-      container: "bg-blue-50 dark:bg-blue-900/30 border-l-4 border-blue-500",
-      badge: "bg-blue-500 text-white",
-      text: "text-blue-900 dark:text-blue-100",
-      clue: "text-blue-800 dark:text-blue-200",
+      container: "bg-blue-team-light border-l-4 border-blue-team",
+      badge: "bg-blue-team text-white",
+      text: "text-blue-team-text",
+      clue: "text-blue-team",
     };
   };
 
@@ -34,26 +34,26 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   const getRevealClasses = (team?: string) => {
     switch (team) {
       case "red":
-        return "bg-red-200 dark:bg-red-800/60 text-red-800 dark:text-red-100";
+        return "bg-red-team-light text-red-team-text";
       case "blue":
-        return "bg-blue-200 dark:bg-blue-800/60 text-blue-800 dark:text-blue-100";
+        return "bg-blue-team-light text-blue-team-text";
       case "trap":
-        return "bg-gray-900 dark:bg-black text-white";
+        return "bg-trap text-trap-text";
       case "neutral":
-        return "bg-amber-200 dark:bg-amber-800/60 text-amber-800 dark:text-amber-100";
+        return "bg-neutral-card/30 text-neutral-card-text";
       default:
-        return "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-200";
+        return "bg-surface text-foreground";
     }
   };
 
   return (
-    <div className="bg-gray-50 dark:bg-gray-900 rounded-lg h-full flex flex-col">
-      <h3 className="font-semibold px-4 py-3 border-b border-gray-200 dark:border-gray-700 shrink-0">
+    <div className="bg-surface rounded-lg h-full flex flex-col">
+      <h3 className="font-semibold px-4 py-3 border-b border-border shrink-0 text-foreground">
         Game Log
       </h3>
       <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
         {gameMessages.length === 0 ? (
-          <p className="text-gray-500 dark:text-gray-400 text-sm px-1">No activity yet</p>
+          <p className="text-muted text-sm px-1">No activity yet</p>
         ) : (
           gameMessages.map((msg) => (
             <div key={msg.id}>
@@ -89,7 +89,7 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
                 </div>
               ) : (
                 // Game system message (paused, resumed, ended)
-                <div className="text-center text-xs text-gray-500 dark:text-gray-400 py-1 italic">
+                <div className="text-center text-xs text-muted py-1 italic">
                   — {msg.message} —
                 </div>
               )}
