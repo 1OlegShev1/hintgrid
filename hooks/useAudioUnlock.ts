@@ -90,17 +90,26 @@ export function useAudioUnlock(): AudioUnlockState {
   
   // Ref to prevent state updates after unmount
   const isMountedRef = useRef(true);
+  
+  // Ref to track if we've already unlocked on this page load (prevents double-triggering)
+  const hasUnlockedRef = useRef(false);
 
-  // Helper to mark audio as ready
+  // Helper to mark audio as ready (only triggers once per page load)
   const markReady = useCallback(() => {
-    if (isMountedRef.current && !isReady) {
+    if (isMountedRef.current && !hasUnlockedRef.current) {
+      hasUnlockedRef.current = true;
       setIsReady(true);
       setUnlockTrigger(prev => prev + 1);
     }
-  }, [isReady]);
+  }, []);
 
   // Attempt to unlock - returns true if successful
   const tryUnlock = useCallback(async (): Promise<boolean> => {
+    // Already unlocked - just return true
+    if (hasUnlockedRef.current) {
+      return true;
+    }
+    
     const success = await tryResumeAudioContext();
     if (success) {
       markReady();
@@ -114,9 +123,8 @@ export function useAudioUnlock(): AudioUnlockState {
     
     // Try immediate resume (may work if user recently interacted)
     tryResumeAudioContext().then(success => {
-      if (success && isMountedRef.current) {
-        setIsReady(true);
-        setUnlockTrigger(prev => prev + 1);
+      if (success) {
+        markReady();
       }
     });
 
@@ -129,9 +137,8 @@ export function useAudioUnlock(): AudioUnlockState {
       
       // Actually unlock the audio context (requires user gesture)
       const success = await tryResumeAudioContext();
-      if (success && isMountedRef.current) {
-        setIsReady(true);
-        setUnlockTrigger(prev => prev + 1);
+      if (success) {
+        markReady();
       }
       
       // Remove listeners after first successful interaction
@@ -150,7 +157,7 @@ export function useAudioUnlock(): AudioUnlockState {
         document.removeEventListener(event, handleInteraction);
       });
     };
-  }, []);
+  }, [markReady]);
 
   return {
     hasUserIntent,
