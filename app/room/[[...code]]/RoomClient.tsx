@@ -194,13 +194,11 @@ export default function RoomPage() {
     
     // Don't play music until player has joined (entered their name)
     if (!playerName) {
-      setMusicTrack(null);
       return;
     }
     
     // No game state yet
     if (!hasGameState) {
-      setMusicTrack(null);
       return;
     }
     
@@ -224,12 +222,16 @@ export default function RoomPage() {
     }
     
     setMusicTrack(track);
-    
-    // Cleanup: stop music when leaving the room
-    return () => {
-      setMusicTrack(null);
-    };
   }, [playerName, hasGameState, gameStarted, gameOver, timerPreset, setMusicTrack]);
+  
+  // Separate effect to stop music ONLY on unmount (not on every dependency change)
+  useEffect(() => {
+    return () => {
+      if (setMusicTrack) {
+        setMusicTrack(null);
+      }
+    };
+  }, [setMusicTrack]);
 
   // Early returns for special states
   if (room.roomClosedReason) {
