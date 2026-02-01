@@ -249,9 +249,10 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 | `hintgrid_sound_volume` | Master volume (0-1) | `0.5` |
 | `hintgrid_sound_muted` | Whether sounds are muted | `false` |
 | `hintgrid_music_enabled` | Whether music is enabled | `false` |
-| `hintgrid-theme` | UI theme preference | `system` |
+| `hintgrid-theme` | Theme mode (light/dark/system) | `system` |
+| `hintgrid-style` | Theme style (classic/synthwave) | `synthwave` |
 
-**Note:** Keys are defined in `shared/constants.ts` (except theme which is in `ThemeProvider.tsx`). Music volume is derived from master volume (30%).
+**Note:** Keys are defined in `shared/constants.ts` (except theme keys which are in `ThemeProvider.tsx`). Music volume is derived from master volume (30%).
 
 ### sessionStorage Keys
 
@@ -367,7 +368,8 @@ Music auto-switches based on game state (lobby → game → victory).
 
 | Provider | Location | Purpose |
 |----------|----------|---------|
-| `ThemeProvider` | `components/ThemeProvider.tsx` | Light/dark theme with system preference support |
+| `ThemeProvider` | `components/ThemeProvider.tsx` | Theme mode (light/dark/system) and style (classic/synthwave) |
+| `ThemeBackground` | `components/ThemeBackground.tsx` | Theme-specific background effects (synthwave sun/grid) |
 | `AuthProvider` | `contexts/AuthContext.tsx` | Firebase Anonymous Auth, provides `uid` |
 | `ErrorProvider` | `contexts/ErrorContext.tsx` | Global error toast notifications |
 | `SoundProvider` | `contexts/SoundContext.tsx` | Sound effects and volume control |
