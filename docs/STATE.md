@@ -263,6 +263,13 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 
 **Note:** Key is defined in `SoundContext.tsx`. This flag indicates user intent (music should auto-play), but **a user gesture is still required on each page load** to unlock the browser's audio context. The code always sets up event listeners for user interaction; sessionStorage just remembers that music should start playing once audio is unlocked.
 
+**Audio Context Handling:**
+- On each page load, the code attempts to resume the audio context immediately (may succeed if user recently interacted)
+- Event listeners are always set up for click/touchstart/keydown to unlock audio on first interaction
+- When `setMusicTrack()` is called but audio isn't ready, the track is stored as pending
+- An `audioUnlockTrigger` state forces the music effect to re-run once audio becomes available
+- The Howl instance uses `onplayerror` callback to retry playback on the "unlock" event
+
 ### Game Configuration Constants
 
 Defined in `shared/constants.ts`:

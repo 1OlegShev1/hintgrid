@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useCallback, useRef, Re
 import useSound from "use-sound";
 import { Howl, Howler } from "howler";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
+import { useAudioUnlock } from "@/hooks/useAudioUnlock";
 import { 
   LOCAL_STORAGE_SOUND_MUTED_KEY, 
   LOCAL_STORAGE_SOUND_VOLUME_KEY,
@@ -16,27 +17,14 @@ export type MusicTrack = "lobby" | "game-30s" | "game-60s" | "game-90s" | "victo
 // Music plays at 30% of master volume
 const MUSIC_VOLUME_RATIO = 0.3;
 
-// Track if audio context has been unlocked
-let audioContextUnlocked = false;
-
-/**
- * Unlock the Web Audio context on first user interaction.
- * Browsers block audio playback until user interacts with the page.
- */
-function unlockAudioContext(): Promise<void> {
-  if (audioContextUnlocked) return Promise.resolve();
-
-  // Howler exposes the audio context - resume it
-  const ctx = Howler.ctx;
-  if (ctx && ctx.state === "suspended") {
-    return ctx.resume().then(() => {
-      audioContextUnlocked = true;
-    });
-  }
-
-  audioContextUnlocked = true;
-  return Promise.resolve();
-}
+// Music track paths
+const MUSIC_TRACKS: Record<Exclude<MusicTrack, null>, string> = {
+  "lobby": "/sounds/music/lobby.mp3",
+  "game-30s": "/sounds/music/game-30s.mp3",
+  "game-60s": "/sounds/music/game-60s.mp3",
+  "game-90s": "/sounds/music/game-90s.mp3",
+  "victory": "/sounds/music/victory.mp3",
+};
 
 interface SoundContextValue {
   // Sound effects
@@ -91,51 +79,15 @@ function PlayFunctionCapture({
 }) {
   // use-sound hooks for audio files
   // Always enabled - mute logic handled in playSound()
-  const [playGameStart] = useSound("/sounds/game-start.mp3", { 
-    volume: volume * 0.7,
-  });
-  
-  const [playTurnChange] = useSound("/sounds/turn-change.mp3", { 
-    volume: volume * 0.5,
-  });
-  
-  const [playGameOver] = useSound("/sounds/game-over.mp3", { 
-    volume: volume * 0.6,
-  });
-
-  // Disappointed crowd sound for losing team
-  const [playGameLose] = useSound("/sounds/game-lose.mp3", { 
-    volume: volume * 0.6,
-  });
-
-  // Bear trap snap sound for losing by trap
-  const [playTrapSnap] = useSound("/sounds/trap-snap.mp3", { 
-    volume: volume * 0.7,
-  });
-
-  // Realistic clock tick sounds - interrupt prevents overlapping
-  // Also expose stop functions to immediately halt playback
-  const [playTick, { stop: stopTick }] = useSound("/sounds/tick.mp3", { 
-    volume: volume * 0.5,
-    interrupt: true,
-  });
-  
-  // Urgent tick - distinct electronic beep for clear urgency
-  const [playTickUrgent, { stop: stopTickUrgent }] = useSound("/sounds/tick-urgent.mp3", { 
-    volume: volume * 0.4,
-    interrupt: true,
-  });
-
-  // Card reveal - subtle flick sound
-  const [playCardReveal] = useSound("/sounds/card-reveal.mp3", { 
-    volume: volume * 0.3,
-    interrupt: true,
-  });
-
-  // Clue submit - soft interface start sound
-  const [playClueSubmit] = useSound("/sounds/clue-submit.mp3", { 
-    volume: volume * 0.4,
-  });
+  const [playGameStart] = useSound("/sounds/game-start.mp3", { volume: volume * 0.7 });
+  const [playTurnChange] = useSound("/sounds/turn-change.mp3", { volume: volume * 0.5 });
+  const [playGameOver] = useSound("/sounds/game-over.mp3", { volume: volume * 0.6 });
+  const [playGameLose] = useSound("/sounds/game-lose.mp3", { volume: volume * 0.6 });
+  const [playTrapSnap] = useSound("/sounds/trap-snap.mp3", { volume: volume * 0.7 });
+  const [playTick, { stop: stopTick }] = useSound("/sounds/tick.mp3", { volume: volume * 0.5, interrupt: true });
+  const [playTickUrgent, { stop: stopTickUrgent }] = useSound("/sounds/tick-urgent.mp3", { volume: volume * 0.4, interrupt: true });
+  const [playCardReveal] = useSound("/sounds/card-reveal.mp3", { volume: volume * 0.3, interrupt: true });
+  const [playClueSubmit] = useSound("/sounds/clue-submit.mp3", { volume: volume * 0.4 });
 
   // Update shared ref when play functions change
   useEffect(() => {
@@ -149,97 +101,29 @@ function PlayFunctionCapture({
   return <>{children}</>;
 }
 
-// Music track paths
-const MUSIC_TRACKS: Record<Exclude<MusicTrack, null>, string> = {
-  "lobby": "/sounds/music/lobby.mp3",
-  "game-30s": "/sounds/music/game-30s.mp3",
-  "game-60s": "/sounds/music/game-60s.mp3",
-  "game-90s": "/sounds/music/game-90s.mp3",
-  "victory": "/sounds/music/victory.mp3",
-};
-
-// Session storage key for audio unlock state (survives page reloads within session)
-const SESSION_AUDIO_UNLOCKED_KEY = "hintgrid_audio_unlocked";
-
-// Check sessionStorage synchronously for SSR safety
-function getInitialAudioUnlocked(): boolean {
-  if (typeof window !== "undefined") {
-    return sessionStorage.getItem(SESSION_AUDIO_UNLOCKED_KEY) === "true";
-  }
-  return false;
-}
-
 export function SoundProvider({ children }: { children: ReactNode }) {
+  // Audio unlock state (browser autoplay policy compliance)
+  const audioUnlock = useAudioUnlock();
+  
   // Sound effects state
   const [volume, setVolumeState] = useState(0.5);
   const [isMuted, setIsMutedState] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
-  // Initialize from sessionStorage - if user interacted before, flag is already set
-  const [audioUnlocked, setAudioUnlocked] = useState(getInitialAudioUnlocked);
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  // Music state (volume derived from master volume)
+  // Music state
   const [musicEnabled, setMusicEnabledState] = useState(false);
   const [currentTrack, setCurrentTrackState] = useState<MusicTrack>(null);
   const howlRef = useRef<Howl | null>(null);
+  const pendingTrackRef = useRef<MusicTrack>(null);
 
-  // Computed music volume (30% of master volume)
+  // Computed values
   const musicVolume = volume * MUSIC_VOLUME_RATIO;
-
-  // Track if audio context has been unlocked on THIS page load
-  // (separate from sessionStorage which just tracks user intent)
-  const [audioContextReady, setAudioContextReady] = useState(false);
-
-  // Unlock audio context on first user interaction (browser autoplay policy)
-  // IMPORTANT: We must ALWAYS set up event listeners on each page load, even if
-  // sessionStorage says user interacted before. Browser requires a user gesture
-  // on each page load to unlock the audio context.
+  const musicVolumeRef = useRef(musicVolume);
+  
   useEffect(() => {
-    // Check if audio context is already running (browser may allow autoplay)
-    const ctx = Howler.ctx;
-    if (ctx && ctx.state === "running") {
-      audioContextUnlocked = true;
-      setAudioContextReady(true);
-      return;
-    }
-
-    // If user previously unlocked, try to resume immediately (may work after navigation)
-    // Some browsers allow resuming without a gesture if context was previously unlocked in session
-    if (audioUnlocked && ctx && ctx.state === "suspended") {
-      ctx.resume().then(() => {
-        audioContextUnlocked = true;
-        setAudioContextReady(true);
-      }).catch(() => {
-        // Expected to fail on fresh page load - user gesture still required
-      });
-    }
-
-    const events = ["click", "touchstart", "keydown"];
-    
-    const handleInteraction = async () => {
-      // Persist to sessionStorage so we know music should auto-play
-      sessionStorage.setItem(SESSION_AUDIO_UNLOCKED_KEY, "true");
-      setAudioUnlocked(true);
-      
-      // Actually unlock the audio context (requires user gesture)
-      await unlockAudioContext();
-      setAudioContextReady(true);
-      
-      events.forEach(event => {
-        document.removeEventListener(event, handleInteraction);
-      });
-    };
-    
-    events.forEach(event => {
-      document.addEventListener(event, handleInteraction);
-    });
-    
-    return () => {
-      events.forEach(event => {
-        document.removeEventListener(event, handleInteraction);
-      });
-    };
-  }, [audioUnlocked]); // Re-run if audioUnlocked changes
+    musicVolumeRef.current = musicVolume;
+  }, [musicVolume]);
 
   // Load from localStorage on mount
   useEffect(() => {
@@ -292,19 +176,20 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     setMusicEnabled(!musicEnabled);
   }, [musicEnabled, setMusicEnabled]);
 
-  // Set music track
+  // Set music track - stores as pending if audio not ready
   const setMusicTrack = useCallback((track: MusicTrack) => {
     setCurrentTrackState(track);
-  }, []);
+    
+    if (track && !audioUnlock.isReady) {
+      pendingTrackRef.current = track;
+      // Opportunistically try to unlock - may work if there's been recent interaction
+      audioUnlock.tryUnlock();
+    } else {
+      pendingTrackRef.current = null;
+    }
+  }, [audioUnlock]);
 
-  // Store musicVolume in a ref so we can use it in the playback effect without it being a dependency
-  const musicVolumeRef = useRef(musicVolume);
-  useEffect(() => {
-    musicVolumeRef.current = musicVolume;
-  }, [musicVolume]);
-
-  // Handle music playback based on track, enabled state, and reduced motion
-  // NOTE: musicVolume is NOT in dependencies - volume changes are handled by separate effect below
+  // Handle music playback
   useEffect(() => {
     // Stop current music if exists
     if (howlRef.current) {
@@ -317,35 +202,34 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       howlRef.current = null;
     }
 
-    // Don't play if no track, music disabled, not hydrated, user prefers reduced motion,
-    // or audio context hasn't been unlocked by user gesture yet
-    if (!currentTrack || !musicEnabled || !isHydrated || prefersReducedMotion || !audioContextReady) {
+    // Don't play if conditions not met
+    if (!currentTrack || !musicEnabled || !isHydrated || prefersReducedMotion || !audioUnlock.isReady) {
       return;
     }
+    
+    pendingTrackRef.current = null;
 
-    // Try to resume audio context if suspended (browser may suspend during navigation)
+    // Ensure audio context is running
     const ctx = Howler.ctx;
     if (ctx && ctx.state === "suspended") {
-      ctx.resume().catch(() => {
-        // If resume fails, user gesture is required - music won't play until click
-      });
+      ctx.resume().catch(() => {});
     }
 
-    // Create new Howl for the track
+    // Create and play new track
     const howl = new Howl({
       src: [MUSIC_TRACKS[currentTrack]],
       loop: true,
       volume: 0,
-      html5: true, // Better for long audio files
+      html5: true,
+      onplayerror: () => {
+        howl.once("unlock", () => howl.play());
+      },
     });
 
     howlRef.current = howl;
-
-    // Play and fade in to current volume (use ref to get latest value)
     howl.play();
     howl.fade(0, musicVolumeRef.current, 1000);
 
-    // Cleanup on unmount or track change
     return () => {
       if (howl.playing()) {
         howl.fade(howl.volume(), 0, 300);
@@ -355,53 +239,38 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         }, 300);
       }
     };
-  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioContextReady]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioUnlock.isReady, audioUnlock.unlockTrigger]);
 
-  // Update volume when musicVolume changes (without recreating/restarting howl)
+  // Update volume without recreating howl
   useEffect(() => {
     if (howlRef.current && musicEnabled && isHydrated) {
       howlRef.current.volume(musicVolume);
     }
   }, [musicVolume, musicEnabled, isHydrated]);
 
-  // Sound is enabled if not muted AND user doesn't prefer reduced motion
+  // Sound enabled check
   const soundEnabled = isHydrated && !isMuted && !prefersReducedMotion;
 
   const playSound = useCallback((name: SoundName) => {
     if (!soundEnabled) return;
     
+    const fns = playFunctionsRef.current;
+    if (!fns) return;
+    
     switch (name) {
-      case "gameStart":
-        playFunctionsRef.current?.playGameStart();
-        break;
-      case "turnChange":
-        playFunctionsRef.current?.playTurnChange();
-        break;
-      case "gameOver":
-        playFunctionsRef.current?.playGameOver();
-        break;
-      case "gameLose":
-        playFunctionsRef.current?.playGameLose();
-        break;
-      case "trapSnap":
-        playFunctionsRef.current?.playTrapSnap();
-        break;
-      case "tick":
-        playFunctionsRef.current?.playTick();
-        break;
-      case "tickUrgent":
-        playFunctionsRef.current?.playTickUrgent();
-        break;
-      case "cardReveal":
-        playFunctionsRef.current?.playCardReveal();
-        break;
-      case "clueSubmit":
-        playFunctionsRef.current?.playClueSubmit();
-        break;
+      case "gameStart": fns.playGameStart(); break;
+      case "turnChange": fns.playTurnChange(); break;
+      case "gameOver": fns.playGameOver(); break;
+      case "gameLose": fns.playGameLose(); break;
+      case "trapSnap": fns.playTrapSnap(); break;
+      case "tick": fns.playTick(); break;
+      case "tickUrgent": fns.playTickUrgent(); break;
+      case "cardReveal": fns.playCardReveal(); break;
+      case "clueSubmit": fns.playClueSubmit(); break;
     }
   }, [soundEnabled]);
 
-  // Stop all tick sounds immediately (used on turn/game state changes)
   const stopTickSounds = useCallback(() => {
     playFunctionsRef.current?.stopTick();
     playFunctionsRef.current?.stopTickUrgent();
@@ -438,7 +307,6 @@ export function useSoundContext() {
   return context;
 }
 
-// Optional hook that returns undefined if not in a SoundProvider
 export function useSoundContextOptional() {
   return useContext(SoundContext);
 }
