@@ -203,11 +203,23 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    // If user previously unlocked, try to resume immediately (may work after navigation)
+    // Some browsers allow resuming without a gesture if context was previously unlocked in session
+    if (audioUnlocked && ctx && ctx.state === "suspended") {
+      ctx.resume().then(() => {
+        audioContextUnlocked = true;
+        setAudioContextReady(true);
+      }).catch(() => {
+        // Expected to fail on fresh page load - user gesture still required
+      });
+    }
+
     const events = ["click", "touchstart", "keydown"];
     
     const handleInteraction = async () => {
       // Persist to sessionStorage so we know music should auto-play
       sessionStorage.setItem(SESSION_AUDIO_UNLOCKED_KEY, "true");
+      setAudioUnlocked(true);
       
       // Actually unlock the audio context (requires user gesture)
       await unlockAudioContext();
@@ -227,7 +239,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
         document.removeEventListener(event, handleInteraction);
       });
     };
-  }, []); // No dependencies - set up once on mount
+  }, [audioUnlocked]); // Re-run if audioUnlocked changes
 
   // Load from localStorage on mount
   useEffect(() => {
