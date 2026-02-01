@@ -228,8 +228,8 @@ export default function Home() {
                   className="flex items-center justify-between w-full text-sm text-muted"
                 >
                   <span>{isPrivateRoom ? "Private room" : "Public room"}</span>
-                  <div className={`relative w-11 h-6 rounded-full transition-colors ${isPrivateRoom ? "bg-primary" : "bg-surface-elevated"}`}>
-                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isPrivateRoom ? "translate-x-5" : "translate-x-0"}`} />
+                  <div className={`relative w-11 h-6 rounded-full transition-colors border ${isPrivateRoom ? "bg-primary border-primary" : "bg-muted/20 border-muted/40"}`}>
+                    <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow-md transition-transform ${isPrivateRoom ? "translate-x-5" : "translate-x-0"}`} />
                   </div>
                 </button>
               </div>
