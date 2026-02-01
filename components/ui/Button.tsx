@@ -5,36 +5,26 @@ import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
 const buttonVariants = cva(
-  // Base styles applied to all buttons
-  "inline-flex items-center justify-center font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed",
+  // Base styles
+  "inline-flex items-center justify-center font-semibold transition-all cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg",
   {
     variants: {
       variant: {
-        primary:
-          "bg-primary text-primary-foreground hover:opacity-90 focus-visible:ring-primary",
-        secondary:
-          "bg-surface-elevated border border-border text-foreground hover:bg-surface",
-        danger:
-          "bg-error text-error-foreground hover:opacity-90 focus-visible:ring-error",
-        success:
-          "bg-success text-success-foreground hover:opacity-90 focus-visible:ring-success",
-        warning:
-          "bg-warning text-warning-foreground hover:opacity-90 focus-visible:ring-warning",
-        ghost:
-          "text-foreground hover:bg-surface",
-        link:
-          "text-primary underline-offset-4 hover:underline p-0 h-auto",
-        // Team variants
-        red:
-          "bg-red-team text-white hover:opacity-90 focus-visible:ring-red-team",
-        blue:
-          "bg-blue-team text-white hover:opacity-90 focus-visible:ring-blue-team",
+        primary: "bg-primary text-primary-foreground hover:opacity-90 focus-visible:ring-primary shadow-md hover:shadow-lg",
+        secondary: "bg-transparent border-2 border-accent text-accent hover:bg-accent/10 focus-visible:ring-accent",
+        danger: "bg-error text-error-foreground hover:opacity-90 focus-visible:ring-error",
+        success: "bg-success text-success-foreground hover:opacity-90 focus-visible:ring-success",
+        warning: "bg-warning text-warning-foreground hover:opacity-90 focus-visible:ring-warning",
+        ghost: "text-muted hover:bg-surface hover:text-foreground",
+        link: "text-primary underline-offset-4 hover:underline p-0 h-auto",
+        red: "bg-red-team text-white hover:opacity-90 focus-visible:ring-red-team",
+        blue: "bg-blue-team text-white hover:opacity-90 focus-visible:ring-blue-team",
       },
       size: {
-        sm: "px-3 py-1.5 text-sm rounded-button",
-        md: "px-4 py-2 text-base rounded-button",
-        lg: "px-6 py-3 text-lg rounded-button",
-        icon: "p-2 rounded-button",
+        sm: "px-3 py-1.5 text-sm",
+        md: "px-4 py-2 text-base",
+        lg: "px-6 py-3 text-lg",
+        icon: "p-2",
       },
       fullWidth: {
         true: "w-full",

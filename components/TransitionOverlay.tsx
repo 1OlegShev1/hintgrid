@@ -48,16 +48,16 @@ export default function TransitionOverlay({
   }, [type]);
 
   const teamColor = team === "red" 
-    ? "from-red-600 to-red-700" 
+    ? "from-red-team to-red-team/80" 
     : team === "blue" 
-      ? "from-blue-600 to-blue-700" 
-      : "from-gray-600 to-gray-700";
+      ? "from-blue-team to-blue-team/80" 
+      : "from-surface-elevated to-surface";
 
   const teamBgLight = team === "red"
-    ? "bg-red-500/20"
+    ? "bg-red-team/20"
     : team === "blue"
-      ? "bg-blue-500/20"
-      : "bg-gray-500/20";
+      ? "bg-blue-team/20"
+      : "bg-surface/20";
 
   if (type === "gameStart") {
     return (
@@ -104,7 +104,7 @@ export default function TransitionOverlay({
           text-white text-xl font-bold shadow-2xl
           flex items-center gap-3
         `}>
-          <div className={`w-4 h-4 rounded-full ${team === "red" ? "bg-red-300" : "bg-blue-300"} animate-pulse`} />
+          <div className={`w-4 h-4 rounded-full ${team === "red" ? "bg-red-team-muted" : "bg-blue-team-muted"} animate-pulse`} />
           {message || `${team?.toUpperCase()} TEAM's Turn`}
         </div>
       </div>
@@ -133,7 +133,7 @@ export default function TransitionOverlay({
                 key={i}
                 className={`
                   absolute w-3 h-3 rounded-full
-                  ${team === "red" ? "bg-red-400" : "bg-blue-400"}
+                  ${team === "red" ? "bg-red-team-muted" : "bg-blue-team-muted"}
                 `}
                 style={{
                   left: `${Math.random() * 100}%`,
@@ -149,7 +149,7 @@ export default function TransitionOverlay({
             [...Array(30)].map((_, i) => (
               <div
                 key={i}
-                className="absolute w-0.5 bg-gray-400/60 rounded-full"
+                className="absolute w-0.5 bg-muted/60 rounded-full"
                 style={{
                   left: `${Math.random() * 100}%`,
                   top: `-5%`,

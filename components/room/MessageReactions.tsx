@@ -124,7 +124,7 @@ export function MessageReactions({
         onClick={() => (showPicker ? setShowPicker(false) : openPicker())}
         disabled={!currentPlayerId}
         title="Add reaction"
-        className="inline-flex items-center justify-center w-6 h-6 rounded text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-60 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
+        className="inline-flex items-center justify-center w-6 h-6 rounded text-muted hover:text-foreground hover:bg-surface transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-60 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
       >
         <svg
           xmlns="http://www.w3.org/2000/svg"
@@ -155,14 +155,14 @@ export function MessageReactions({
             transition-colors cursor-pointer
             ${
               hasReacted(emoji)
-                ? "bg-blue-100 dark:bg-blue-900/50 border border-blue-300 dark:border-blue-700"
-                : "bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 hover:bg-gray-200 dark:hover:bg-gray-700"
+                ? "bg-primary/20 border border-primary/50"
+                : "bg-surface border border-border hover:bg-surface-elevated"
             }
             disabled:cursor-not-allowed disabled:opacity-50
           `}
         >
           <span>{emoji}</span>
-          <span className="text-gray-600 dark:text-gray-400 font-medium">{playerIds.length}</span>
+          <span className="text-muted font-medium">{playerIds.length}</span>
         </button>
       ))}
 
@@ -170,7 +170,7 @@ export function MessageReactions({
       {showPicker && (
         <div
           ref={pickerRef}
-          className="fixed p-2 bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 z-50"
+          className="fixed p-2 bg-surface-elevated rounded-lg shadow-lg border border-border z-50"
           style={{
             top: pickerPosition.top,
             left: pickerPosition.left,
@@ -182,7 +182,7 @@ export function MessageReactions({
               <button
                 key={emoji}
                 onClick={() => handlePickerSelect(emoji)}
-                className="w-9 h-9 flex items-center justify-center text-xl hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 rounded transition-colors"
+                className="w-9 h-9 flex items-center justify-center text-xl hover:bg-surface active:bg-surface-elevated rounded transition-colors"
               >
                 {emoji}
               </button>

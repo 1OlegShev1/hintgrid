@@ -33,8 +33,16 @@ function ComputerIcon({ className }: { className?: string }) {
   );
 }
 
+function PaletteIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M4.098 19.902a3.75 3.75 0 0 0 5.304 0l6.401-6.402M6.75 21A3.75 3.75 0 0 1 3 17.25V4.125C3 3.504 3.504 3 4.125 3h5.25c.621 0 1.125.504 1.125 1.125v4.072M6.75 21a3.75 3.75 0 0 0 3.75-3.75V8.197M6.75 21h13.125c.621 0 1.125-.504 1.125-1.125v-5.25c0-.621-.504-1.125-1.125-1.125h-4.072M10.5 8.197l2.88-2.88c.438-.439 1.15-.439 1.59 0l3.712 3.713c.44.44.44 1.152 0 1.59l-2.879 2.88M6.75 17.25h.008v.008H6.75v-.008Z" />
+    </svg>
+  );
+}
+
 export default function Navbar() {
-  const { theme, setTheme } = useTheme();
+  const { theme, setTheme, style, setStyle } = useTheme();
   const pathname = usePathname();
   const router = useRouter();
   const { isLastPlayer, isActiveGame, leaveRoom } = useGameContext();
@@ -123,6 +131,10 @@ export default function Navbar() {
     setTheme(themes[nextIndex]);
   };
 
+  const toggleStyle = () => {
+    setStyle(style === "synthwave" ? "classic" : "synthwave");
+  };
+
   const getThemeIcon = () => {
     switch (theme) {
       case "light":
@@ -145,12 +157,16 @@ export default function Navbar() {
     }
   };
 
+  const getStyleLabel = () => {
+    return style === "synthwave" ? "Synthwave" : "Classic";
+  };
+
   return (
     <>
       <nav className={`
         sticky top-0 z-40
-        bg-white/80 dark:bg-gray-900/80 backdrop-blur-md 
-        border-b border-gray-200 dark:border-gray-800
+        bg-surface/90 backdrop-blur-md 
+        border-b border-border
         transition-transform duration-300 ease-in-out
         ${isVisible ? "translate-y-0" : "-translate-y-full"}
       `}>
@@ -160,11 +176,11 @@ export default function Navbar() {
             onClick={handleHomeClick}
             className="group flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
-            <span className="text-2xl sm:text-3xl font-black tracking-tight">
-              <span className="text-red-500">Hint</span>
-              <span className="text-blue-500">Grid</span>
+            <span className="font-bold text-lg sm:text-xl tracking-wide">
+              <span className="text-primary">Hint</span>
+              <span className="text-accent">Grid</span>
             </span>
-            <span className="text-xs font-medium px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-900/50 text-amber-700 dark:text-amber-300 group-hover:bg-amber-200 dark:group-hover:bg-amber-800/50 transition-colors">
+            <span className="text-xs px-2 py-0.5 rounded bg-surface-elevated text-primary border border-primary/50">
               BETA
             </span>
           </Link>
@@ -172,13 +188,23 @@ export default function Navbar() {
           <div className="flex items-center gap-1">
             <ConnectionIndicator />
             <SoundToggle />
+            {/* Style switcher (classic/synthwave) */}
+            <button
+              onClick={toggleStyle}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:text-accent hover:bg-surface-elevated transition-colors"
+              title={`Style: ${getStyleLabel()}. Click to toggle.`}
+            >
+              <PaletteIcon className="w-5 h-5" />
+              <span className="text-sm hidden sm:inline">{getStyleLabel()}</span>
+            </button>
+            {/* Theme mode switcher (light/dark/system) */}
             <button
               onClick={cycleTheme}
-              className="flex items-center gap-2 px-3 py-2 rounded-lg text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
-              title={`Current: ${getThemeLabel()}. Click to cycle.`}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:text-accent hover:bg-surface-elevated transition-colors"
+              title={`Mode: ${getThemeLabel()}. Click to cycle.`}
             >
               {getThemeIcon()}
-              <span className="text-sm font-medium hidden sm:inline">{getThemeLabel()}</span>
+              <span className="text-sm hidden sm:inline">{getThemeLabel()}</span>
             </button>
           </div>
         </div>

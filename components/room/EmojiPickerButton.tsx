@@ -78,7 +78,7 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
         type="button"
         onClick={() => (isOpen ? setIsOpen(false) : openPicker())}
         disabled={disabled}
-        className="p-2.5 text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 active:bg-gray-200 dark:active:bg-gray-600 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+        className="p-2.5 text-muted hover:text-foreground hover:bg-surface active:bg-surface-elevated rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Open emoji picker"
         title="Add emoji"
       >

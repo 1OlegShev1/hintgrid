@@ -212,17 +212,17 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
               onClick={() => setShowQrModal(true)}
               variant="ghost"
               size="icon"
-              className="bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-600 dark:text-blue-400"
+              className="bg-primary/10 hover:bg-primary/20 text-primary"
               title="Show QR code to join room"
             >
               <QrCodeIcon className="w-5 h-5" />
             </Button>
-            <h1 className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+            <h1 className="text-2xl font-bold bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
               Room:{" "}
             </h1>
             <button
               onClick={handleCopyRoomCode}
-              className="text-2xl font-bold bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent hover:opacity-80 cursor-pointer transition-opacity"
+              className="text-2xl font-bold bg-linear-to-r from-primary to-accent bg-clip-text text-transparent hover:opacity-80 cursor-pointer transition-opacity"
               title="Click to copy room code"
             >
               {roomCode}
@@ -234,8 +234,8 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
               data-testid="room-lock-btn"
               className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all ${
                 isLocked
-                  ? "bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 hover:bg-amber-200 dark:hover:bg-amber-900/50"
-                  : "bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-400 hover:bg-gray-200 dark:hover:bg-gray-600"
+                  ? "bg-warning/20 text-warning hover:bg-warning/30"
+                  : "bg-surface text-muted hover:bg-surface-elevated"
               }`}
               title={isLocked ? "Room is locked - click to unlock" : "Room is open - click to lock"}
             >
@@ -244,7 +244,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
             </button>
           ) : isLocked ? (
             <span 
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 text-sm font-medium"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-warning/20 text-warning text-sm font-medium"
               title="Room is locked - new players cannot join"
             >
               <LockIcon className="w-4 h-4" locked={true} />
@@ -253,15 +253,15 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
           ) : null}
           <button
             onClick={handleShareRoom}
-            className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 dark:bg-blue-900 hover:bg-blue-200 dark:hover:bg-blue-800 text-blue-700 dark:text-blue-300 rounded-lg text-sm font-medium transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all"
             title="Copy room URL"
           >
             {copiedUrl ? (
               <>
-                <svg className="w-4 h-4 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg className="w-4 h-4 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span className="text-green-600">URL Copied!</span>
+                <span className="text-success">URL Copied!</span>
               </>
             ) : (
               <>
@@ -276,7 +276,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
             <button
               onClick={onLeaveRoom}
               data-testid="leave-room-btn"
-              className="flex items-center gap-1.5 px-3 py-1.5 bg-gray-100 dark:bg-gray-700 hover:bg-red-100 dark:hover:bg-red-900/30 text-gray-600 dark:text-gray-400 hover:text-red-600 dark:hover:text-red-400 rounded-lg text-sm font-medium transition-all"
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-surface hover:bg-error/10 text-muted hover:text-error rounded-lg text-sm font-medium transition-all"
               title="Leave room"
             >
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -286,7 +286,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
             </button>
           )}
           {codeCopied && (
-            <span className="text-sm text-green-600 dark:text-green-400 font-medium">
+            <span className="text-sm text-success font-medium">
               Code copied!
             </span>
           )}
@@ -311,7 +311,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
                     type="text"
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
-                    className="px-2 py-1 text-sm border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-700 text-gray-700 dark:text-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="px-2 py-1 text-sm border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
                     maxLength={40}
                     autoFocus
                     onBlur={() => {
@@ -336,9 +336,9 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
                       setIsEditingName(true);
                     }
                   }}
-                  className={`text-gray-700 dark:text-gray-300 font-medium ${
+                  className={`text-foreground font-medium ${
                     isRoomOwner && onSetRoomName 
-                      ? "hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer" 
+                      ? "hover:text-primary cursor-pointer" 
                       : "cursor-default"
                   }`}
                   title={isRoomOwner && onSetRoomName ? "Click to edit room name" : undefined}
@@ -351,7 +351,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
               {visibility === "private" ? (
                 <span 
                   title="Private room - not listed publicly" 
-                  className="flex items-center gap-1 text-xs text-gray-500 dark:text-gray-400"
+                  className="flex items-center gap-1 text-xs text-muted"
                 >
                   <EyeOffIcon className="w-3.5 h-3.5" />
                   <span>Private</span>
@@ -359,7 +359,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
               ) : (
                 <span 
                   title="Public room - visible to everyone" 
-                  className="flex items-center gap-1 text-xs text-green-600 dark:text-green-400"
+                  className="flex items-center gap-1 text-xs text-success"
                 >
                   <GlobeIcon className="w-3.5 h-3.5" />
                   <span>Public</span>

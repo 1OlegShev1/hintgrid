@@ -59,22 +59,22 @@ function DangerIcon({ className }: { className?: string }) {
 
 const iconConfig = {
   warning: {
-    bg: "bg-warning/10",
+    bg: "bg-warning/10 border border-warning/30",
     color: "text-warning",
     Icon: WarningIcon,
   },
   danger: {
-    bg: "bg-error/10",
+    bg: "bg-error/10 border border-error/30",
     color: "text-error",
     Icon: DangerIcon,
   },
   info: {
-    bg: "bg-info/10",
+    bg: "bg-info/10 border border-info/30",
     color: "text-info",
     Icon: InfoIcon,
   },
   success: {
-    bg: "bg-success/10",
+    bg: "bg-success/10 border border-success/30",
     color: "text-success",
     Icon: SuccessIcon,
   },
@@ -178,7 +178,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
         onClick={closeOnBackdropClick ? onClose : undefined}
         aria-hidden="true"
       />
@@ -189,7 +189,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
         className={cn(
-          "relative bg-surface-elevated rounded-card shadow-modal p-6 w-full mx-4 animate-modal-in",
+          "relative bg-surface-elevated border border-border rounded-lg shadow-xl p-6 w-full mx-4 animate-modal-in",
           sizeClasses[size],
           className
         )}

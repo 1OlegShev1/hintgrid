@@ -6,18 +6,16 @@ import { cn } from "@/lib/utils";
 
 const cardVariants = cva(
   // Base styles
-  "rounded-card",
+  "rounded-xl",
   {
     variants: {
       variant: {
-        default: "bg-surface-elevated border border-border",
-        elevated: "bg-surface-elevated shadow-elevated",
-        ghost: "bg-transparent",
-        // Team variants for colored cards
-        red: "bg-red-team-light border-2 border-red-team-muted",
-        blue: "bg-blue-team-light border-2 border-blue-team-muted",
-        // Highlight for "your turn" or selected states
-        highlight: "bg-highlight border-2 border-warning",
+        default: "bg-surface border border-border shadow-sm",
+        elevated: "bg-surface-elevated border border-border shadow-lg",
+        ghost: "bg-transparent border-transparent shadow-none",
+        red: "bg-red-team-light border-2 border-red-team/60",
+        blue: "bg-blue-team-light border-2 border-blue-team/60",
+        highlight: "bg-warning/20 border-2 border-warning",
       },
       padding: {
         none: "",

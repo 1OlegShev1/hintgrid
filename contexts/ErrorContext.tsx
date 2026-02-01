@@ -69,7 +69,7 @@ function ErrorToastContainer({
       {errors.map((error) => (
         <div
           key={error.id}
-          className="bg-red-600 text-white px-4 py-3 rounded-lg shadow-lg flex items-start gap-3 animate-in slide-in-from-right fade-in duration-200"
+          className="bg-error text-error-foreground px-4 py-3 rounded-lg shadow-lg flex items-start gap-3 animate-in slide-in-from-right fade-in duration-200"
           role="alert"
         >
           <svg

@@ -6,21 +6,18 @@ import { cn } from "@/lib/utils";
 
 const inputVariants = cva(
   // Base styles
-  "w-full transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed",
+  "w-full transition-all focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed rounded-lg border border-border bg-surface-elevated text-foreground placeholder:text-muted focus:ring-2 focus:ring-primary focus:border-transparent",
   {
     variants: {
       variant: {
-        default:
-          "border border-border bg-surface-elevated text-foreground placeholder:text-muted focus:ring-2 focus:ring-primary focus:border-transparent",
-        error:
-          "border-2 border-error bg-surface-elevated text-foreground placeholder:text-muted focus:ring-2 focus:ring-error focus:border-error",
-        ghost:
-          "bg-transparent border-none focus:ring-0",
+        default: "",
+        error: "border-2 border-error focus:ring-2 focus:ring-error",
+        ghost: "bg-transparent border-none focus:ring-0",
       },
       inputSize: {
-        sm: "px-3 py-1.5 text-sm rounded-input",
-        md: "px-4 py-2.5 text-base rounded-input",
-        lg: "px-4 py-3 text-lg rounded-input",
+        sm: "px-3 py-1.5 text-sm",
+        md: "px-4 py-2.5 text-base",
+        lg: "px-4 py-3 text-lg",
       },
     },
     defaultVariants: {

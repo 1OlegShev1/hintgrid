@@ -6,7 +6,9 @@
 import {
   ref, get, set, update, remove, push, serverTimestamp, onDisconnect,
   runTransaction,
+  onValue,
   DatabaseReference,
+  Unsubscribe,
 } from "firebase/database";
 import { getDatabase } from "./firebase";
 import { generateBoard, assignTeams } from "@/shared/words";
@@ -922,6 +924,100 @@ export async function getPublicRooms(limit: number = 6): Promise<Array<{
   return validRooms
     .sort((a, b) => b.playerCount - a.playerCount)
     .slice(0, limit);
+}
+
+export interface PublicRoomData {
+  roomCode: string;
+  roomName: string;
+  ownerName: string;
+  playerCount: number;
+  status: "lobby" | "playing" | "paused";
+  timerPreset: string;
+  createdAt: number;
+}
+
+/**
+ * Subscribe to real-time updates of public rooms.
+ * Returns an unsubscribe function.
+ * 
+ * This provides instant updates when rooms change (player count, status, etc.)
+ * instead of polling. The callback receives the filtered and sorted room list.
+ */
+export function subscribeToPublicRooms(
+  limit: number = 6,
+  onRoomsChange: (rooms: PublicRoomData[]) => void,
+  onError?: (error: Error) => void
+): Unsubscribe {
+  const db = getDb();
+  const publicRoomsRef = ref(db, "publicRooms");
+  
+  return onValue(
+    publicRoomsRef,
+    (snapshot) => {
+      // Wrap async logic in an IIFE with error handling
+      // (onValue doesn't await callbacks, so we handle errors ourselves)
+      (async () => {
+        if (!snapshot.exists()) {
+          onRoomsChange([]);
+          return;
+        }
+        
+        const rooms = snapshot.val() as Record<string, {
+          roomName: string;
+          ownerName: string;
+          playerCount: number;
+          status: "lobby" | "playing" | "paused";
+          timerPreset: string;
+          createdAt: number;
+        }>;
+        
+        // Convert to array, filter by min players, sort by count
+        const candidates = Object.entries(rooms)
+          .map(([roomCode, data]) => ({ roomCode, ...data }))
+          .filter(room => room.playerCount >= 4) // Only show rooms with 4+ players
+          .sort((a, b) => b.playerCount - a.playerCount);
+        
+        // Check if each candidate room actually exists (verify not orphaned)
+        // Only check up to limit + a few extra to account for orphans
+        const toCheck = candidates.slice(0, limit + 5);
+        const validRooms: typeof candidates = [];
+        const orphanedCodes: string[] = [];
+        
+        await Promise.all(toCheck.map(async (room) => {
+          const roomRef = ref(db, `rooms/${room.roomCode}`);
+          const roomSnap = await get(roomRef);
+          if (roomSnap.exists()) {
+            validRooms.push(room);
+          } else {
+            orphanedCodes.push(room.roomCode);
+          }
+        }));
+        
+        // Clean up orphaned index entries in background
+        if (orphanedCodes.length > 0) {
+          Promise.all(orphanedCodes.map(code => 
+            remove(ref(db, `publicRooms/${code}`))
+          )).catch(err => {
+            console.warn("[subscribeToPublicRooms] Failed to clean orphaned entries:", err.message);
+          });
+        }
+        
+        // Sort again and limit
+        const result = validRooms
+          .sort((a, b) => b.playerCount - a.playerCount)
+          .slice(0, limit);
+        
+        onRoomsChange(result);
+      })().catch(err => {
+        console.error("[subscribeToPublicRooms] Async error:", err);
+        onError?.(err instanceof Error ? err : new Error(String(err)));
+      });
+    },
+    (error) => {
+      console.error("[subscribeToPublicRooms] Subscription error:", error);
+      onError?.(error);
+    }
+  );
 }
 
 /**

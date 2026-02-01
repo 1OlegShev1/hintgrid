@@ -69,34 +69,34 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
       <div className="grid grid-cols-2 gap-4">
         <div className={`rounded-lg p-4 sm:p-6 text-center ${
           winner === "red" 
-            ? "bg-red-100 dark:bg-red-900/40 border-2 border-red-400" 
-            : "bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800"
+            ? "bg-red-team-light border-2 border-red-team" 
+            : "bg-red-team-light/50 border border-red-team/30"
         }`} style={{ containerType: 'inline-size' }}>
-          <div className="text-fluid-score font-bold text-red-700 dark:text-red-300">
+          <div className="text-fluid-score font-bold text-red-team">
             {redRevealed}/{redCards.length}
           </div>
-          <div className="text-fluid-score-label text-red-600 dark:text-red-400 mt-1">
+          <div className="text-fluid-score-label text-red-team-muted mt-1">
             Red Cards Revealed
           </div>
           {winner === "red" && (
-            <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-red-700 dark:text-red-300">
+            <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-red-team">
               🎉 🏆 Winner! 🏆 🎉
             </div>
           )}
         </div>
         <div className={`rounded-lg p-4 sm:p-6 text-center ${
           winner === "blue" 
-            ? "bg-blue-100 dark:bg-blue-900/40 border-2 border-blue-400" 
-            : "bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800"
+            ? "bg-blue-team-light border-2 border-blue-team" 
+            : "bg-blue-team-light/50 border border-blue-team/30"
         }`} style={{ containerType: 'inline-size' }}>
-          <div className="text-fluid-score font-bold text-blue-700 dark:text-blue-300">
+          <div className="text-fluid-score font-bold text-blue-team">
             {blueRevealed}/{blueCards.length}
           </div>
-          <div className="text-fluid-score-label text-blue-600 dark:text-blue-400 mt-1">
+          <div className="text-fluid-score-label text-blue-team-muted mt-1">
             Blue Cards Revealed
           </div>
           {winner === "blue" && (
-            <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-blue-700 dark:text-blue-300">
+            <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-blue-team">
               🎉 🏆 Winner! 🏆 🎉
             </div>
           )}
@@ -105,15 +105,15 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
 
       {/* Trap indicator */}
       {trapHit && (
-        <div className="bg-gray-900 text-white rounded-lg p-3 text-center">
+        <div className="bg-trap text-trap-text rounded-lg p-3 text-center">
           <span className="text-lg">💀</span> Trap card was revealed - instant loss!
         </div>
       )}
 
       {/* Top Players */}
       {topPlayers.length > 0 && (
-        <div className="bg-gray-50 dark:bg-gray-900 rounded-lg p-4">
-          <h4 className="font-semibold text-gray-800 dark:text-gray-200 mb-3">
+        <div className="bg-surface rounded-lg p-4">
+          <h4 className="font-semibold text-foreground mb-3">
             Top Seekers
           </h4>
           <div className="space-y-2">
@@ -122,31 +122,31 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
                 key={stat.player.id}
                 className={`flex items-center justify-between p-2 rounded-lg ${
                   stat.player.team === "red"
-                    ? "bg-red-50 dark:bg-red-900/20"
-                    : "bg-blue-50 dark:bg-blue-900/20"
+                    ? "bg-red-team-light"
+                    : "bg-blue-team-light"
                 }`}
               >
                 <div className="flex items-center gap-2">
                   <span className="text-lg w-8">{getMedalEmoji(index)}</span>
                   <span className={`font-medium ${
                     stat.player.team === "red" 
-                      ? "text-red-800 dark:text-red-200" 
-                      : "text-blue-800 dark:text-blue-200"
+                      ? "text-red-team-text" 
+                      : "text-blue-team-text"
                   }`}>
                     {stat.player.name}
                   </span>
                   {stat.trapHit && (
-                    <span className="text-xs bg-gray-800 text-white px-1.5 py-0.5 rounded" title="Hit the trap">
+                    <span className="text-xs bg-trap text-trap-text px-1.5 py-0.5 rounded" title="Hit the trap">
                       💀
                     </span>
                   )}
                 </div>
                 <div className="flex items-center gap-3 text-sm">
-                  <span className="text-green-600 dark:text-green-400 font-semibold">
+                  <span className="text-success font-semibold">
                     ✓ {stat.correctGuesses}
                   </span>
                   {stat.wrongGuesses > 0 && (
-                    <span className="text-red-600 dark:text-red-400">
+                    <span className="text-error">
                       ✗ {stat.wrongGuesses}
                     </span>
                   )}
@@ -155,7 +155,7 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
             ))}
           </div>
           {playerStats.length === 0 && (
-            <p className="text-sm text-gray-500 dark:text-gray-400">
+            <p className="text-sm text-muted">
               No cards were revealed by seekers.
             </p>
           )}

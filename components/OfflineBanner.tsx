@@ -15,16 +15,16 @@ export default function OfflineBanner() {
   }
 
   return (
-    <div className="mb-4 px-4 py-3 rounded-xl bg-amber-50 dark:bg-amber-900/30 border border-amber-200 dark:border-amber-700 flex items-center gap-3">
+    <div className="mb-4 px-4 py-3 rounded-xl bg-warning/20 border border-warning/50 flex items-center gap-3">
       <div className="relative flex h-3 w-3 shrink-0">
-        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-        <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-500"></span>
+        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-warning opacity-75"></span>
+        <span className="relative inline-flex rounded-full h-3 w-3 bg-warning"></span>
       </div>
       <div className="flex-1">
-        <p className="text-sm font-medium text-amber-800 dark:text-amber-200">
+        <p className="text-sm font-medium text-highlight-text">
           Connection lost
         </p>
-        <p className="text-xs text-amber-600 dark:text-amber-400">
+        <p className="text-xs text-warning">
           Trying to reconnect... Your actions may not sync until connection is restored.
         </p>
       </div>

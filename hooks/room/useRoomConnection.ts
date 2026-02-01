@@ -109,6 +109,9 @@ export function useRoomConnection(
       setIsConnecting(false);
     });
 
+    // Track if player was ever in the room (to detect kick vs never joined)
+    let wasInRoom = false;
+    
     // Players listener - also updates onDisconnect behavior based on player count
     let lastConnectedCount = -1;
     let latestConnectedCount = 0; // Persists across callbacks for timeout to use
@@ -117,6 +120,18 @@ export function useRoomConnection(
       if (isCleanedUp) return;
       const data = snap.val() as Record<string, PlayerData> | null;
       playersDataRef.current = data;
+      
+      // Detect if player was kicked: they were in the room before, but now they're not
+      // (and the room still exists - checked by roomExists flag)
+      const isPlayerInRoom = data ? playerId in data : false;
+      if (wasInRoom && !isPlayerInRoom && roomExists) {
+        // Player was removed from the room while it still exists = kicked
+        setRoomClosedReason("kicked");
+        return;
+      }
+      if (isPlayerInRoom) {
+        wasInRoom = true;
+      }
       
       // connected !== false treats undefined as connected (backwards compatible)
       const connected = data

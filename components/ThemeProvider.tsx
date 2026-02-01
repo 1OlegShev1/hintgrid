@@ -2,65 +2,96 @@
 
 import { createContext, useContext, useEffect, useState } from "react";
 
-type Theme = "light" | "dark" | "system";
+// Theme mode controls light/dark contrast
+type ThemeMode = "light" | "dark" | "system";
+
+// Theme style controls the aesthetic/color palette
+type ThemeStyle = "classic" | "synthwave";
 
 interface ThemeContextValue {
-  theme: Theme;
+  // Mode (light/dark)
+  mode: ThemeMode;
+  resolvedMode: "light" | "dark";
+  setMode: (mode: ThemeMode) => void;
+  // Style (aesthetic)
+  style: ThemeStyle;
+  setStyle: (style: ThemeStyle) => void;
+  // Legacy aliases for backwards compatibility
+  theme: ThemeMode;
   resolvedTheme: "light" | "dark";
-  setTheme: (theme: Theme) => void;
+  setTheme: (mode: ThemeMode) => void;
 }
 
 const ThemeContext = createContext<ThemeContextValue | undefined>(undefined);
 
-const STORAGE_KEY = "hintgrid-theme";
+const MODE_STORAGE_KEY = "hintgrid-theme";
+const STYLE_STORAGE_KEY = "hintgrid-style";
 
 function getSystemTheme(): "light" | "dark" {
-  if (typeof window === "undefined") return "light";
+  if (typeof window === "undefined") return "dark";
   return window.matchMedia("(prefers-color-scheme: dark)").matches
     ? "dark"
     : "light";
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>("system");
-  const [resolvedTheme, setResolvedTheme] = useState<"light" | "dark">("light");
+  const [mode, setModeState] = useState<ThemeMode>("system");
+  const [resolvedMode, setResolvedMode] = useState<"light" | "dark">("dark");
+  const [style, setStyleState] = useState<ThemeStyle>("synthwave");
   const [mounted, setMounted] = useState(false);
 
-  // Initialize theme from localStorage on mount
+  // Initialize from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (stored && ["light", "dark", "system"].includes(stored)) {
-      setThemeState(stored);
+    const storedMode = localStorage.getItem(MODE_STORAGE_KEY) as ThemeMode | null;
+    if (storedMode && ["light", "dark", "system"].includes(storedMode)) {
+      setModeState(storedMode);
     }
+    
+    const storedStyle = localStorage.getItem(STYLE_STORAGE_KEY) as ThemeStyle | null;
+    if (storedStyle && ["classic", "synthwave"].includes(storedStyle)) {
+      setStyleState(storedStyle);
+    }
+    
     setMounted(true);
   }, []);
 
-  // Update resolved theme and apply to document
+  // Update resolved mode and apply classes to document
   useEffect(() => {
-    const updateResolvedTheme = () => {
-      const resolved = theme === "system" ? getSystemTheme() : theme;
-      setResolvedTheme(resolved);
+    const updateTheme = () => {
+      const resolved = mode === "system" ? getSystemTheme() : mode;
+      setResolvedMode(resolved);
 
-      // Apply class to document
+      // Apply classes to document
       const root = document.documentElement;
+      
+      // Mode classes (light/dark)
       root.classList.remove("light", "dark");
       root.classList.add(resolved);
+      
+      // Style classes (classic/synthwave)
+      root.classList.remove("theme-classic", "theme-synthwave");
+      root.classList.add(`theme-${style}`);
     };
 
-    updateResolvedTheme();
+    updateTheme();
 
     // Listen for system preference changes
-    if (theme === "system") {
+    if (mode === "system") {
       const mediaQuery = window.matchMedia("(prefers-color-scheme: dark)");
-      const handler = () => updateResolvedTheme();
+      const handler = () => updateTheme();
       mediaQuery.addEventListener("change", handler);
       return () => mediaQuery.removeEventListener("change", handler);
     }
-  }, [theme]);
+  }, [mode, style]);
 
-  const setTheme = (newTheme: Theme) => {
-    setThemeState(newTheme);
-    localStorage.setItem(STORAGE_KEY, newTheme);
+  const setMode = (newMode: ThemeMode) => {
+    setModeState(newMode);
+    localStorage.setItem(MODE_STORAGE_KEY, newMode);
+  };
+
+  const setStyle = (newStyle: ThemeStyle) => {
+    setStyleState(newStyle);
+    localStorage.setItem(STYLE_STORAGE_KEY, newStyle);
   };
 
   // Prevent hydration mismatch by not rendering until mounted
@@ -69,7 +100,19 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme }}>
+    <ThemeContext.Provider 
+      value={{ 
+        mode, 
+        resolvedMode, 
+        setMode,
+        style,
+        setStyle,
+        // Legacy aliases
+        theme: mode,
+        resolvedTheme: resolvedMode,
+        setTheme: setMode,
+      }}
+    >
       {children}
     </ThemeContext.Provider>
   );
@@ -82,3 +125,6 @@ export function useTheme() {
   }
   return context;
 }
+
+// Export types for external use
+export type { ThemeMode, ThemeStyle };
