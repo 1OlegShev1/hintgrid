@@ -59,23 +59,23 @@ function DangerIcon({ className }: { className?: string }) {
 
 const iconConfig = {
   warning: {
-    bg: "bg-warning/10",
-    color: "text-warning",
+    bg: "bg-yellow-900/40 border border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]",
+    color: "text-yellow-400",
     Icon: WarningIcon,
   },
   danger: {
-    bg: "bg-error/10",
-    color: "text-error",
+    bg: "bg-pink-900/40 border border-pink-500/50 shadow-[0_0_15px_rgba(255,51,102,0.3)]",
+    color: "text-pink-400",
     Icon: DangerIcon,
   },
   info: {
-    bg: "bg-info/10",
-    color: "text-info",
+    bg: "bg-cyan-900/40 border border-cyan-500/50 shadow-[0_0_15px_rgba(0,212,255,0.3)]",
+    color: "text-cyan-400",
     Icon: InfoIcon,
   },
   success: {
-    bg: "bg-success/10",
-    color: "text-success",
+    bg: "bg-green-900/40 border border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]",
+    color: "text-green-400",
     Icon: SuccessIcon,
   },
 } as const;
@@ -178,7 +178,7 @@ export function Modal({
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       {/* Backdrop */}
       <div
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm animate-fade-in"
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm animate-fade-in"
         onClick={closeOnBackdropClick ? onClose : undefined}
         aria-hidden="true"
       />
@@ -189,7 +189,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
         className={cn(
-          "relative bg-surface-elevated rounded-card shadow-modal p-6 w-full mx-4 animate-modal-in",
+          "relative bg-purple-900/90 backdrop-blur-sm border-2 border-purple-500/60 rounded-lg shadow-[0_0_30px_rgba(139,92,246,0.3)] p-6 w-full mx-4 animate-modal-in",
           sizeClasses[size],
           className
         )}
@@ -211,14 +211,14 @@ export function Modal({
           {title && (
             <h3
               id="modal-title"
-              className="text-lg font-semibold text-foreground mb-2"
+              className="text-lg font-pixel text-cyan-400 mb-2 tracking-wide"
             >
               {title}
             </h3>
           )}
 
           {/* Content */}
-          <div className="text-muted">{children}</div>
+          <div className="text-purple-300 font-retro">{children}</div>
 
           {/* Actions */}
           {actions && actions.length > 0 && (

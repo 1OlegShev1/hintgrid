@@ -2,9 +2,8 @@ import { useState, useEffect, FormEvent } from "react";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar } from "@/shared/constants";
 import { validatePlayerName } from "@/shared/validation";
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/Card";
-import { Input } from "@/components/ui/Input";
-import { Button } from "@/components/ui/Button";
+import { ThemeBackground } from "@/components/ThemeBackground";
+import { Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
 
 interface JoinRoomFormProps {
   roomCode: string;
@@ -47,12 +46,14 @@ export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4">
-      <Card className="w-full max-w-md" variant="elevated">
+    <main className="min-h-screen flex items-center justify-center p-4 relative bg-transparent">
+      <ThemeBackground />
+
+      <Card variant="elevated" padding="lg" className="w-full max-w-md relative z-10">
         <CardHeader className="text-center">
           <CardTitle>Join Room</CardTitle>
-          <p className="text-muted">
-            Enter your name to join room {roomCode}
+          <p className="text-muted mt-2">
+            Enter your name to join room <span className="text-accent font-bold">{roomCode}</span>
           </p>
         </CardHeader>
         <CardContent>
@@ -69,18 +70,21 @@ export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
                   value={pendingName}
                   onChange={(e) => handleNameChange(e.target.value)}
                   placeholder="Enter your name"
-                  variant={nameError ? "error" : "default"}
-                  error={nameError || undefined}
                   autoFocus
+                  error={nameError || undefined}
                   className="flex-1"
                 />
               </div>
+              {nameError && (
+                <p className="mt-2 text-sm text-error">{nameError}</p>
+              )}
             </div>
             <Button
               type="submit"
               disabled={!pendingName.trim()}
-              fullWidth
+              variant="primary"
               size="lg"
+              fullWidth
             >
               Join Room
             </Button>

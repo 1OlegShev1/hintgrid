@@ -1,6 +1,7 @@
 import { useRouter } from "next/navigation";
 import type { RoomClosedReason } from "@/shared/types";
 import { Card, Button } from "@/components/ui";
+import { ThemeBackground } from "@/components/ThemeBackground";
 
 interface RoomClosedModalProps {
   reason: RoomClosedReason;
@@ -22,6 +23,10 @@ export default function RoomClosedModal({ reason }: RoomClosedModalProps) {
       title: "Session Expired",
       message: "The game session has expired due to inactivity.",
     },
+    kicked: {
+      title: "Removed from Room",
+      message: "You have been removed from this room by the room owner.",
+    },
   };
 
   const { title, message } = reasonMessages[reason] || {
@@ -30,9 +35,11 @@ export default function RoomClosedModal({ reason }: RoomClosedModalProps) {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <Card variant="elevated" padding="lg" className="max-w-md w-full text-center">
-        <div className="mx-auto w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mb-6">
+    <main className="min-h-screen flex items-center justify-center p-4 relative bg-transparent">
+      <ThemeBackground />
+
+      <Card variant="elevated" padding="lg" className="max-w-md w-full text-center relative z-10">
+        <div className="mx-auto w-16 h-16 rounded-full bg-warning/20 border border-warning/50 flex items-center justify-center mb-6">
           <svg 
             className="w-8 h-8 text-warning" 
             fill="none" 
@@ -47,7 +54,7 @@ export default function RoomClosedModal({ reason }: RoomClosedModalProps) {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-foreground mb-3">{title}</h1>
+        <h1 className="text-xl font-bold text-foreground mb-3">{title}</h1>
         <p className="text-muted mb-6">{message}</p>
         <Button
           onClick={() => router.push("/")}

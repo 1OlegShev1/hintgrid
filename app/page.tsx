@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
 import { getPublicRooms } from "@/lib/rtdb-actions";
-import { Button, Card, Badge, Input } from "@/components/ui";
+import { Badge, Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
+import { ThemeBackground } from "@/components/ThemeBackground";
+import { useTheme } from "@/components/ThemeProvider";
 
 interface PublicRoom {
   roomCode: string;
@@ -100,14 +102,17 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
-      <div className="w-full max-w-4xl">
+    <main className="min-h-screen flex items-center justify-center p-4 relative bg-transparent">
+      {/* Theme-aware Background */}
+      <ThemeBackground />
+
+      <div className="w-full max-w-4xl relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
-          <h1 className="text-5xl font-bold mb-2 bg-linear-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+          <h1 className="text-5xl font-bold mb-2 bg-linear-to-r from-primary to-accent bg-clip-text text-transparent">
             HintGrid
           </h1>
-          <p className="text-gray-600 dark:text-gray-400">
+          <p className="text-muted">
             A word guessing party game
           </p>
         </div>
@@ -115,87 +120,88 @@ export default function Home() {
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left: Public Rooms */}
           <Card variant="elevated" padding="lg">
-            <h2 className="text-lg font-semibold text-foreground mb-4">
-              Public Games
-            </h2>
-            
-            {loadingRooms ? (
-              <div className="space-y-3">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="animate-pulse bg-surface rounded-lg h-16" />
-                ))}
-              </div>
-            ) : publicRooms.length > 0 ? (
-              <div className="space-y-3" data-testid="public-rooms-list">
-                {publicRooms.map((room) => (
-                  <div
-                    key={room.roomCode}
-                    data-testid={`public-room-${room.roomCode}`}
-                    className="p-3 bg-surface rounded-lg border border-border hover:border-primary transition-colors"
-                  >
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 mb-1">
-                          <span className="font-medium text-foreground truncate">
-                            {room.roomName}
-                          </span>
-                          {getStatusBadge(room.status)}
+            <CardHeader>
+              <CardTitle>Public Games</CardTitle>
+            </CardHeader>
+            <CardContent>
+              {loadingRooms ? (
+                <div className="space-y-3">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="animate-pulse bg-surface rounded-lg h-16 border border-border" />
+                  ))}
+                </div>
+              ) : publicRooms.length > 0 ? (
+                <div className="space-y-3" data-testid="public-rooms-list">
+                  {publicRooms.map((room) => (
+                    <div
+                      key={room.roomCode}
+                      data-testid={`public-room-${room.roomCode}`}
+                      className="p-3 bg-surface rounded-lg border border-border hover:border-accent transition-all duration-300"
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className="text-lg text-foreground truncate">
+                              {room.roomName}
+                            </span>
+                            {getStatusBadge(room.status)}
+                          </div>
+                          <div className="flex items-center gap-3 text-sm text-muted">
+                            <span>{room.playerCount} players</span>
+                            <span className="text-primary">•</span>
+                            <span>{getTimerLabel(room.timerPreset)}</span>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-3 text-xs text-muted">
-                          <span>{room.playerCount} players</span>
-                          <span>•</span>
-                          <span>{getTimerLabel(room.timerPreset)}</span>
-                        </div>
+                        <Button
+                          onClick={() => {
+                            if (playerName.trim()) {
+                              window.location.href = `/room/${room.roomCode}?name=${encodeURIComponent(playerName)}`;
+                            } else {
+                              window.location.href = `/room/${room.roomCode}`;
+                            }
+                          }}
+                          data-testid={`public-room-join-${room.roomCode}`}
+                          variant="secondary"
+                          size="sm"
+                        >
+                          {room.status === "lobby" ? "Join" : "Watch"}
+                        </Button>
                       </div>
-                      <Button
-                        onClick={() => {
-                          // Always redirect to room - name entry happens there if needed
-                          if (playerName.trim()) {
-                            window.location.href = `/room/${room.roomCode}?name=${encodeURIComponent(playerName)}`;
-                          } else {
-                            window.location.href = `/room/${room.roomCode}`;
-                          }
-                        }}
-                        data-testid={`public-room-join-${room.roomCode}`}
-                        variant="primary"
-                        size="sm"
-                      >
-                        {room.status === "lobby" ? "Join" : "Watch"}
-                      </Button>
                     </div>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="text-4xl mb-3">🎮</div>
-                <p className="text-muted mb-2">
-                  No public games right now
-                </p>
-                <p className="text-sm text-muted/70">
-                  Create one and invite friends!
-                </p>
-              </div>
-            )}
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8">
+                  <div className="text-4xl mb-3">🎮</div>
+                  <p className="text-muted text-lg mb-2">
+                    No public games right now
+                  </p>
+                  <p className="text-sm text-muted/70">
+                    Create one and invite friends!
+                  </p>
+                </div>
+              )}
+            </CardContent>
           </Card>
 
           {/* Right: Create/Join */}
           <Card variant="elevated" padding="lg">
-            <div className="space-y-4">
+            <CardContent className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-foreground mb-2">
                   Your Name
                 </label>
                 <div className="flex items-center gap-3">
                   <AvatarPicker selected={avatar} onSelect={handleAvatarSelect} />
-                  <input
+                  <Input
                     id="name"
                     data-testid="home-name-input"
                     type="text"
                     value={playerName}
                     onChange={(e) => setPlayerName(e.target.value)}
                     placeholder="Enter your name"
-                    className="flex-1 px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-surface-elevated text-foreground"
+                    className="flex-1"
+                    inputSize="lg"
                     onKeyDown={(e) => {
                       if (e.key === "Enter" && !isCreating) {
                         handleCreateRoom();
@@ -213,7 +219,6 @@ export default function Home() {
                   variant="primary"
                   size="lg"
                   fullWidth
-                  className="bg-linear-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-md hover:shadow-lg"
                 >
                   Create {isPrivateRoom ? "Private" : "Public"} Room
                 </Button>
@@ -223,7 +228,7 @@ export default function Home() {
                   className="flex items-center justify-between w-full text-sm text-muted"
                 >
                   <span>{isPrivateRoom ? "Private room" : "Public room"}</span>
-                  <div className={`relative w-11 h-6 rounded-full transition-colors ${isPrivateRoom ? "bg-primary" : "bg-border"}`}>
+                  <div className={`relative w-11 h-6 rounded-full transition-colors ${isPrivateRoom ? "bg-primary" : "bg-surface-elevated"}`}>
                     <div className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${isPrivateRoom ? "translate-x-5" : "translate-x-0"}`} />
                   </div>
                 </button>
@@ -234,7 +239,7 @@ export default function Home() {
                   <div className="w-full border-t border-border"></div>
                 </div>
                 <div className="relative flex justify-center text-sm">
-                  <span className="px-2 bg-surface-elevated text-muted">or join with code</span>
+                  <span className="px-3 bg-surface-elevated text-muted">or join with code</span>
                 </div>
               </div>
 
@@ -242,14 +247,15 @@ export default function Home() {
                 <label htmlFor="roomCode" className="block text-sm font-medium text-foreground mb-2">
                   Room Code
                 </label>
-                <input
+                <Input
                   id="roomCode"
                   data-testid="home-code-input"
                   type="text"
                   value={roomCode}
                   onChange={(e) => setRoomCode(e.target.value.toUpperCase())}
-                  placeholder="Enter room code"
-                  className="w-full px-4 py-3 border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-surface-elevated text-foreground uppercase"
+                  placeholder="ENTER ROOM CODE"
+                  className="uppercase tracking-widest"
+                  inputSize="lg"
                   maxLength={6}
                   onKeyDown={(e) => {
                     if (e.key === "Enter" && playerName.trim() && roomCode.trim()) {
@@ -266,11 +272,10 @@ export default function Home() {
                 variant="secondary"
                 size="lg"
                 fullWidth
-                className="shadow-md hover:shadow-lg"
               >
                 Join Room
               </Button>
-            </div>
+            </CardContent>
           </Card>
         </div>
       </div>

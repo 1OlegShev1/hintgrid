@@ -81,7 +81,7 @@ export interface ChatMessage {
   reactions?: Record<string, string[]>;
 }
 
-export type RoomClosedReason = "abandoned" | "allPlayersLeft" | "timeout";
+export type RoomClosedReason = "abandoned" | "allPlayersLeft" | "timeout" | "kicked";
 
 /**
  * Public room info stored in /publicRooms index for discovery.

@@ -4,6 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { ref, get } from "firebase/database";
 import TransitionOverlay from "@/components/TransitionOverlay";
+import { ThemeBackground } from "@/components/ThemeBackground";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
 import { goOffline, goOnline, getDatabase } from "@/lib/firebase";
 import { useGameTimer } from "@/hooks/useGameTimer";
@@ -281,7 +282,10 @@ export default function RoomPage() {
   }
 
   return (
-    <main className="min-h-screen bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800 p-4">
+    <main className="min-h-screen p-4 relative bg-transparent">
+      {/* Theme-aware Background */}
+      <ThemeBackground />
+
       {/* Transition Overlays */}
       {overlays.showGameStart && (
         <TransitionOverlay
@@ -315,7 +319,7 @@ export default function RoomPage() {
         />
       )}
       
-      <div className="max-w-6xl mx-auto">
+      <div className="max-w-6xl mx-auto relative z-10">
         <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} isLocked={room.gameState.locked} roomName={room.gameState.roomName} visibility={room.gameState.visibility} onSetRoomLocked={room.handleSetRoomLocked} onSetRoomName={room.handleSetRoomName} onLeaveRoom={handleLeaveRoom} />
         <OfflineBanner />
 

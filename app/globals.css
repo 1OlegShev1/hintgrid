@@ -109,8 +109,14 @@ html {
 
 body {
   color: inherit;
-  background: inherit;
+  background: transparent;
   font-family: Arial, Helvetica, sans-serif;
+}
+
+/* Synthwave background override - let synthwave-bg handle it */
+html.theme-synthwave,
+html.theme-synthwave body {
+  background: transparent !important;
 }
 
 /* Global interactive element styles */
@@ -383,4 +389,193 @@ button:disabled,
   line-height: 1.2;
   word-break: break-word;
   hyphens: auto;
+}
+
+/* ============================================
+   SYNTHWAVE THEME
+   ============================================ */
+
+html.theme-synthwave {
+  --color-background: #0d0221;
+  --color-foreground: #ffffff;
+  background: #0d0221;
+  color: #ffffff;
+  --color-surface: rgba(26, 5, 51, 0.8);
+  --color-surface-elevated: rgba(40, 10, 70, 0.9);
+  --color-border: rgba(255, 0, 255, 0.5);
+  --color-muted: #a78bfa;
+  
+  --color-primary: #ff00ff;
+  --color-primary-foreground: #ffffff;
+  --color-accent: #00ffff;
+  --color-accent-foreground: #0d0221;
+  
+  --color-success: #00ff88;
+  --color-success-foreground: #0d0221;
+  --color-warning: #ffff00;
+  --color-warning-foreground: #0d0221;
+  --color-error: #ff3366;
+  --color-error-foreground: #ffffff;
+  --color-info: #00d4ff;
+  --color-info-foreground: #0d0221;
+  
+  --color-red-team: #ff3366;
+  --color-red-team-muted: #ff6b8a;
+  --color-red-team-light: rgba(255, 51, 102, 0.2);
+  --color-red-team-text: #ffb3c6;
+  
+  --color-blue-team: #00d4ff;
+  --color-blue-team-muted: #66e5ff;
+  --color-blue-team-light: rgba(0, 212, 255, 0.2);
+  --color-blue-team-text: #b3f0ff;
+  
+  --color-neutral-card: #6b21a8;
+  --color-neutral-card-text: #e9d5ff;
+  --color-trap: #18181b;
+  --color-trap-text: #ff3366;
+  
+  --color-highlight: rgba(255, 0, 255, 0.3);
+  --color-highlight-text: #ff00ff;
+}
+
+/* Synthwave background container */
+.synthwave-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  background: linear-gradient(
+    to bottom,
+    #0d0221 0%,
+    #150828 30%,
+    #1a0a35 50%,
+    #2d1b4e 70%,
+    #1a0a35 85%,
+    #0d0221 100%
+  );
+}
+
+/* Synthwave sun */
+.synthwave-sun {
+  position: absolute;
+  bottom: 30%;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(to bottom, #ff6b00 0%, #ff00ff 50%, #bf00ff 100%);
+  border-radius: 50%;
+  box-shadow: 0 0 60px rgba(255, 0, 255, 0.8), 0 0 100px rgba(255, 107, 0, 0.6);
+  mask-image: repeating-linear-gradient(to bottom, black 0px, black 8px, transparent 8px, transparent 12px);
+  -webkit-mask-image: repeating-linear-gradient(to bottom, black 0px, black 8px, transparent 8px, transparent 12px);
+}
+
+
+/* Synthwave grid - purple grid, scrolling horizontally */
+.synthwave-grid {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 40vh;
+  background-image: 
+    repeating-linear-gradient(
+      90deg,
+      rgba(255, 0, 255, 0.4) 0px,
+      rgba(255, 0, 255, 0.4) 2px,
+      transparent 2px,
+      transparent 60px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255, 0, 255, 0.4) 0px,
+      rgba(255, 0, 255, 0.4) 2px,
+      transparent 2px,
+      transparent 60px
+    );
+  background-size: 60px 60px;
+  transform: perspective(500px) rotateX(60deg);
+  transform-origin: 50% 0%;
+  animation: grid-scroll 10s linear infinite;
+}
+
+@keyframes grid-scroll {
+  0% { background-position: 0 0; }
+  100% { background-position: 60px 0; }
+}
+
+/* ============================================
+   SYNTHWAVE EFFECTS
+   ============================================ */
+
+/* Glowing text for synthwave */
+html.theme-synthwave h1,
+html.theme-synthwave h2,
+html.theme-synthwave h3 {
+  text-shadow: 
+    0 0 10px rgba(255, 0, 255, 0.8),
+    0 0 20px rgba(255, 0, 255, 0.6),
+    0 0 40px rgba(255, 0, 255, 0.4);
+}
+
+/* Glowing cards */
+html.theme-synthwave .bg-surface,
+html.theme-synthwave .bg-surface-elevated {
+  box-shadow: 
+    0 0 20px rgba(255, 0, 255, 0.3),
+    0 0 40px rgba(139, 92, 246, 0.2),
+    inset 0 0 20px rgba(255, 0, 255, 0.05);
+  border: 1px solid rgba(255, 0, 255, 0.4);
+}
+
+/* Glowing buttons */
+html.theme-synthwave button.bg-primary,
+html.theme-synthwave .bg-primary {
+  box-shadow: 
+    0 0 15px rgba(255, 0, 255, 0.6),
+    0 0 30px rgba(255, 0, 255, 0.4),
+    inset 0 0 10px rgba(255, 255, 255, 0.1);
+}
+
+html.theme-synthwave button.bg-primary:hover,
+html.theme-synthwave .bg-primary:hover {
+  box-shadow: 
+    0 0 20px rgba(255, 0, 255, 0.8),
+    0 0 40px rgba(255, 0, 255, 0.5),
+    inset 0 0 15px rgba(255, 255, 255, 0.2);
+}
+
+/* Glowing inputs */
+html.theme-synthwave input,
+html.theme-synthwave textarea,
+html.theme-synthwave select {
+  box-shadow: 
+    0 0 10px rgba(139, 92, 246, 0.3),
+    inset 0 0 10px rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.5);
+}
+
+html.theme-synthwave input:focus,
+html.theme-synthwave textarea:focus,
+html.theme-synthwave select:focus {
+  box-shadow: 
+    0 0 20px rgba(0, 255, 255, 0.5),
+    0 0 40px rgba(0, 255, 255, 0.3),
+    inset 0 0 15px rgba(0, 255, 255, 0.1);
+  border-color: rgba(0, 255, 255, 0.8);
+}
+
+/* Glowing accent elements */
+html.theme-synthwave .text-primary {
+  text-shadow: 0 0 10px currentColor;
+}
+
+html.theme-synthwave .text-accent {
+  text-shadow: 0 0 10px currentColor;
+}
+
+/* Navbar glow */
+html.theme-synthwave nav {
+  box-shadow: 0 0 20px rgba(255, 0, 255, 0.3);
+  border-bottom: 1px solid rgba(255, 0, 255, 0.3);
 }
