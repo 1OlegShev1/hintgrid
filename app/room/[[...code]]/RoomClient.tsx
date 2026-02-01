@@ -224,6 +224,11 @@ export default function RoomPage() {
     }
     
     setMusicTrack(track);
+    
+    // Cleanup: stop music when leaving the room
+    return () => {
+      setMusicTrack(null);
+    };
   }, [playerName, hasGameState, gameStarted, gameOver, timerPreset, setMusicTrack]);
 
   // Early returns for special states
