@@ -59,23 +59,23 @@ function DangerIcon({ className }: { className?: string }) {
 
 const iconConfig = {
   warning: {
-    bg: "bg-yellow-900/40 border border-yellow-500/50 shadow-[0_0_15px_rgba(250,204,21,0.3)]",
-    color: "text-yellow-400",
+    bg: "bg-warning/10 border border-warning/30",
+    color: "text-warning",
     Icon: WarningIcon,
   },
   danger: {
-    bg: "bg-pink-900/40 border border-pink-500/50 shadow-[0_0_15px_rgba(255,51,102,0.3)]",
-    color: "text-pink-400",
+    bg: "bg-error/10 border border-error/30",
+    color: "text-error",
     Icon: DangerIcon,
   },
   info: {
-    bg: "bg-cyan-900/40 border border-cyan-500/50 shadow-[0_0_15px_rgba(0,212,255,0.3)]",
-    color: "text-cyan-400",
+    bg: "bg-info/10 border border-info/30",
+    color: "text-info",
     Icon: InfoIcon,
   },
   success: {
-    bg: "bg-green-900/40 border border-green-500/50 shadow-[0_0_15px_rgba(34,197,94,0.3)]",
-    color: "text-green-400",
+    bg: "bg-success/10 border border-success/30",
+    color: "text-success",
     Icon: SuccessIcon,
   },
 } as const;
@@ -189,7 +189,7 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
         className={cn(
-          "relative bg-purple-900/90 backdrop-blur-sm border-2 border-purple-500/60 rounded-lg shadow-[0_0_30px_rgba(139,92,246,0.3)] p-6 w-full mx-4 animate-modal-in",
+          "relative bg-surface-elevated border border-border rounded-lg shadow-xl p-6 w-full mx-4 animate-modal-in",
           sizeClasses[size],
           className
         )}
@@ -211,14 +211,14 @@ export function Modal({
           {title && (
             <h3
               id="modal-title"
-              className="text-lg font-pixel text-cyan-400 mb-2 tracking-wide"
+              className="text-lg font-semibold text-foreground mb-2"
             >
               {title}
             </h3>
           )}
 
           {/* Content */}
-          <div className="text-purple-300 font-retro">{children}</div>
+          <div className="text-muted">{children}</div>
 
           {/* Actions */}
           {actions && actions.length > 0 && (
