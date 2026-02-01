@@ -1,4 +1,7 @@
 import type { Player } from "@/shared/types";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+import { getTeamClasses, getTeamTextClass } from "@/components/ui/TeamIndicator";
 
 interface CompactTeamsProps {
   players: Player[];
@@ -13,9 +16,9 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
   const spectators = players.filter((p) => !p.team || !p.role);
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 mt-4">
+    <Card className="mt-4" variant="elevated">
       <div className="flex items-center justify-between mb-3">
-        <h3 className="text-base font-semibold text-gray-600 dark:text-gray-400">Teams</h3>
+        <h3 className="text-base font-semibold text-muted">Teams</h3>
       </div>
       <div className="grid grid-cols-2 gap-4">
         {(["red", "blue"] as const).map((team) => {
@@ -30,15 +33,9 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
           return (
             <div
               key={team}
-              className={`rounded-lg border p-3 ${
-                team === "red"
-                  ? "border-red-300 dark:border-red-700 bg-red-50 dark:bg-red-900/20"
-                  : "border-blue-300 dark:border-blue-700 bg-blue-50 dark:bg-blue-900/20"
-              }`}
+              className={getTeamClasses(team, "card")}
             >
-              <div className={`text-sm font-bold uppercase mb-2 ${
-                team === "red" ? "text-red-700 dark:text-red-300" : "text-blue-700 dark:text-blue-300"
-              }`}>
+              <div className={`text-sm font-bold uppercase mb-2 ${getTeamTextClass(team)}`}>
                 {team} Team
               </div>
               <div className="space-y-2">
@@ -128,28 +125,34 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
                     <div className="flex gap-2 flex-wrap">
                       {onAddSpectator && (
                         <>
-                          <button
+                          <Button
                             onClick={() => onAddSpectator("red", p.id)}
-                            className="px-2 py-1 rounded text-xs font-medium bg-red-500 text-white hover:bg-red-600 transition-colors"
+                            variant="red"
+                            size="sm"
+                            className="text-xs py-1"
                           >
                             Join Red
-                          </button>
-                          <button
+                          </Button>
+                          <Button
                             onClick={() => onAddSpectator("blue", p.id)}
-                            className="px-2 py-1 rounded text-xs font-medium bg-blue-500 text-white hover:bg-blue-600 transition-colors"
+                            variant="blue"
+                            size="sm"
+                            className="text-xs py-1"
                           >
                             Join Blue
-                          </button>
+                          </Button>
                         </>
                       )}
                       {onKickPlayer && !isMe && (
-                        <button
+                        <Button
                           onClick={() => onKickPlayer(p.id)}
-                          className="px-2 py-1 rounded text-xs font-medium bg-gray-200 dark:bg-gray-600 text-red-600 dark:text-red-400 hover:bg-gray-300 dark:hover:bg-gray-500 transition-colors"
+                          variant="ghost"
+                          size="sm"
+                          className="text-xs py-1 text-error hover:text-error"
                           title="Kick from room (2 min ban)"
                         >
                           Kick
-                        </button>
+                        </Button>
                       )}
                     </div>
                   )}
@@ -159,6 +162,6 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
           </div>
         </div>
       )}
-    </div>
+    </Card>
   );
 }

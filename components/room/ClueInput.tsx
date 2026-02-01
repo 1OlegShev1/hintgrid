@@ -1,6 +1,8 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import type { GameState } from "@/shared/types";
 import { validateClueWord } from "@/shared/validation";
+import { Button } from "@/components/ui/Button";
+import { Input } from "@/components/ui/Input";
 
 interface ClueInputProps {
   gameState: GameState;
@@ -97,9 +99,9 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
       <form onSubmit={handleSubmit}>
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex-1 min-w-[160px]">
-            <label className="block text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Clue word</label>
-            <input
+            <Input
               ref={inputRef}
+              label="Clue word"
               type="text"
               value={clueWord}
               onChange={(e) => {
@@ -108,11 +110,8 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
               }}
               placeholder="Enter one word..."
               data-testid="game-clue-input"
-              className={`w-full px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-amber-500 focus:border-amber-500 dark:bg-gray-700 dark:text-white ${
-                clueError 
-                  ? "border-red-500 dark:border-red-500" 
-                  : "border-amber-300 dark:border-amber-600"
-              }`}
+              variant={clueError ? "error" : "default"}
+              className="border-amber-300 dark:border-amber-600 focus:ring-amber-500 focus:border-amber-500"
             />
           </div>
           <div>
@@ -122,7 +121,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
                 type="button"
                 onClick={() => setClueCount(Math.max(0, clueCount - 1))}
                 disabled={clueCount <= 0}
-                className="w-9 h-10 flex items-center justify-center border-2 border-r-0 border-amber-300 dark:border-amber-600 rounded-l-lg bg-amber-50 dark:bg-gray-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-bold text-lg"
+                className="w-9 h-10 flex items-center justify-center border-2 border-r-0 border-amber-300 dark:border-amber-600 rounded-l-lg bg-amber-50 dark:bg-gray-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors font-bold text-lg"
                 aria-label="Decrease count"
               >
                 −
@@ -140,7 +139,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
                 type="button"
                 onClick={() => setClueCount(Math.min(9, clueCount + 1))}
                 disabled={clueCount >= 9}
-                className="w-9 h-10 flex items-center justify-center border-2 border-l-0 border-amber-300 dark:border-amber-600 rounded-r-lg bg-amber-50 dark:bg-gray-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed transition-colors font-bold text-lg"
+                className="w-9 h-10 flex items-center justify-center border-2 border-l-0 border-amber-300 dark:border-amber-600 rounded-r-lg bg-amber-50 dark:bg-gray-700 text-amber-700 dark:text-amber-300 hover:bg-amber-100 dark:hover:bg-gray-600 disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer transition-colors font-bold text-lg"
                 aria-label="Increase count"
               >
                 +
@@ -148,14 +147,15 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
             </div>
           </div>
           <div className="self-end">
-            <button
+            <Button
               type="submit"
               disabled={!clueWord.trim()}
               data-testid="game-clue-btn"
-              className="bg-amber-600 text-white px-5 py-2 rounded-lg font-semibold hover:bg-amber-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shadow-md"
+              variant="warning"
+              className="shadow-md"
             >
               Give Clue
-            </button>
+            </Button>
           </div>
         </div>
         {clueError && (

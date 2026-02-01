@@ -46,7 +46,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitest/coverage-v8": "^4.0.18",
     "autoprefixer": "^10.4.24",
-    "firebase-admin": "^13.6.0",
+    "firebase-admin": "^12.7.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
     "postcss": "^8.5.6",

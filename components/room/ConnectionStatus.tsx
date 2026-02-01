@@ -1,3 +1,6 @@
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
+
 interface ConnectionStatusProps {
   isConnecting: boolean;
   connectionError: string | null;
@@ -167,56 +170,44 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
     return (
       <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
         <div className="text-center max-w-md">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8">
+          <Card variant="elevated" padding="lg">
             <div className={`w-16 h-16 mx-auto mb-4 ${iconBg} rounded-full flex items-center justify-center`}>
               {icon}
             </div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+            <h2 className="text-xl font-bold text-foreground mb-2">
               {title}
             </h2>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <p className="text-muted mb-6">
               {message}
             </p>
             <div className="flex gap-3 justify-center">
               {isNameTaken ? (
-                <button
-                  onClick={handleChooseDifferentName}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
-                >
+                <Button onClick={handleChooseDifferentName}>
                   Choose Different Name
-                </button>
+                </Button>
               ) : isRoomLocked ? (
-                <button
-                  onClick={() => window.location.href = "/"}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
-                >
+                <Button onClick={() => window.location.href = "/"}>
                   Go Home
-                </button>
+                </Button>
               ) : isRateLimit ? (
-                <button
-                  onClick={() => window.location.reload()}
-                  className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
-                >
+                <Button onClick={() => window.location.reload()}>
                   Try Again
-                </button>
+                </Button>
               ) : (
                 <>
-                  <button
-                    onClick={() => window.location.reload()}
-                    className="bg-blue-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-blue-700 transition-all"
-                  >
+                  <Button onClick={() => window.location.reload()}>
                     Retry
-                  </button>
-                  <button
+                  </Button>
+                  <Button
                     onClick={() => window.location.href = "/"}
-                    className="bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 px-6 py-2 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-all"
+                    variant="secondary"
                   >
                     Go Home
-                  </button>
+                  </Button>
                 </>
               )}
             </div>
-          </div>
+          </Card>
         </div>
       </main>
     );

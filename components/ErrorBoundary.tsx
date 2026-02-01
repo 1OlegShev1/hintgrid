@@ -1,6 +1,8 @@
 "use client";
 
 import { Component, ReactNode } from "react";
+import { Card } from "@/components/ui/Card";
+import { Button } from "@/components/ui/Button";
 
 interface Props {
   children: ReactNode;
@@ -41,11 +43,11 @@ export class ErrorBoundary extends Component<Props, State> {
  */
 function DefaultErrorFallback({ error, onRetry }: { error?: Error; onRetry: () => void }) {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-        <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card variant="elevated" padding="lg" className="max-w-md w-full text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-error/10 rounded-full flex items-center justify-center">
           <svg
-            className="w-8 h-8 text-red-600 dark:text-red-400"
+            className="w-8 h-8 text-error"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -58,37 +60,34 @@ function DefaultErrorFallback({ error, onRetry }: { error?: Error; onRetry: () =
             />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-bold text-foreground mb-2">
           Something went wrong
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-muted mb-6">
           An unexpected error occurred. Please try again.
         </p>
         {error && (
           <details className="mb-6 text-left">
-            <summary className="text-sm text-gray-500 dark:text-gray-400 cursor-pointer hover:text-gray-700 dark:hover:text-gray-300">
+            <summary className="text-sm text-muted cursor-pointer hover:text-foreground">
               Error details
             </summary>
-            <pre className="mt-2 p-3 bg-gray-100 dark:bg-gray-700 rounded-lg text-xs text-gray-700 dark:text-gray-300 overflow-auto max-h-32">
+            <pre className="mt-2 p-3 bg-surface rounded-lg text-xs text-foreground overflow-auto max-h-32">
               {error.message}
             </pre>
           </details>
         )}
         <div className="flex gap-3 justify-center">
-          <button
-            onClick={onRetry}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
+          <Button onClick={onRetry}>
             Try Again
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => window.location.href = "/"}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            variant="secondary"
           >
             Go Home
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
@@ -98,11 +97,11 @@ function DefaultErrorFallback({ error, onRetry }: { error?: Error; onRetry: () =
  */
 export function RoomErrorFallback() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100 dark:bg-gray-900 p-4">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-        <div className="w-16 h-16 mx-auto mb-4 bg-red-100 dark:bg-red-900/30 rounded-full flex items-center justify-center">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card variant="elevated" padding="lg" className="max-w-md w-full text-center">
+        <div className="w-16 h-16 mx-auto mb-4 bg-error/10 rounded-full flex items-center justify-center">
           <svg
-            className="w-8 h-8 text-red-600 dark:text-red-400"
+            className="w-8 h-8 text-error"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -115,27 +114,24 @@ export function RoomErrorFallback() {
             />
           </svg>
         </div>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white mb-2">
+        <h2 className="text-xl font-bold text-foreground mb-2">
           Room Error
         </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
+        <p className="text-muted mb-6">
           Something went wrong with the game room. Please try rejoining or create a new room.
         </p>
         <div className="flex gap-3 justify-center">
-          <button
-            onClick={() => window.location.reload()}
-            className="px-4 py-2 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-700 transition-colors"
-          >
+          <Button onClick={() => window.location.reload()}>
             Reload
-          </button>
-          <button
+          </Button>
+          <Button
             onClick={() => window.location.href = "/"}
-            className="px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-semibold hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+            variant="secondary"
           >
             Go Home
-          </button>
+          </Button>
         </div>
-      </div>
+      </Card>
     </div>
   );
 }
