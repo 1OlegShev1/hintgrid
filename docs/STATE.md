@@ -128,7 +128,8 @@ Rooms can be public or private, controlled by the `visibility` field (default: `
 
 **Public room discovery**:
 - Public rooms are indexed at `/publicRooms/{roomCode}` for efficient home page queries
-- Home page shows top 6 public rooms with 4+ players, sorted by player count
+- Home page subscribes to `/publicRooms` in real-time for instant updates
+- Shows top 6 public rooms with 4+ players, sorted by player count
 - Locked rooms are removed from the public index
 - Index is updated client-side by the room owner on state changes
 
@@ -417,10 +418,20 @@ Team color helpers in `TeamIndicator`:
 - `GameView` (`components/room/GameView.tsx`) — Active game UI (board, chat, status)
 - `LobbyView` (`components/room/LobbyView.tsx`) — Pre-game lobby UI (team selection)
 
+**GameView Layout:**
+- Desktop: Sidebar (Game Log + Chat) height syncs to game board via ResizeObserver
+- Mobile: Fixed 600px sidebar height (single column layout)
+- Each sidebar section takes 50% of available height with internal scrolling
+
 **Chat Components:**
 - `EmojiPickerButton` (`components/room/EmojiPickerButton.tsx`) — Full emoji picker dropdown for chat input (uses `emoji-picker-react`)
 - `MessageReactions` (`components/room/MessageReactions.tsx`) — Reaction display and picker for chat messages
-- `ChatLog` (`components/ChatLog.tsx`) — IRC-style chat log with reaction support
+- `ChatLog` (`components/ChatLog.tsx`) — IRC-style chat log with reaction support and auto-scroll toggle
+
+**Chat Auto-Scroll:**
+- Toggle button in chat header ("⬇ Auto" / "⬇ Manual")
+- When enabled (default), chat scrolls to bottom on new messages
+- When disabled, stays at current scroll position (for reading history)
 
 ### Key Files
 
@@ -428,7 +439,7 @@ Team color helpers in `TeamIndicator`:
 |------|---------|
 | `lib/firebase.ts` | Firebase app/auth/database initialization |
 | `lib/firebase-auth.ts` | Anonymous sign-in helper |
-| `lib/rtdb-actions.ts` | All Firebase Realtime Database operations + stale player cleanup |
+| `lib/rtdb-actions.ts` | All Firebase Realtime Database operations + stale player cleanup + public rooms subscription |
 | `lib/retry.ts` | Retry utility with exponential backoff for network operations |
 | `lib/utils.ts` | `cn()` utility for merging Tailwind classes |
 | `shared/types.ts` | TypeScript types for game state and Firebase data structures |

@@ -47,11 +47,11 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   };
 
   return (
-    <div className="bg-surface rounded-lg h-full flex flex-col">
+    <div className="bg-surface rounded-lg flex-1 min-h-0 flex flex-col">
       <h3 className="font-semibold px-4 py-3 border-b border-border shrink-0 text-foreground">
         Game Log
       </h3>
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2">
+      <div className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-3 space-y-2">
         {gameMessages.length === 0 ? (
           <p className="text-muted text-sm px-1">No activity yet</p>
         ) : (

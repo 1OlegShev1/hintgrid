@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useState, useEffect } from "react";
 import GameBoard from "@/components/GameBoard";
 import ChatLog from "@/components/ChatLog";
 import ClueHistory from "@/components/ClueHistory";
@@ -33,6 +34,40 @@ interface GameViewProps {
 export function GameView({ room, derived, timer, overlays }: GameViewProps) {
   const { gameState, players, currentPlayer, messages, chatInput, setChatInput, isSendingChat, chatInputRef } = room;
   const { isMyTurn, isRoomOwner, canVote, canGiveClue, requiredVotes, turnGlowClass } = derived;
+  
+  // Track board height to sync sidebar on desktop
+  const boardRef = useRef<HTMLDivElement>(null);
+  const [sidebarHeight, setSidebarHeight] = useState<number | null>(null);
+  
+  useEffect(() => {
+    const board = boardRef.current;
+    if (!board) return;
+    
+    const updateHeight = () => {
+      // Only apply on md+ screens (768px+)
+      if (window.innerWidth >= 768) {
+        const height = board.offsetHeight;
+        if (height > 0) {
+          setSidebarHeight(height);
+        }
+      } else {
+        setSidebarHeight(null); // Use CSS default on mobile
+      }
+    };
+    
+    // Small delay to ensure board has rendered with final dimensions
+    const timer = setTimeout(updateHeight, 100);
+    
+    const resizeObserver = new ResizeObserver(updateHeight);
+    resizeObserver.observe(board);
+    window.addEventListener("resize", updateHeight);
+    
+    return () => {
+      clearTimeout(timer);
+      resizeObserver.disconnect();
+      window.removeEventListener("resize", updateHeight);
+    };
+  }, []);
 
   if (!gameState) return null;
 
@@ -75,8 +110,8 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
       )}
 
       {/* Board and Chat */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-stretch overflow-hidden">
-        <div className="md:col-span-3">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div ref={boardRef} className="md:col-span-3">
           <Card variant="elevated" padding="lg" className={turnGlowClass}>
             <GameBoard
               board={gameState.board}
@@ -121,11 +156,14 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
           </Card>
         </div>
 
-        <div className="md:col-span-2 flex flex-col gap-4 overflow-hidden">
-          <Card variant="elevated" padding="md" className="flex-1 min-h-32 overflow-hidden">
+        <div 
+          className="md:col-span-2 flex flex-col gap-4 h-[600px] md:h-auto overflow-hidden"
+          style={sidebarHeight ? { height: sidebarHeight } : undefined}
+        >
+          <Card variant="elevated" padding="md" className="overflow-hidden flex flex-col" style={{ height: 'calc(50% - 8px)', minHeight: 0 }}>
             <ClueHistory clues={messages} />
           </Card>
-          <Card variant="elevated" padding="md" className="flex-1 min-h-48 flex flex-col overflow-hidden">
+          <Card variant="elevated" padding="md" className="overflow-hidden flex flex-col" style={{ height: 'calc(50% - 8px)', minHeight: 0 }}>
             <ChatLog
               messages={messages}
               players={players}

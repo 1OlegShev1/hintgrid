@@ -4,20 +4,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
-import { getPublicRooms } from "@/lib/rtdb-actions";
+import { subscribeToPublicRooms, type PublicRoomData } from "@/lib/rtdb-actions";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
 import { ThemeBackground } from "@/components/ThemeBackground";
 import { useTheme } from "@/components/ThemeProvider";
-
-interface PublicRoom {
-  roomCode: string;
-  roomName: string;
-  ownerName: string;
-  playerCount: number;
-  status: "lobby" | "playing" | "paused";
-  timerPreset: string;
-  createdAt: number;
-}
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
@@ -25,7 +15,7 @@ export default function Home() {
   const [avatar, setAvatar] = useState("");
   const [isCreating, setIsCreating] = useState(false);
   const [isPrivateRoom, setIsPrivateRoom] = useState(false);
-  const [publicRooms, setPublicRooms] = useState<PublicRoom[]>([]);
+  const [publicRooms, setPublicRooms] = useState<PublicRoomData[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const router = useRouter();
 
@@ -35,31 +25,21 @@ export default function Home() {
     setAvatar(stored || getRandomAvatar());
   }, []);
 
-  // Fetch public rooms
+  // Subscribe to public rooms in real-time
   useEffect(() => {
-    let mounted = true;
-    
-    const fetchRooms = async () => {
-      try {
-        const rooms = await getPublicRooms(PUBLIC_ROOMS_DISPLAY_LIMIT);
-        if (mounted) {
-          setPublicRooms(rooms);
-          setLoadingRooms(false);
-        }
-      } catch (err) {
-        console.warn("Failed to fetch public rooms:", err);
-        if (mounted) setLoadingRooms(false);
+    const unsubscribe = subscribeToPublicRooms(
+      PUBLIC_ROOMS_DISPLAY_LIMIT,
+      (rooms) => {
+        setPublicRooms(rooms);
+        setLoadingRooms(false);
+      },
+      (error) => {
+        console.warn("Failed to subscribe to public rooms:", error);
+        setLoadingRooms(false);
       }
-    };
-
-    fetchRooms();
-    // Refresh every 30 seconds
-    const interval = setInterval(fetchRooms, 30000);
+    );
     
-    return () => {
-      mounted = false;
-      clearInterval(interval);
-    };
+    return unsubscribe;
   }, []);
 
   const handleAvatarSelect = (newAvatar: string) => {
@@ -86,7 +66,7 @@ export default function Home() {
     window.location.href = `/room/${code}?name=${encodeURIComponent(playerName)}`;
   };
 
-  const getStatusBadge = (status: PublicRoom["status"]) => {
+  const getStatusBadge = (status: PublicRoomData["status"]) => {
     switch (status) {
       case "lobby":
         return <Badge variant="waiting" size="pill">Waiting</Badge>;

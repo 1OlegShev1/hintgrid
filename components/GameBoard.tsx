@@ -255,7 +255,7 @@ export default function GameBoard({
             </button>
             {votes.length > 0 && !card.revealed && (
               <div 
-                className={`absolute top-1 left-1 z-10 ${currentTeam === "red" ? "bg-red-team" : "bg-blue-team"} text-white text-xs px-2 py-0.5 rounded-full font-semibold ${isBadgeAnimating ? "badge-pop" : ""}`}
+                className={`absolute -top-2 -left-2 z-10 ${currentTeam === "red" ? "bg-red-team" : "bg-blue-team"} text-white text-xs w-6 h-6 flex items-center justify-center rounded-full font-bold shadow-md ${isBadgeAnimating ? "badge-pop" : ""}`}
                 title={`Votes: ${votes.length}`}
                 aria-hidden="true"
               >
@@ -263,7 +263,11 @@ export default function GameBoard({
               </div>
             )}
             {hasVoted && !card.revealed && (
-              <div className={`absolute top-1 right-1 z-10 ${currentTeam === "red" ? "bg-red-team" : "bg-blue-team"} text-white text-xs px-1.5 py-0.5 rounded`} title="You voted" aria-hidden="true">
+              <div 
+                className={`absolute -top-2 -right-2 z-10 ${currentTeam === "red" ? "bg-red-team" : "bg-blue-team"} text-white text-xs w-6 h-6 flex items-center justify-center rounded-full shadow-md`} 
+                title="You voted" 
+                aria-hidden="true"
+              >
                 ✓
               </div>
             )}
@@ -271,7 +275,7 @@ export default function GameBoard({
               <button
                 onClick={() => onConfirmReveal(index)}
                 data-testid={`board-reveal-${index}`}
-                className="absolute bottom-1 right-1 z-10 bg-success text-success-foreground text-xs px-2 py-1 rounded hover:opacity-90 font-semibold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="absolute -bottom-1 left-1/2 -translate-x-1/2 z-10 bg-success text-success-foreground text-xs px-3 py-1 rounded-full hover:opacity-90 font-bold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 title="Click to reveal this card"
                 aria-label={`Reveal ${card.word}`}
               >

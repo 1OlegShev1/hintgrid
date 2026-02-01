@@ -97,7 +97,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
         <span className="text-sm text-muted">Give a one-word clue and number of related cards</span>
       </div>
       <form onSubmit={handleSubmit}>
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-end gap-2">
           <div className="flex-1 min-w-[160px]">
             <Input
               ref={inputRef}
@@ -113,7 +113,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
               variant={clueError ? "error" : "default"}
             />
           </div>
-          <div>
+          <div className="pb-0.5">
             <label className="block text-xs font-medium text-muted mb-1">Count</label>
             <div className="flex items-center">
               <button
@@ -145,7 +145,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
               </button>
             </div>
           </div>
-          <div className="self-end">
+          <div className="pb-0.5">
             <Button
               type="submit"
               disabled={!clueWord.trim()}

@@ -1,5 +1,6 @@
 "use client";
 
+import { useRef, useEffect, useState } from "react";
 import type { ChatMessage, Player } from "@/shared/types";
 import { MessageReactions } from "@/components/room";
 import { Card } from "@/components/ui";
@@ -22,6 +23,17 @@ export default function ChatLog({
   // Show chat and user-related system messages (not game-system)
   // User system messages: offline, joined team, spectator, owner transfer
   const chatMessages = messages.filter((msg) => msg.type === "chat" || msg.type === "system");
+  
+  // Auto-scroll state and ref
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [autoScroll, setAutoScroll] = useState(true);
+  
+  // Scroll to bottom when new messages arrive (if autoScroll is on)
+  useEffect(() => {
+    if (autoScroll && scrollRef.current) {
+      scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
+    }
+  }, [chatMessages.length, autoScroll]);
 
   // Helper to get avatar by playerId
   const getAvatar = (playerId?: string) => {
@@ -34,11 +46,22 @@ export default function ChatLog({
   const reactionsEnabled = !!onAddReaction && !!onRemoveReaction;
 
   return (
-    <div className="bg-surface rounded-lg h-full flex flex-col">
-      <h3 className="font-semibold px-4 py-3 border-b border-border shrink-0 text-foreground">
-        Chat
-      </h3>
-      <div className="flex-1 overflow-y-auto scrollbar-thin p-3 space-y-2 font-mono text-sm">
+    <div className="bg-surface rounded-lg flex-1 min-h-0 flex flex-col">
+      <div className="flex items-center justify-between px-4 py-3 border-b border-border shrink-0">
+        <h3 className="font-semibold text-foreground">Chat</h3>
+        <button
+          onClick={() => setAutoScroll(!autoScroll)}
+          className={`text-xs px-2 py-1 rounded transition-colors ${
+            autoScroll 
+              ? "bg-primary/20 text-primary" 
+              : "bg-muted/20 text-muted hover:text-foreground"
+          }`}
+          title={autoScroll ? "Auto-scroll enabled" : "Auto-scroll disabled"}
+        >
+          {autoScroll ? "⬇ Auto" : "⬇ Manual"}
+        </button>
+      </div>
+      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-3 space-y-2 font-mono text-sm">
         {chatMessages.length === 0 ? (
           <p className="text-muted text-sm font-sans px-1">No messages yet</p>
         ) : (
