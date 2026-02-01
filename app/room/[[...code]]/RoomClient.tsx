@@ -4,7 +4,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo } from "react";
 import { ref, get } from "firebase/database";
 import TransitionOverlay from "@/components/TransitionOverlay";
-import { ThemeBackground } from "@/components/ThemeBackground";
+import { ThemeBackground, type SunPosition } from "@/components/ThemeBackground";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
 import { goOffline, goOnline, getDatabase } from "@/lib/firebase";
 import { useGameTimer } from "@/hooks/useGameTimer";
@@ -186,6 +186,9 @@ export default function RoomPage() {
   const gameOver = room.gameState?.gameOver ?? false;
   const timerPreset = room.gameState?.timerPreset ?? "normal";
   
+  // Sun position: right on game over (podium), left otherwise (lobby/game)
+  const sunPosition: SunPosition = gameOver ? "right" : "left";
+  
   useEffect(() => {
     if (!setMusicTrack) return;
     
@@ -283,8 +286,8 @@ export default function RoomPage() {
 
   return (
     <main className="min-h-screen p-4 relative bg-transparent">
-      {/* Theme-aware Background */}
-      <ThemeBackground />
+      {/* Theme-aware Background - sun moves left (game) to right (game over) */}
+      <ThemeBackground sunPosition={sunPosition} />
 
       {/* Transition Overlays */}
       {overlays.showGameStart && (

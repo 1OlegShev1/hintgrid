@@ -36,7 +36,7 @@ export default function RoomClosedModal({ reason }: RoomClosedModalProps) {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative bg-transparent">
-      <ThemeBackground />
+      <ThemeBackground sunPosition="right" />
 
       <Card variant="elevated" padding="lg" className="max-w-md w-full text-center relative z-10">
         <div className="mx-auto w-16 h-16 rounded-full bg-warning/20 border border-warning/50 flex items-center justify-center mb-6">

@@ -2,6 +2,18 @@
 
 import { useTheme } from "./ThemeProvider";
 
+export type SunPosition = "center" | "left" | "right";
+
+interface ThemeBackgroundProps {
+  /**
+   * Position of the sun for synthwave theme:
+   * - "center": Default, centered (home page)
+   * - "left": Partially visible on left edge (game start/lobby)
+   * - "right": Partially visible on right edge (game over)
+   */
+  sunPosition?: SunPosition;
+}
+
 /**
  * ThemeBackground - Renders the appropriate background based on theme style.
  * 
@@ -10,13 +22,13 @@ import { useTheme } from "./ThemeProvider";
  * 
  * This component should be placed at the root of pages that need a themed background.
  */
-export function ThemeBackground() {
+export function ThemeBackground({ sunPosition = "center" }: ThemeBackgroundProps) {
   const { style } = useTheme();
 
   if (style === "synthwave") {
     return (
       <div className="synthwave-bg">
-        <div className="synthwave-sun" />
+        <div className={`synthwave-sun synthwave-sun--${sunPosition}`} />
         <div className="synthwave-grid" />
       </div>
     );

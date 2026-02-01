@@ -602,6 +602,24 @@ html.light.theme-synthwave {
   100% { background-position: 60px 0; }
 }
 
+/* Sun position variants - easter egg effect */
+/* Center is the default (already set in main sun styles) */
+
+/* Left: Sun peeks from left edge (game start/lobby) */
+.dark.theme-synthwave .synthwave-sun.synthwave-sun--left,
+.light.theme-synthwave .synthwave-sun.synthwave-sun--left {
+  left: -5%;
+  transform: translateX(0);
+}
+
+/* Right: Sun peeks from right edge (game over/podium) */
+.dark.theme-synthwave .synthwave-sun.synthwave-sun--right,
+.light.theme-synthwave .synthwave-sun.synthwave-sun--right {
+  left: auto;
+  right: -5%;
+  transform: translateX(0);
+}
+
 /* ============================================
    SYNTHWAVE EFFECTS - DARK (Neon Glow)
    ============================================ */

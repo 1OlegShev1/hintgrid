@@ -47,7 +47,7 @@ export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 relative bg-transparent">
-      <ThemeBackground />
+      <ThemeBackground sunPosition="left" />
 
       <Card variant="elevated" padding="lg" className="w-full max-w-md relative z-10">
         <CardHeader className="text-center">

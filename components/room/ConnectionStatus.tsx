@@ -13,7 +13,7 @@ interface ConnectionStatusProps {
 function LoadingSkeleton() {
   return (
     <div className="min-h-screen p-4 relative bg-transparent">
-      <ThemeBackground />
+      <ThemeBackground sunPosition="left" />
 
       <div className="max-w-6xl mx-auto relative z-10">
         {/* Header skeleton */}
@@ -172,7 +172,7 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
 
     return (
       <main className="min-h-screen flex items-center justify-center p-4 relative bg-transparent">
-        <ThemeBackground />
+        <ThemeBackground sunPosition="left" />
 
         <div className="text-center max-w-md relative z-10">
           <Card variant="elevated" padding="lg">
