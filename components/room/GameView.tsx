@@ -11,6 +11,8 @@ import {
 } from "@/components/room";
 import type { UseRtdbRoomReturn } from "@/hooks/useRtdbRoom";
 import type { UseRoomDerivedStateReturn } from "@/hooks/useRoomDerivedState";
+import { Card, Button, getTeamClasses, getTeamTextClass } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 interface GameViewProps {
   room: UseRtdbRoomReturn;
@@ -75,7 +77,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
       {/* Board and Chat */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4 items-stretch overflow-hidden">
         <div className="md:col-span-3">
-          <div className={`bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6 ${turnGlowClass}`}>
+          <Card variant="elevated" padding="lg" className={turnGlowClass}>
             <GameBoard
               board={gameState.board}
               currentPlayer={currentPlayer}
@@ -91,37 +93,39 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
             {/* Player/Team indicator below board - only show if player has team */}
             {currentPlayer?.team && currentPlayer?.role && (
               <div className="mt-4 flex justify-center">
-                <div className={`inline-flex items-center gap-3 px-5 py-3 rounded-xl border-2 shadow-sm ${
-                  currentPlayer.team === "red" 
-                    ? "bg-red-50 dark:bg-red-900/30 border-red-400 dark:border-red-600" 
-                    : "bg-blue-50 dark:bg-blue-900/30 border-blue-400 dark:border-blue-600"
-                }`}>
-                  <span className={`text-xs font-medium uppercase tracking-wide ${
-                    currentPlayer.team === "red" ? "text-red-500 dark:text-red-400" : "text-blue-500 dark:text-blue-400"
-                  }`}>
+                <div className={cn(
+                  "inline-flex items-center gap-3 px-5 py-3 rounded-xl border-2 shadow-sm",
+                  getTeamClasses(currentPlayer.team, "card")
+                )}>
+                  <span className={cn(
+                    "text-xs font-medium uppercase tracking-wide",
+                    getTeamTextClass(currentPlayer.team)
+                  )}>
                     You are
                   </span>
-                  <span className={`font-bold text-lg ${
-                    currentPlayer.team === "red" ? "text-red-700 dark:text-red-200" : "text-blue-700 dark:text-blue-200"
-                  }`}>
+                  <span className={cn(
+                    "font-bold text-lg",
+                    getTeamTextClass(currentPlayer.team)
+                  )}>
                     {currentPlayer.team.toUpperCase()} {currentPlayer.role === "clueGiver" ? "Hinter" : "Seeker"}
                   </span>
-                  <span className={`text-sm ${
-                    currentPlayer.team === "red" ? "text-red-600 dark:text-red-300" : "text-blue-600 dark:text-blue-300"
-                  }`}>
+                  <span className={cn(
+                    "text-sm",
+                    getTeamTextClass(currentPlayer.team)
+                  )}>
                     ({currentPlayer.name})
                   </span>
                 </div>
               </div>
             )}
-          </div>
+          </Card>
         </div>
 
         <div className="md:col-span-2 flex flex-col gap-4 overflow-hidden">
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-32 overflow-hidden">
+          <Card variant="elevated" padding="md" className="flex-1 min-h-32 overflow-hidden">
             <ClueHistory clues={messages} />
-          </div>
-          <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-4 flex-1 min-h-48 flex flex-col overflow-hidden">
+          </Card>
+          <Card variant="elevated" padding="md" className="flex-1 min-h-48 flex flex-col overflow-hidden">
             <ChatLog
               messages={messages}
               players={players}
@@ -129,7 +133,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
               onAddReaction={room.handleAddReaction}
               onRemoveReaction={room.handleRemoveReaction}
             />
-            <form onSubmit={room.handleSendMessage} className="mt-3 pt-2 border-t border-gray-200 dark:border-gray-700 shrink-0">
+            <form onSubmit={room.handleSendMessage} className="mt-3 pt-2 border-t border-border shrink-0">
               <div className="flex gap-2 items-center">
                 <EmojiPickerButton
                   onEmojiSelect={room.handleEmojiSelect}
@@ -142,25 +146,20 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
                   onChange={(e) => setChatInput(e.target.value)}
                   placeholder="Type message..."
                   disabled={isSendingChat}
-                  className="flex-1 min-w-0 px-3 py-2.5 text-base border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent dark:bg-gray-700 dark:text-white disabled:opacity-50"
+                  className="flex-1 min-w-0 px-3 py-2.5 text-base border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-surface-elevated text-foreground disabled:opacity-50"
                 />
-                <button
+                <Button
                   type="submit"
-                  disabled={!chatInput.trim() || isSendingChat}
-                  className="bg-blue-600 text-white px-4 py-2.5 rounded-lg font-semibold hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all shrink-0 flex items-center justify-center min-w-[60px]"
+                  disabled={!chatInput.trim()}
+                  isLoading={isSendingChat}
+                  variant="primary"
+                  className="min-w-[60px]"
                 >
-                  {isSendingChat ? (
-                    <svg className="animate-spin h-5 w-5" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
-                    </svg>
-                  ) : (
-                    "Send"
-                  )}
-                </button>
+                  Send
+                </Button>
               </div>
             </form>
-          </div>
+          </Card>
         </div>
       </div>
 

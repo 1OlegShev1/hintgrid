@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import { Modal, Button } from "@/components/ui";
 
 interface IdleWarningModalProps {
   /** Called when user confirms they're still there */
@@ -37,42 +38,48 @@ export default function IdleWarningModal({
   }, [secondsLeft, onLeave]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-8 max-w-md mx-4 text-center">
-        <div className="text-6xl mb-4">👋</div>
-        <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-          Are you still there?
-        </h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">
-          You&apos;ve been inactive for a while. Click below to stay in the room.
-        </p>
-        
-        <div className="mb-6">
-          <div className="text-4xl font-mono font-bold text-blue-600 dark:text-blue-400">
-            {secondsLeft}
-          </div>
-          <div className="text-sm text-gray-500 dark:text-gray-400">
-            seconds until you&apos;re redirected
-          </div>
+    <Modal
+      open={true}
+      onClose={onStay}
+      closeOnBackdropClick={false}
+      closeOnEscape={false}
+      size="md"
+      customIcon={<span className="text-4xl">👋</span>}
+    >
+      <h2 className="text-2xl font-bold text-foreground mb-2">
+        Are you still there?
+      </h2>
+      <p className="text-muted mb-6">
+        You&apos;ve been inactive for a while. Click below to stay in the room.
+      </p>
+      
+      <div className="mb-6">
+        <div className="text-4xl font-mono font-bold text-primary">
+          {secondsLeft}
         </div>
-
-        <div className="flex gap-3 justify-center">
-          <button
-            onClick={onStay}
-            data-testid="idle-stay-btn"
-            className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-semibold rounded-lg transition-colors"
-          >
-            I&apos;m still here!
-          </button>
-          <button
-            onClick={onLeave}
-            data-testid="idle-leave-btn"
-            className="px-6 py-3 bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-700 dark:text-gray-300 font-semibold rounded-lg transition-colors"
-          >
-            Leave room
-          </button>
+        <div className="text-sm text-muted">
+          seconds until you&apos;re redirected
         </div>
       </div>
-    </div>
+
+      <div className="flex gap-3 justify-center">
+        <Button
+          onClick={onStay}
+          data-testid="idle-stay-btn"
+          variant="primary"
+          size="lg"
+        >
+          I&apos;m still here!
+        </Button>
+        <Button
+          onClick={onLeave}
+          data-testid="idle-leave-btn"
+          variant="secondary"
+          size="lg"
+        >
+          Leave room
+        </Button>
+      </div>
+    </Modal>
   );
 }

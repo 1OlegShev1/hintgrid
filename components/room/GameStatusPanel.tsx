@@ -2,6 +2,8 @@ import { useState } from "react";
 import type { GameState, Player } from "@/shared/types";
 import GameStats from "@/components/GameStats";
 import ClueInput from "./ClueInput";
+import { Button, ConfirmModal, Badge, getTeamClasses } from "@/components/ui";
+import { cn } from "@/lib/utils";
 
 interface GameStatusPanelProps {
   gameState: GameState;
@@ -126,29 +128,29 @@ export default function GameStatusPanel({
         </div>
         <div className="flex items-center gap-2">
           {isMyTurn && (
-            <button
+            <Button
               onClick={onEndTurn}
               data-testid="game-end-turn-btn"
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-all"
+              variant="secondary"
             >
               End Turn
-            </button>
+            </Button>
           )}
           {isRoomOwner && !gameState.gameOver && !gameState.paused && (
-            <button
+            <Button
               onClick={onPauseGame}
-              className="bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition-all"
+              variant="warning"
             >
               Pause
-            </button>
+            </Button>
           )}
           {isRoomOwner && !gameState.gameOver && (
-            <button
+            <Button
               onClick={() => setShowEndGameModal(true)}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-all"
+              variant="danger"
             >
               End Game
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -188,12 +190,12 @@ export default function GameStatusPanel({
             {isRoomOwner && (
               <div className="mt-2">
                 {canResume ? (
-                  <button
+                  <Button
                     onClick={onResumeGame}
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all"
+                    variant="success"
                   >
                     Resume Game
-                  </button>
+                  </Button>
                 ) : (
                   <p className="text-xs text-amber-600 dark:text-amber-400">
                     Need a connected hinter and at least one connected seeker to resume
@@ -239,20 +241,20 @@ export default function GameStatusPanel({
             {isRoomOwner && (
               <div className="flex items-center justify-center gap-3">
                 {onRematch && (
-                  <button
+                  <Button
                     onClick={onRematch}
                     data-testid="game-rematch-btn"
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all"
+                    variant="success"
                   >
                     Rematch
-                  </button>
+                  </Button>
                 )}
-                <button
+                <Button
                   onClick={onEndGame}
-                  className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-all"
+                  variant="secondary"
                 >
                   Back to Lobby
-                </button>
+                </Button>
               </div>
             )}
             {!isRoomOwner && (
@@ -270,58 +272,20 @@ export default function GameStatusPanel({
       </div>
 
       {/* End Game Confirmation Modal */}
-      {showEndGameModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center">
-          <div 
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowEndGameModal(false)}
-          />
-          <div className="relative bg-white dark:bg-gray-800 rounded-2xl shadow-2xl p-6 max-w-sm w-full mx-4 animate-in fade-in zoom-in duration-200">
-            <div className="text-center">
-              <div className="mx-auto w-12 h-12 rounded-full bg-red-100 dark:bg-red-900/30 flex items-center justify-center mb-4">
-                <svg 
-                  className="w-6 h-6 text-red-600 dark:text-red-400"
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                >
-                  <path 
-                    strokeLinecap="round" 
-                    strokeLinejoin="round" 
-                    strokeWidth={2} 
-                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" 
-                  />
-                </svg>
-              </div>
-              
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">
-                End Game?
-              </h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
-                This will end the current game for all players and return everyone to the lobby.
-              </p>
-              
-              <div className="flex gap-3">
-                <button
-                  onClick={() => setShowEndGameModal(false)}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600 transition-colors"
-                >
-                  Cancel
-                </button>
-                <button
-                  onClick={() => {
-                    setShowEndGameModal(false);
-                    onEndGame();
-                  }}
-                  className="flex-1 px-4 py-2.5 rounded-lg font-medium bg-red-600 text-white hover:bg-red-700 transition-colors"
-                >
-                  End Game
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmModal
+        open={showEndGameModal}
+        onClose={() => setShowEndGameModal(false)}
+        onConfirm={() => {
+          setShowEndGameModal(false);
+          onEndGame();
+        }}
+        title="End Game?"
+        message="This will end the current game for all players and return everyone to the lobby."
+        confirmLabel="End Game"
+        cancelLabel="Cancel"
+        confirmVariant="danger"
+        icon="danger"
+      />
     </div>
   );
 }

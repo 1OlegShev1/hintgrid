@@ -5,44 +5,100 @@
 
 /* Theme variables using @theme directive */
 @theme {
+  /* Semantic background colors */
   --color-background: #ffffff;
   --color-foreground: #171717;
   --color-surface: #f9fafb;
   --color-surface-elevated: #ffffff;
   --color-border: #e5e7eb;
   --color-muted: #6b7280;
+  
+  /* Brand colors */
   --color-primary: #3b82f6;
   --color-primary-foreground: #ffffff;
   --color-accent: #4f46e5;
+  --color-accent-foreground: #ffffff;
+  
+  /* Functional colors */
+  --color-success: #22c55e;
+  --color-success-foreground: #ffffff;
+  --color-warning: #f59e0b;
+  --color-warning-foreground: #ffffff;
+  --color-error: #ef4444;
+  --color-error-foreground: #ffffff;
+  --color-info: #3b82f6;
+  --color-info-foreground: #ffffff;
+  
+  /* Team colors - Red */
   --color-red-team: #ef4444;
   --color-red-team-muted: #f87171;
   --color-red-team-light: #fef2f2;
+  --color-red-team-text: #991b1b;
+  
+  /* Team colors - Blue */
   --color-blue-team: #3b82f6;
   --color-blue-team-muted: #60a5fa;
   --color-blue-team-light: #eff6ff;
+  --color-blue-team-text: #1e40af;
+  
+  /* Game-specific colors */
   --color-neutral-card: #fef3c7;
+  --color-neutral-card-text: #713f12;
   --color-trap: #0f172a;
+  --color-trap-text: #ffffff;
+  
+  /* Interactive states */
+  --color-highlight: #fef9c3;
+  --color-highlight-text: #854d0e;
 }
 
 /* Dark theme overrides */
 .dark {
+  /* Semantic background colors */
   --color-background: #0a0a0a;
   --color-foreground: #ededed;
   --color-surface: #18181b;
   --color-surface-elevated: #27272a;
   --color-border: #3f3f46;
   --color-muted: #a1a1aa;
+  
+  /* Brand colors */
   --color-primary: #60a5fa;
   --color-primary-foreground: #ffffff;
   --color-accent: #6366f1;
+  --color-accent-foreground: #ffffff;
+  
+  /* Functional colors */
+  --color-success: #4ade80;
+  --color-success-foreground: #052e16;
+  --color-warning: #fbbf24;
+  --color-warning-foreground: #422006;
+  --color-error: #f87171;
+  --color-error-foreground: #450a0a;
+  --color-info: #60a5fa;
+  --color-info-foreground: #172554;
+  
+  /* Team colors - Red */
   --color-red-team: #f87171;
   --color-red-team-muted: #fca5a5;
   --color-red-team-light: rgba(248, 113, 113, 0.15);
+  --color-red-team-text: #fecaca;
+  
+  /* Team colors - Blue */
   --color-blue-team: #60a5fa;
   --color-blue-team-muted: #93c5fd;
   --color-blue-team-light: rgba(96, 165, 250, 0.15);
+  --color-blue-team-text: #bfdbfe;
+  
+  /* Game-specific colors */
   --color-neutral-card: #78716c;
+  --color-neutral-card-text: #fefce8;
   --color-trap: #18181b;
+  --color-trap-text: #ffffff;
+  
+  /* Interactive states */
+  --color-highlight: rgba(254, 249, 195, 0.2);
+  --color-highlight-text: #fef08a;
 }
 
 /* Base styles */

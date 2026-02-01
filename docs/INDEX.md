@@ -21,12 +21,21 @@ Ideas parked for later development:
 
 ```
 app/                    # Next.js App Router pages
+├── globals.css         # Theme CSS variables + Tailwind
 ├── layout.tsx          # Root layout with all providers
 ├── page.tsx            # Home page (create/join room)
 └── room/[[...code]]/   # Room page with catch-all route
     └── RoomClient.tsx  # Main room orchestrator (thin)
 
 components/             # React components
+├── ui/                 # Design system primitives
+│   ├── Button.tsx      # Button variants (primary, secondary, danger, etc.)
+│   ├── Card.tsx        # Content containers
+│   ├── Modal.tsx       # Dialog overlays
+│   ├── Input.tsx       # Form inputs
+│   ├── Badge.tsx       # Status indicators
+│   ├── TeamIndicator.tsx  # Team color utilities
+│   └── index.ts        # Barrel export
 ├── room/               # Room-specific components
 │   ├── GameView.tsx    # Active game UI
 │   ├── LobbyView.tsx   # Pre-game lobby UI

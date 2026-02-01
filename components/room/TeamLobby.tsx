@@ -3,6 +3,7 @@ import type { GameState, Player, WordPack, TimerPreset } from "@/shared/types";
 import { TIMER_PRESETS, WORD_PACKS, MAX_CUSTOM_WORDS_ON_BOARD } from "@/shared/constants";
 import { getPackDisplayName, getWordCount } from "@/shared/words";
 import { parseCustomWordsInput } from "@/shared/validation";
+import { Button, Card } from "@/components/ui";
 
 interface TeamLobbyProps {
   players: Player[];
@@ -135,7 +136,7 @@ export default function TeamLobby({
   };
 
   return (
-    <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-6">
+    <Card variant="elevated" padding="lg">
       {/* Paused state header - only show if not hidden (GameStatusPanel shows it instead) */}
       {isPaused && !hidePauseHeader && (
         <div className="mb-6">
@@ -158,13 +159,13 @@ export default function TeamLobby({
               </p>
             </div>
             {isRoomOwner && onResumeGame && (
-              <button
+              <Button
                 onClick={onResumeGame}
                 disabled={!canResume}
-                className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                variant="success"
               >
                 Resume Game
-              </button>
+              </Button>
             )}
           </div>
         </div>
@@ -432,27 +433,29 @@ export default function TeamLobby({
               )}
             </div>
             {isRoomOwner && (
-              <button
+              <Button
                 onClick={onRandomize}
                 disabled={players.length < 4}
                 data-testid="lobby-randomize-btn"
-                className="bg-gray-200 text-gray-800 px-3 py-1.5 sm:px-4 sm:py-2 rounded-lg font-semibold hover:bg-gray-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base"
+                variant="secondary"
+                size="sm"
               >
                 Randomize
-              </button>
+              </Button>
             )}
             {/* Hide Start Game button when game is over (rematch is handled elsewhere) */}
             {isRoomOwner && showControls && !gameState.gameOver ? (
-              <button
+              <Button
                 onClick={onStartGame}
                 disabled={players.filter((p) => p.team && p.role).length < 4}
                 data-testid="lobby-start-btn"
-                className="bg-green-600 text-white px-4 py-1.5 sm:px-6 sm:py-2 rounded-lg font-semibold hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed transition-all text-sm sm:text-base"
+                variant="success"
+                size="sm"
               >
                 Start Game
-              </button>
+              </Button>
             ) : showControls && !gameState.gameOver ? (
-              <span className="text-sm text-gray-600 dark:text-gray-400">
+              <span className="text-sm text-muted">
                 Only the room owner can start the game
               </span>
             ) : null}
@@ -699,6 +702,6 @@ export default function TeamLobby({
           )}
         </>
       )}
-    </div>
+    </Card>
   );
 }

@@ -1,5 +1,6 @@
 import { useRouter } from "next/navigation";
 import type { RoomClosedReason } from "@/shared/types";
+import { Card, Button } from "@/components/ui";
 
 interface RoomClosedModalProps {
   reason: RoomClosedReason;
@@ -30,10 +31,10 @@ export default function RoomClosedModal({ reason }: RoomClosedModalProps) {
 
   return (
     <main className="min-h-screen flex items-center justify-center p-4 bg-linear-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
-      <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-xl p-8 max-w-md w-full text-center">
-        <div className="mx-auto w-16 h-16 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center mb-6">
+      <Card variant="elevated" padding="lg" className="max-w-md w-full text-center">
+        <div className="mx-auto w-16 h-16 rounded-full bg-warning/10 flex items-center justify-center mb-6">
           <svg 
-            className="w-8 h-8 text-amber-600 dark:text-amber-400" 
+            className="w-8 h-8 text-warning" 
             fill="none" 
             stroke="currentColor" 
             viewBox="0 0 24 24"
@@ -46,15 +47,17 @@ export default function RoomClosedModal({ reason }: RoomClosedModalProps) {
             />
           </svg>
         </div>
-        <h1 className="text-2xl font-bold text-gray-900 dark:text-white mb-3">{title}</h1>
-        <p className="text-gray-600 dark:text-gray-400 mb-6">{message}</p>
-        <button
+        <h1 className="text-2xl font-bold text-foreground mb-3">{title}</h1>
+        <p className="text-muted mb-6">{message}</p>
+        <Button
           onClick={() => router.push("/")}
-          className="w-full bg-blue-600 text-white py-3 rounded-lg font-semibold hover:bg-blue-700 transition-all"
+          variant="primary"
+          size="lg"
+          fullWidth
         >
           Return to Home
-        </button>
-      </div>
+        </Button>
+      </Card>
     </main>
   );
 }

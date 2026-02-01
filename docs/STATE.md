@@ -381,6 +381,25 @@ Music auto-switches based on game state (lobby → game → victory).
 
 ### Components
 
+**UI Primitives** (`components/ui/`):
+Design system components for consistent styling and theming support:
+
+| Component | Purpose |
+|-----------|---------|
+| `Button` | Primary, secondary, danger, success, warning, ghost variants with sizes |
+| `Card` | Content containers with variants (default, elevated, ghost, team colors) |
+| `Modal` / `ConfirmModal` | Dialog overlays with icon support and actions |
+| `Input` / `Textarea` | Form inputs with labels, errors, and helper text |
+| `Badge` | Status indicators and labels (status, team colors) |
+| `TeamIndicator` | Consistent team-colored elements (text, card, border, glow, banner) |
+
+Helper utilities in `lib/utils.ts`:
+- `cn()` — Combines `clsx` and `tailwind-merge` for conditional class merging
+
+Team color helpers in `TeamIndicator`:
+- `getTeamClasses()` — Get team-specific classes for a variant
+- `getTeamTextClass()`, `getTeamBgClass()`, `getTeamBorderClass()` — Individual utilities
+
 **Error Handling:**
 - `ErrorBoundary` (`components/ErrorBoundary.tsx`) — Catches React errors, prevents full app crash
 
@@ -401,6 +420,7 @@ Music auto-switches based on game state (lobby → game → victory).
 | `lib/firebase-auth.ts` | Anonymous sign-in helper |
 | `lib/rtdb-actions.ts` | All Firebase Realtime Database operations + stale player cleanup |
 | `lib/retry.ts` | Retry utility with exponential backoff for network operations |
+| `lib/utils.ts` | `cn()` utility for merging Tailwind classes |
 | `shared/types.ts` | TypeScript types for game state and Firebase data structures |
 | `shared/game-utils.ts` | Pure game logic (vote threshold, clue validation) |
 | `shared/validation.ts` | Input sanitization and validation utilities |
