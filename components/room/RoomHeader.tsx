@@ -253,7 +253,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
           ) : null}
           <button
             onClick={handleShareRoom}
-            className="flex items-center gap-2 px-3 py-1.5 bg-primary/10 hover:bg-primary/20 text-primary rounded-lg text-sm font-medium transition-all"
+            className="flex items-center gap-2 px-3 py-1.5 bg-primary text-primary-foreground hover:bg-primary/90 rounded-lg text-sm font-medium shadow-sm hover:shadow transition-all"
             title="Copy room URL"
           >
             {copiedUrl ? (

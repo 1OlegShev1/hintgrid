@@ -135,8 +135,8 @@ export default function SoundToggle() {
           onClick={handleVolumeButtonClick}
           className={`p-2 rounded-lg transition-colors ${
             soundEnabled
-              ? "text-purple-300 hover:text-cyan-400 hover:bg-purple-900/50"
-              : "text-purple-500 hover:text-purple-300 hover:bg-purple-900/50"
+              ? "text-primary hover:text-accent hover:bg-primary/10"
+              : "text-muted hover:text-primary hover:bg-primary/10"
           }`}
           title={isMuted ? "Unmute" : "Mute"}
           aria-label={isMuted ? "Unmute" : "Mute"}
@@ -148,7 +148,7 @@ export default function SoundToggle() {
         <div 
           className={`
             absolute z-50 flex items-center gap-2 px-3 py-2 
-            bg-[#1a0533]/95 rounded-lg shadow-lg border border-purple-500/50 shadow-[0_0_15px_rgba(255,0,255,0.2)]
+            bg-surface-elevated rounded-lg shadow-lg border border-border
             transition-all duration-200
             top-full right-0 mt-2 origin-top-right
             ${showSlider ? "opacity-100 scale-100" : "opacity-0 scale-95 pointer-events-none"}
@@ -159,8 +159,8 @@ export default function SoundToggle() {
             onClick={toggleMute}
             className={`sm:hidden p-1.5 rounded transition-colors ${
               isMuted 
-                ? "bg-purple-700 text-pink-400" 
-                : "text-purple-400 hover:bg-purple-800"
+                ? "bg-primary/20 text-primary" 
+                : "text-muted hover:bg-primary/10"
             }`}
             aria-label={isMuted ? "Unmute" : "Mute"}
           >
@@ -186,26 +186,26 @@ export default function SoundToggle() {
             step="0.05"
             value={volume}
             onChange={(e) => setVolume(parseFloat(e.target.value))}
-            className="w-24 h-2 bg-purple-800 rounded-lg appearance-none cursor-pointer
+            className="w-24 h-2 bg-muted/30 rounded-lg appearance-none cursor-pointer
               [&::-webkit-slider-thumb]:appearance-none
               [&::-webkit-slider-thumb]:w-4
               [&::-webkit-slider-thumb]:h-4
               [&::-webkit-slider-thumb]:rounded-full
-              [&::-webkit-slider-thumb]:bg-cyan-400
-              [&::-webkit-slider-thumb]:shadow-[0_0_8px_rgba(0,255,255,0.8)]
+              [&::-webkit-slider-thumb]:bg-primary
+              [&::-webkit-slider-thumb]:shadow-[0_0_8px_var(--color-primary)]
               [&::-webkit-slider-thumb]:cursor-pointer
               [&::-webkit-slider-thumb]:transition-transform
               [&::-webkit-slider-thumb]:hover:scale-110
               [&::-moz-range-thumb]:w-4
               [&::-moz-range-thumb]:h-4
               [&::-moz-range-thumb]:rounded-full
-              [&::-moz-range-thumb]:bg-cyan-400
-              [&::-moz-range-thumb]:shadow-[0_0_8px_rgba(0,255,255,0.8)]
+              [&::-moz-range-thumb]:bg-primary
+              [&::-moz-range-thumb]:shadow-[0_0_8px_var(--color-primary)]
               [&::-moz-range-thumb]:border-0
               [&::-moz-range-thumb]:cursor-pointer"
             aria-label="Volume"
           />
-          <span className="text-xs text-purple-300 font-retro w-8 text-right tabular-nums">
+          <span className="text-xs text-muted w-8 text-right tabular-nums">
             {Math.round(volume * 100)}%
           </span>
         </div>
@@ -216,8 +216,8 @@ export default function SoundToggle() {
         onClick={toggleMusic}
         className={`p-2 rounded-lg transition-colors ${
           musicEnabled
-            ? "text-pink-400 hover:text-pink-300 hover:bg-purple-900/50"
-            : "text-purple-500 hover:text-purple-300 hover:bg-purple-900/50"
+            ? "text-accent hover:text-accent/80 hover:bg-accent/10"
+            : "text-muted hover:text-accent hover:bg-accent/10"
         }`}
         title={musicEnabled ? "Turn off music" : "Turn on music"}
         aria-label={musicEnabled ? "Turn off music" : "Turn on music"}
