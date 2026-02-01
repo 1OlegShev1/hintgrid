@@ -479,33 +479,33 @@ export default function TeamLobby({
               key={team}
               className={`rounded-xl border-2 p-4 ${
                 team === "red"
-                  ? "border-pink-500/60 bg-pink-900/30 shadow-[0_0_20px_rgba(255,51,102,0.2)]"
-                  : "border-cyan-500/60 bg-cyan-900/30 shadow-[0_0_20px_rgba(0,212,255,0.2)]"
+                  ? "border-red-team/60 bg-red-team-light"
+                  : "border-blue-team/60 bg-blue-team-light"
               }`}
             >
               <h3 className={`text-lg font-pixel mb-3 tracking-wide ${
-                team === "red" ? "text-pink-400" : "text-cyan-400"
+                team === "red" ? "text-red-team" : "text-blue-team"
               }`}>
                 {team.toUpperCase()} TEAM
               </h3>
 
               <div className="mb-4">
                 <div className="flex items-center gap-2 mb-1">
-                  <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
                   </svg>
-                  <span className="font-semibold text-white">Hinter</span>
+                  <span className="font-semibold text-foreground">Hinter</span>
                 </div>
-                <p className="text-sm text-purple-300 mb-2 ml-6">Sees all cards • Gives one-word hints</p>
+                <p className="text-sm text-muted mb-2 ml-6">Sees all cards • Gives one-word hints</p>
                 {clueGiver ? (
                   <div className={`rounded-lg p-3 text-base border ${
                     clueGiver.id === currentPlayer?.id
-                      ? "bg-yellow-900/40 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]"
-                      : "bg-purple-900/40 border-purple-500/50"
+                      ? "bg-highlight border-highlight-text"
+                      : "bg-surface border-border"
                   }`}>
                     <div className={`font-medium truncate flex items-center gap-2 ${
-                      clueGiver.id === currentPlayer?.id ? "text-yellow-300" : "text-white"
+                      clueGiver.id === currentPlayer?.id ? "text-highlight-text" : "text-foreground"
                     } ${clueGiverOffline ? "opacity-60" : ""}`}>
                       <span className="text-xl">{clueGiver.avatar}</span>
                       <span>{clueGiver.name}{clueGiver.id === currentPlayer?.id ? " (you)" : ""}</span>
@@ -549,8 +549,8 @@ export default function TeamLobby({
                     data-testid={`lobby-join-${team}-clueGiver`}
                     className={`w-full rounded-lg p-3 text-base border-2 border-dashed font-medium transition-all ${
                       team === "red"
-                        ? "border-pink-500/60 text-pink-400 hover:bg-pink-900/30 hover:border-pink-400 hover:shadow-[0_0_15px_rgba(255,51,102,0.3)]"
-                        : "border-cyan-500/60 text-cyan-400 hover:bg-cyan-900/30 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,212,255,0.3)]"
+                        ? "border-red-team/60 text-red-team hover:bg-red-team-light hover:border-red-team"
+                        : "border-blue-team/60 text-blue-team hover:bg-blue-team-light hover:border-blue-team"
                     }`}
                   >
                     Join as Hinter
@@ -564,20 +564,20 @@ export default function TeamLobby({
 
               <div>
                 <div className="flex items-center gap-2 mb-1">
-                  <svg className="w-4 h-4 text-purple-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg className="w-4 h-4 text-muted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                   </svg>
-                  <span className="font-semibold text-white">Seekers</span>
+                  <span className="font-semibold text-foreground">Seekers</span>
                 </div>
-                <p className="text-sm text-purple-300 mb-2 ml-6">Find words based on hints</p>
+                <p className="text-sm text-muted mb-2 ml-6">Find words based on hints</p>
                 <div className="space-y-2 max-h-32 overflow-y-auto">
                   {guessers.map((player) => (
                     <div
                       key={player.id}
                       className={`rounded-lg px-3 py-2 text-base border flex items-center gap-2 ${
                         player.id === currentPlayer?.id
-                          ? "bg-yellow-900/40 border-yellow-400 text-yellow-300 font-medium shadow-[0_0_10px_rgba(250,204,21,0.3)]"
-                          : "bg-purple-900/40 border-purple-500/50 text-white"
+                          ? "bg-highlight border-highlight-text text-highlight-text font-medium"
+                          : "bg-surface border-border text-foreground"
                       } ${player.connected === false ? "opacity-60" : ""}`}
                     >
                       <span className="text-xl">{player.avatar}</span>
@@ -622,8 +622,8 @@ export default function TeamLobby({
                       data-testid={`lobby-join-${team}-guesser`}
                       className={`w-full rounded-lg px-3 py-2 text-base border-2 border-dashed font-medium transition-all ${
                         team === "red"
-                          ? "border-pink-500/60 text-pink-400 hover:bg-pink-900/30 hover:border-pink-400 hover:shadow-[0_0_15px_rgba(255,51,102,0.3)]"
-                          : "border-cyan-500/60 text-cyan-400 hover:bg-cyan-900/30 hover:border-cyan-400 hover:shadow-[0_0_15px_rgba(0,212,255,0.3)]"
+                          ? "border-red-team/60 text-red-team hover:bg-red-team-light hover:border-red-team"
+                          : "border-blue-team/60 text-blue-team hover:bg-blue-team-light hover:border-blue-team"
                       }`}
                     >
                       Join as Seeker
@@ -638,8 +638,8 @@ export default function TeamLobby({
 
       {(showControls || isPaused) && (
         <>
-          <div className="mt-6 bg-purple-900/40 rounded-xl p-4 border border-purple-500/50">
-            <h3 className="text-lg font-pixel text-purple-300 mb-3 tracking-wide">All Players</h3>
+          <div className="mt-6 bg-surface rounded-xl p-4 border border-border">
+            <h3 className="text-lg font-pixel text-accent mb-3 tracking-wide">All Players</h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
               {players.map((player) => (
                 <div 
@@ -647,11 +647,11 @@ export default function TeamLobby({
                   data-testid={`lobby-player-${player.name}`}
                   className={`rounded-lg px-3 py-2 text-base border min-w-0 ${
                   player.id === currentPlayer?.id
-                    ? "bg-yellow-900/40 border-yellow-400 shadow-[0_0_10px_rgba(250,204,21,0.3)]"
-                    : "bg-purple-900/40 border-purple-500/50"
+                    ? "bg-highlight border-highlight-text"
+                    : "bg-surface-elevated border-border"
                 } ${player.connected === false ? "opacity-60" : ""}`}>
                   <div className={`font-medium flex items-center gap-2 ${
-                    player.id === currentPlayer?.id ? "text-yellow-300" : "text-white"
+                    player.id === currentPlayer?.id ? "text-highlight-text" : "text-foreground"
                   }`}>
                     <span className="text-2xl">{player.avatar}</span>
                     <span className="truncate">{player.name}{player.id === currentPlayer?.id ? " (you)" : ""}</span>
@@ -681,13 +681,13 @@ export default function TeamLobby({
                   </div>
                   {player.team && player.role && (
                     <div className={`text-sm mt-1 ml-9 ${
-                      player.team === "red" ? "text-pink-400" : "text-cyan-400"
+                      player.team === "red" ? "text-red-team" : "text-blue-team"
                     }`}>
                       {player.team} {player.role === "clueGiver" ? "hinter" : "seeker"}
                     </div>
                   )}
                   {!player.team || !player.role ? (
-                    <div className="text-sm text-purple-400 mt-1 ml-9">
+                    <div className="text-sm text-muted mt-1 ml-9">
                       {isPaused ? "Spectator" : "No team selected"}
                     </div>
                   ) : null}

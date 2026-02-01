@@ -133,7 +133,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
                 value={clueCount}
                 onChange={(e) => setClueCount(Math.min(9, Math.max(0, Number(e.target.value) || 0)))}
                 data-testid="game-clue-count"
-                className="w-12 h-10 px-1 text-center border-y-2 border-warning focus:ring-2 focus:ring-warning focus:border-warning bg-surface text-foreground font-semibold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-12 h-10 px-1 text-center border-y-2 border-warning focus:ring-2 focus:ring-warning focus:border-warning bg-warning/10 text-foreground font-semibold text-lg [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               />
               <button
                 type="button"

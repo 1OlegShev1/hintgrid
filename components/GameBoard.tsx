@@ -146,8 +146,8 @@ export default function GameBoard({
   // Front face color (unrevealed card - what guessers/clue givers see)
   const getFrontFaceColor = useCallback((card: Card) => {
     if (!isClueGiver) {
-      // Guesser view - neutral surface
-      return "bg-surface-elevated text-foreground";
+      // Guesser view - neutral surface with border
+      return "bg-surface-elevated text-foreground border-2 border-border";
     }
 
     // Clue giver view - colored hints
