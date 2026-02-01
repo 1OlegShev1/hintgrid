@@ -114,6 +114,14 @@ This is **reliable** because it's server-side — no client cooperation needed.
 Run `npm run cleanup:rooms -- --hours 24` to delete rooms older than 24 hours.
 Requires Firebase Admin credentials (`gcloud auth application-default login`).
 
+**Orphaned public index cleanup**:
+- When `onDisconnect` deletes a room, it only removes `/rooms/{roomCode}`, not `/publicRooms/{roomCode}`
+- This can leave orphaned index entries pointing to non-existent rooms
+- The home page (`getPublicRooms`) automatically detects and cleans these orphans:
+  - Before displaying rooms, it verifies each room actually exists
+  - Orphaned entries are deleted in the background (any authenticated user can delete)
+  - Security rule: anyone can delete `/publicRooms/{roomCode}` if `/rooms/{roomCode}` doesn't exist
+
 ### Public Rooms
 
 Rooms can be public or private, controlled by the `visibility` field (default: `"public"`).

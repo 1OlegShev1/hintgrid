@@ -859,6 +859,9 @@ export async function removeFromPublicRoomIndex(roomCode: string): Promise<void>
 /**
  * Get list of public rooms for the home page.
  * Returns rooms sorted by player count (descending), limited to top N.
+ * 
+ * Also cleans up orphaned index entries - rooms where the actual room no longer exists.
+ * This happens when onDisconnect deletes the room but the index wasn't cleaned up.
  */
 export async function getPublicRooms(limit: number = 6): Promise<Array<{
   roomCode: string;
@@ -884,10 +887,39 @@ export async function getPublicRooms(limit: number = 6): Promise<Array<{
     createdAt: number;
   }>;
   
-  // Convert to array, filter by min players, sort by count, limit
-  return Object.entries(rooms)
+  // Convert to array, filter by min players, sort by count
+  const candidates = Object.entries(rooms)
     .map(([roomCode, data]) => ({ roomCode, ...data }))
     .filter(room => room.playerCount >= 4) // Only show rooms with 4+ players
+    .sort((a, b) => b.playerCount - a.playerCount);
+  
+  // Check if each candidate room actually exists (verify not orphaned)
+  // Only check up to limit + a few extra to account for orphans
+  const toCheck = candidates.slice(0, limit + 5);
+  const validRooms: typeof candidates = [];
+  const orphanedCodes: string[] = [];
+  
+  await Promise.all(toCheck.map(async (room) => {
+    const roomRef = ref(db, `rooms/${room.roomCode}`);
+    const roomSnap = await get(roomRef);
+    if (roomSnap.exists()) {
+      validRooms.push(room);
+    } else {
+      orphanedCodes.push(room.roomCode);
+    }
+  }));
+  
+  // Clean up orphaned index entries in background (don't block response)
+  if (orphanedCodes.length > 0) {
+    Promise.all(orphanedCodes.map(code => 
+      remove(ref(db, `publicRooms/${code}`))
+    )).catch(err => {
+      console.warn("[getPublicRooms] Failed to clean orphaned entries:", err.message);
+    });
+  }
+  
+  // Sort again (Promise.all doesn't preserve order) and limit
+  return validRooms
     .sort((a, b) => b.playerCount - a.playerCount)
     .slice(0, limit);
 }
