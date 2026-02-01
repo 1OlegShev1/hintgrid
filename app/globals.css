@@ -113,6 +113,18 @@ body {
   font-family: Arial, Helvetica, sans-serif;
 }
 
+/* Global interactive element styles */
+button,
+[role="button"],
+.cursor-pointer {
+  cursor: pointer;
+}
+
+button:disabled,
+[role="button"][aria-disabled="true"] {
+  cursor: not-allowed;
+}
+
 @layer utilities {
   .text-balance {
     text-wrap: balance;
