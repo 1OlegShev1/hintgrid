@@ -213,8 +213,8 @@ export async function joinRoom(
   if (updatedRoomSnap.exists()) {
     const updatedRoomData = updatedRoomSnap.val() as RoomData;
     const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
-    // Fire and forget - don't block join on index update
-    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
+    // Update index - await to ensure it completes before returning
+    await updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers);
   }
 
   return { disconnectRef: playerRef };
@@ -838,15 +838,17 @@ export async function updatePublicRoomIndex(
   roomData: RoomData,
   players: Record<string, PlayerData>
 ): Promise<void> {
+  const db = getDb();
+  const publicRoomRef = ref(db, `publicRooms/${roomCode}`);
+  
   // Only index public, unlocked rooms
   // Default to public if visibility is not set (for backwards compatibility)
   const isPublic = roomData.visibility === "public" || roomData.visibility === undefined;
   if (!isPublic || roomData.locked) {
+    // Remove from index if room is private or locked
+    await remove(publicRoomRef);
     return;
   }
-  
-  const db = getDb();
-  const publicRoomRef = ref(db, `publicRooms/${roomCode}`);
   
   // Get owner name for display
   const owner = players[roomData.ownerId];
