@@ -109,13 +109,14 @@ export interface ModalProps {
   /** Whether pressing Escape closes the modal (default: true) */
   closeOnEscape?: boolean;
   /** Size of the modal */
-  size?: "sm" | "md" | "lg";
+  size?: "sm" | "md" | "lg" | "xl";
 }
 
 const sizeClasses = {
   sm: "max-w-sm",
   md: "max-w-md",
   lg: "max-w-lg",
+  xl: "max-w-2xl",
 };
 
 /**
@@ -189,12 +190,13 @@ export function Modal({
         aria-modal="true"
         aria-labelledby={title ? "modal-title" : undefined}
         className={cn(
-          "relative bg-surface-elevated border border-border rounded-lg shadow-xl p-6 w-full mx-4 animate-modal-in",
+          "relative bg-surface-elevated border border-border rounded-lg shadow-xl p-6 w-full mx-4 animate-modal-in flex flex-col",
           sizeClasses[size],
           className
         )}
       >
-        <div className="text-center">
+        {/* Header - centered */}
+        <div className="text-center shrink-0">
           {/* Icon */}
           {(customIcon || iconData) && (
             <div
@@ -216,27 +218,29 @@ export function Modal({
               {title}
             </h3>
           )}
-
-          {/* Content */}
-          <div className="text-muted">{children}</div>
-
-          {/* Actions */}
-          {actions && actions.length > 0 && (
-            <div className="mt-6 flex gap-3">
-              {actions.map((action, index) => (
-                <Button
-                  key={index}
-                  variant={action.variant ?? "secondary"}
-                  onClick={action.onClick}
-                  fullWidth
-                  data-testid={action["data-testid"]}
-                >
-                  {action.label}
-                </Button>
-              ))}
-            </div>
-          )}
         </div>
+
+        {/* Content - scrollable */}
+        <div className="text-muted overflow-y-auto min-h-0 my-4">
+          {children}
+        </div>
+
+        {/* Actions - at bottom */}
+        {actions && actions.length > 0 && (
+          <div className="flex gap-3 shrink-0">
+            {actions.map((action, index) => (
+              <Button
+                key={index}
+                variant={action.variant ?? "secondary"}
+                onClick={action.onClick}
+                fullWidth
+                data-testid={action["data-testid"]}
+              >
+                {action.label}
+              </Button>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

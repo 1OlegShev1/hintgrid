@@ -7,6 +7,7 @@ import { useTheme } from "./ThemeProvider";
 import { useGameContext } from "./GameContext";
 import SoundToggle from "./SoundToggle";
 import ConnectionIndicator from "./ConnectionIndicator";
+import HelpModal, { QuestionMarkIcon } from "./HelpModal";
 import { ConfirmModal } from "@/components/ui";
 
 function SunIcon({ className }: { className?: string }) {
@@ -47,6 +48,7 @@ export default function Navbar() {
   const router = useRouter();
   const { isLastPlayer, isActiveGame, leaveRoom } = useGameContext();
   const [showLeaveModal, setShowLeaveModal] = useState(false);
+  const [showHelpModal, setShowHelpModal] = useState(false);
   const [isLeaving, setIsLeaving] = useState(false);
   
   // Mobile auto-hide navbar on scroll
@@ -188,6 +190,15 @@ export default function Navbar() {
           <div className="flex items-center gap-1">
             <ConnectionIndicator />
             <SoundToggle />
+            {/* Help button */}
+            <button
+              onClick={() => setShowHelpModal(true)}
+              className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:text-accent hover:bg-surface-elevated transition-colors"
+              title="How to Play"
+            >
+              <QuestionMarkIcon className="w-5 h-5" />
+              <span className="text-sm hidden sm:inline">Help</span>
+            </button>
             {/* Style switcher (classic/synthwave) */}
             <button
               onClick={toggleStyle}
@@ -225,6 +236,12 @@ export default function Navbar() {
         cancelLabel="Stay"
         confirmVariant={isLastPlayer ? "danger" : "warning"}
         icon={isLastPlayer ? "danger" : "warning"}
+      />
+
+      {/* Help Modal */}
+      <HelpModal
+        open={showHelpModal}
+        onClose={() => setShowHelpModal(false)}
       />
     </>
   );
