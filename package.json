@@ -22,7 +22,8 @@
     "deploy": "npm run build && firebase deploy",
     "deploy:hosting": "npm run build && firebase deploy --only hosting",
     "deploy:rules": "firebase deploy --only firestore:rules",
-    "cleanup:rooms": "node scripts/cleanup-rooms.js"
+    "cleanup:rooms": "node scripts/cleanup-rooms.js",
+    "cleanup:orphaned-public-rooms": "node scripts/cleanup-orphaned-public-rooms.js"
   },
   "dependencies": {
     "bad-words-next": "^3.2.0",

@@ -254,10 +254,18 @@ export async function updateDisconnectBehavior(
     // Set up room deletion - if this fires, it removes everything including players
     // If it doesn't fire (network issues), at least player-level handler above
     // will mark us as disconnected so cleanup script can delete the room later
-    await onDisconnect(roomRef).remove();
+    const publicRoomRef = ref(db, `publicRooms/${roomCode}`);
+    await Promise.all([
+      onDisconnect(roomRef).remove(),
+      onDisconnect(publicRoomRef).remove(), // Also clean up public index
+    ]);
   } else if (isOwner) {
     // Owner but others are connected - cancel room-level handler if we had one
-    await onDisconnect(roomRef).cancel();
+    const publicRoomRef = ref(db, `publicRooms/${roomCode}`);
+    await Promise.all([
+      onDisconnect(roomRef).cancel(),
+      onDisconnect(publicRoomRef).cancel(),
+    ]);
   }
 }
 
@@ -356,7 +364,11 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
 
   const playersSnap = await get(playersRef);
   if (!playersSnap.exists()) {
-    await remove(roomRef);
+    // No players exist - delete room and public index
+    await Promise.all([
+      remove(roomRef),
+      removeFromPublicRoomIndex(roomCode),
+    ]);
     return;
   }
 
@@ -1626,5 +1638,8 @@ export async function pruneStalePlayers(
 
 export async function deleteRoom(roomCode: string): Promise<void> {
   const db = getDb();
-  await remove(ref(db, `rooms/${roomCode}`));
+  await Promise.all([
+    remove(ref(db, `rooms/${roomCode}`)),
+    removeFromPublicRoomIndex(roomCode),
+  ]);
 }

@@ -123,7 +123,13 @@ async function main() {
     }
 
     if (shouldDelete) {
-      if (!dryRun) await db.ref(`rooms/${roomId}`).remove();
+      if (!dryRun) {
+        // Delete both the room and its public index entry
+        await Promise.all([
+          db.ref(`rooms/${roomId}`).remove(),
+          db.ref(`publicRooms/${roomId}`).remove(),
+        ]);
+      }
       deleted += 1;
       console.log(`[delete] ${roomId} (${reason})`);
     } else {
