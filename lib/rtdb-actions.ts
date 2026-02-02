@@ -207,13 +207,15 @@ export async function joinRoom(
   });
   
   // Update public room index (player count changed)
-  // Need to re-fetch room data since we may have created it
+  // Only owner can write to publicRooms (security rule), so only update if we're the owner
   const updatedRoomSnap = await get(roomRef);
-  const updatedPlayersSnap = await get(playersRef);
   if (updatedRoomSnap.exists()) {
     const updatedRoomData = updatedRoomSnap.val() as RoomData;
-    const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
-    await updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers);
+    if (updatedRoomData.ownerId === playerId) {
+      const updatedPlayersSnap = await get(playersRef);
+      const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
+      await updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers);
+    }
   }
 
   return { disconnectRef: playerRef };
@@ -407,14 +409,10 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
     // Skip grace period since this is an explicit leave action
     await reassignOwnerIfNeeded(roomCode, true, true);
     
-    // Update public room index (player count changed)
-    const updatedRoomSnap = await get(roomRef);
-    const updatedPlayersSnap = await get(playersRef);
-    if (updatedRoomSnap.exists()) {
-      const updatedRoomData = updatedRoomSnap.val() as RoomData;
-      const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
-      await updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers);
-    }
+    // Note: We don't update publicRooms here because:
+    // 1. If non-owner left: they don't have permission to write
+    // 2. If owner left: ownership transferred, they're no longer owner
+    // The count will catch up when the (new) owner does something
   }
 }
 
