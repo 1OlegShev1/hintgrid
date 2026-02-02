@@ -111,7 +111,7 @@
 
         "customWords": {
           ".write": "auth != null && (!root.child('rooms').child($roomCode).exists() || root.child('rooms').child($roomCode).child('ownerId').val() === auth.uid) && root.child('rooms').child($roomCode).child('gameStarted').val() !== true",
-          ".validate": "!newData.exists() || newData.isString() || (newData.hasChildren() && newData.val().length <= 100)"
+          ".validate": "!newData.exists() || newData.hasChildren()"
         },
 
         "currentClue": {
