@@ -213,7 +213,6 @@ export async function joinRoom(
   if (updatedRoomSnap.exists()) {
     const updatedRoomData = updatedRoomSnap.val() as RoomData;
     const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
-    // Update index - await to ensure it completes before returning
     await updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers);
   }
 
