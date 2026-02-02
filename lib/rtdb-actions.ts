@@ -369,11 +369,10 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
 
   const playersSnap = await get(playersRef);
   if (!playersSnap.exists()) {
-    // No players exist - delete room and public index
-    await Promise.all([
-      remove(roomRef),
-      removeFromPublicRoomIndex(roomCode),
-    ]);
+    // No players exist - delete room first, then public index
+    // (publicRooms delete requires room to not exist OR be owner)
+    await remove(roomRef);
+    await removeFromPublicRoomIndex(roomCode);
     return;
   }
 
@@ -384,11 +383,10 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
   ).length;
 
   if (connectedCount === 0) {
-    // Last player leaving - delete the room and remove from public index
-    await Promise.all([
-      remove(roomRef),
-      removeFromPublicRoomIndex(roomCode),
-    ]);
+    // Last player leaving - delete room first, then public index
+    // (publicRooms delete requires room to not exist OR be owner)
+    await remove(roomRef);
+    await removeFromPublicRoomIndex(roomCode);
   } else {
     // Mark as disconnected
     await update(playerRef, { connected: false, lastSeen: serverTimestamp() });
@@ -1651,8 +1649,7 @@ export async function pruneStalePlayers(
 
 export async function deleteRoom(roomCode: string): Promise<void> {
   const db = getDb();
-  await Promise.all([
-    remove(ref(db, `rooms/${roomCode}`)),
-    removeFromPublicRoomIndex(roomCode),
-  ]);
+  // Delete room first, then publicRooms (security rule requires room to not exist)
+  await remove(ref(db, `rooms/${roomCode}`));
+  await removeFromPublicRoomIndex(roomCode);
 }
