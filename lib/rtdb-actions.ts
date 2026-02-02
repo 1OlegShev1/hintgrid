@@ -414,7 +414,7 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
     if (updatedRoomSnap.exists()) {
       const updatedRoomData = updatedRoomSnap.val() as RoomData;
       const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
-      updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
+      await updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers);
     }
   }
 }
@@ -1112,7 +1112,7 @@ export async function kickPlayer(
   const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
   const updatedRoomSnap = await get(roomRef);
   if (updatedRoomSnap.exists()) {
-    updatePublicRoomIndex(roomCode, updatedRoomSnap.val() as RoomData, updatedPlayers).catch(() => {});
+    await updatePublicRoomIndex(roomCode, updatedRoomSnap.val() as RoomData, updatedPlayers);
   }
 }
 
