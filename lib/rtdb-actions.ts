@@ -350,6 +350,10 @@ export async function reassignOwnerIfNeeded(
     });
   }
   
+  // Update public room index (owner changed)
+  const updatedRoomData = { ...roomData, ownerId: newOwnerId };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, players).catch(() => {});
+  
   return { newOwnerName: newOwnerData.name, withinGracePeriod: false, gracePeriodRemainingMs: 0 };
 }
 
@@ -496,6 +500,10 @@ export async function startGame(roomCode: string, playerId: string): Promise<voi
     pausedForTeam: null,
     board,
   });
+  
+  // Update public room index (status changed to "playing")
+  const updatedRoomData = { ...roomData, gameStarted: true, gameOver: false, paused: false };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
 }
 
 export async function rematch(roomCode: string, playerId: string): Promise<void> {
@@ -726,6 +734,12 @@ export async function setTimerPreset(roomCode: string, playerId: string, preset:
   if (roomData.gameStarted) throw new Error("Game already started");
 
   await update(roomRef, { timerPreset: preset });
+  
+  // Update public room index (timerPreset changed)
+  const playersSnap = await get(ref(db, `rooms/${roomCode}/players`));
+  const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
+  const updatedRoomData = { ...roomData, timerPreset: preset };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, players).catch(() => {});
 }
 
 export async function setWordPack(roomCode: string, playerId: string, packs: WordPack[]): Promise<void> {
