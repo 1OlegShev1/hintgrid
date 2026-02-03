@@ -229,6 +229,7 @@ export default function GameBoard({
               disabled={card.revealed || !canVote}
               tabIndex={canVote && !card.revealed ? 0 : -1}
               data-testid={`board-card-${index}`}
+              data-revealed={card.revealed ? "true" : "false"}
               aria-label={`${card.revealed ? `Revealed: ${card.team}` : card.word}${hasVoted ? ", you voted" : ""}${votes.length > 0 ? `, ${votes.length} votes` : ""}`}
               className={`
                 card-flip-container aspect-square rounded-lg font-semibold w-full

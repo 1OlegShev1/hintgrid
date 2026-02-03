@@ -1,4 +1,5 @@
 import { test, expect, BrowserContext } from '@playwright/test';
+import { cleanupContexts, createMultipleContexts } from './test-utils';
 
 /**
  * E2E tests for error scenarios related to room access.
@@ -8,22 +9,6 @@ import { test, expect, BrowserContext } from '@playwright/test';
  * Firebase Auth session.
  */
 
-/**
- * Helper: Clean up test contexts properly
- */
-async function cleanupContexts(contexts: BrowserContext[]) {
-  for (const ctx of contexts) {
-    for (const page of ctx.pages()) {
-      const leaveBtn = page.getByTestId('leave-room-btn');
-      if (await leaveBtn.isVisible().catch(() => false)) {
-        await leaveBtn.click().catch(() => {});
-      }
-    }
-  }
-  await new Promise(resolve => setTimeout(resolve, 300));
-  await Promise.all(contexts.map(ctx => ctx.close()));
-}
-
 test.describe('Room Error Scenarios', () => {
   // Note: "invalid room code" test removed - by design, joining a non-existent room creates it.
   // Room codes are not validated for format; any string works as a room identifier.
@@ -31,11 +16,9 @@ test.describe('Room Error Scenarios', () => {
   test('should show error when joining locked room', async ({ browser }) => {
     test.setTimeout(60000);
     
-    const contexts: BrowserContext[] = await Promise.all([
-      browser.newContext(),
-      browser.newContext(),
-    ]);
-    const [ownerPage, playerPage] = await Promise.all(contexts.map(ctx => ctx.newPage()));
+    // Create contexts SEQUENTIALLY to avoid Firebase Auth race conditions
+    const { contexts, pages } = await createMultipleContexts(browser, 2);
+    const [ownerPage, playerPage] = pages;
 
     try {
       // Owner creates room
@@ -75,11 +58,9 @@ test.describe('Room Error Scenarios', () => {
   test('should show error when banned player tries to rejoin', async ({ browser }) => {
     test.setTimeout(90000);
     
-    const contexts: BrowserContext[] = await Promise.all([
-      browser.newContext(),
-      browser.newContext(),
-    ]);
-    const [ownerPage, playerPage] = await Promise.all(contexts.map(ctx => ctx.newPage()));
+    // Create contexts SEQUENTIALLY to avoid Firebase Auth race conditions
+    const { contexts, pages } = await createMultipleContexts(browser, 2);
+    const [ownerPage, playerPage] = pages;
 
     try {
       // Owner creates room
@@ -102,9 +83,8 @@ test.describe('Room Error Scenarios', () => {
       
       await expect(playerPage.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
       
-      // Owner sees player and kicks them
-      // Wait for player to appear in owner's view
-      await expect(ownerPage.getByText('TroubleMaker')).toBeVisible({ timeout: 10000 });
+      // Owner sees player - wait for them to appear in owner's view (proves Firebase sync)
+      await expect(ownerPage.getByTestId('lobby-player-TroubleMaker')).toBeVisible({ timeout: 10000 });
       
       // Find and click kick button - it's near the player's name
       // Use locator to find the kick button in the same row/container as the player name
@@ -134,11 +114,9 @@ test.describe('Room Error Scenarios', () => {
     // We'll skip actual wait and just verify the ban message mentions duration
     test.setTimeout(60000);
     
-    const contexts: BrowserContext[] = await Promise.all([
-      browser.newContext(),
-      browser.newContext(),
-    ]);
-    const [ownerPage, playerPage] = await Promise.all(contexts.map(ctx => ctx.newPage()));
+    // Create contexts SEQUENTIALLY to avoid Firebase Auth race conditions
+    const { contexts, pages } = await createMultipleContexts(browser, 2);
+    const [ownerPage, playerPage] = pages;
 
     try {
       // Owner creates room
@@ -161,8 +139,8 @@ test.describe('Room Error Scenarios', () => {
       
       await expect(playerPage.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
       
-      // Owner kicks player
-      await expect(ownerPage.getByText('Banned')).toBeVisible({ timeout: 10000 });
+      // Owner sees player - wait for them to appear (proves Firebase sync)
+      await expect(ownerPage.getByTestId('lobby-player-Banned')).toBeVisible({ timeout: 10000 });
       
       const kickBtn = ownerPage.getByRole('button', { name: /kick/i }).first();
       await expect(kickBtn).toBeVisible({ timeout: 5000 });
@@ -187,11 +165,9 @@ test.describe('Room Error Scenarios', () => {
   test('should show error for duplicate player name', async ({ browser }) => {
     test.setTimeout(60000);
     
-    const contexts: BrowserContext[] = await Promise.all([
-      browser.newContext(),
-      browser.newContext(),
-    ]);
-    const [page1, page2] = await Promise.all(contexts.map(ctx => ctx.newPage()));
+    // Create contexts SEQUENTIALLY to avoid Firebase Auth race conditions
+    const { contexts, pages } = await createMultipleContexts(browser, 2);
+    const [page1, page2] = pages;
 
     try {
       // First player creates room
