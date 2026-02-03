@@ -7,7 +7,7 @@ Start here to understand the project documentation.
 | File | Topics Covered |
 |------|----------------|
 | [`RULES.md`](RULES.md) | Game rules, clue validation, turn mechanics, pause/disconnect handling |
-| [`STATE.md`](STATE.md) | Firebase data model, room lifecycle, turn flow, client-side state, sound system, architecture, testing conventions |
+| [`STATE.md`](STATE.md) | Firebase data model, room lifecycle, turn flow, client-side state, sound system, architecture, **testing strategy & conventions** |
 
 ## Future Plans
 
@@ -84,4 +84,5 @@ After implementing a feature, update the relevant doc:
 | New client-side storage (localStorage) | `STATE.md` (Client-Side State section) |
 | Sound system changes | `STATE.md` (Sound System section) |
 | New interactive component | Add `data-testid` attributes (see `STATE.md` Testing section) |
+| New rtdb-actions function | Consider adding integration test (see `STATE.md` Testing section) |
 | New documentation file | Add entry to this `INDEX.md` |

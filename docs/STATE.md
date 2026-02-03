@@ -503,6 +503,62 @@ The `database.rules.json` file enforces server-side validation:
 
 ## Testing
 
+### Testing Philosophy
+
+**Test business logic, not Firebase.** We don't test that Firebase stores and retrieves data correctly — that's Firebase's job. We test that our code makes the right decisions and coordinates state correctly.
+
+| Test Type | What to Test | What NOT to Test |
+|-----------|--------------|------------------|
+| Unit | Pure functions, validation, game rules | React components, Firebase calls |
+| Integration | State transitions, coordinated updates, permissions | Thin CRUD wrappers, subscriptions |
+| E2E | User flows, multi-player interactions | Every edge case (use integration for that) |
+
+### Test Layers
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│  E2E (Playwright)                                          │
+│  - Full user flows: create room → play game → win          │
+│  - Multi-player with separate browser contexts             │
+│  - Run: npm run test:e2e                                   │
+├─────────────────────────────────────────────────────────────┤
+│  Integration (Vitest + Firebase Emulator)                  │
+│  - rtdb-actions.ts: game flow, kick/ban, pause, etc.       │
+│  - Requires: npm run firebase:emulators (separate terminal)│
+│  - Run: npm run test:integration                           │
+├─────────────────────────────────────────────────────────────┤
+│  Unit (Vitest)                                             │
+│  - shared/*: validation, game-utils, words, constants      │
+│  - lib/retry.ts, lib/utils.ts                              │
+│  - Run: npm test                                           │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### What's Worth Integration Testing
+
+**DO test** (complex logic, state transitions):
+- Game lifecycle: `startGame`, `endGame`, `rematch`
+- Turn mechanics: `giveClue`, `voteCard`, `confirmReveal`, `endTurn`
+- Pause/resume logic and auto-pause conditions
+- Kick/ban with vote clearing
+- Owner transfer with grace period
+- Team randomization
+
+**DON'T test** (thin wrappers, low risk):
+- `sendMessage`, `addReaction`, `removeReaction` — just Firebase push/set/remove
+- `subscribeToPublicRooms` — testing Firebase's subscription system
+- Simple setters: `setWordPack`, `setCustomWords`, `setRoomLocked`
+
+### Coverage Expectations
+
+| Layer | Target | Notes |
+|-------|--------|-------|
+| `shared/*` | ~100% | Pure functions, easy to test exhaustively |
+| `lib/rtdb-actions.ts` | ~70% | Core game logic covered; chat/subscriptions skipped |
+| `lib/retry.ts` | ~95% | Utility with clear behavior |
+
+Run coverage: `npm test -- --coverage` or `npm run test:integration -- --coverage`
+
 ### E2E Testing with Playwright
 
 E2E tests live in `tests/` and use Playwright. Run with:
