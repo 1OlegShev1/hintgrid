@@ -10,11 +10,15 @@ import {
   validatePlayerName,
   validateClueWord,
   sanitizeChatMessageWithCensor,
+  validateCustomWord,
+  parseCustomWordsInput,
 } from "../validation";
 import {
   MAX_PLAYER_NAME_LENGTH,
   MAX_CLUE_LENGTH,
   MAX_CHAT_MESSAGE_LENGTH,
+  MAX_CUSTOM_WORD_LENGTH,
+  MAX_CUSTOM_WORDS,
 } from "../constants";
 import { containsProfanity, censorProfanity } from "../profanity";
 
@@ -295,5 +299,189 @@ describe("sanitizeChatMessageWithCensor", () => {
 
   it("preserves clean messages", () => {
     expect(sanitizeChatMessageWithCensor("Good game!")).toBe("Good game!");
+  });
+});
+
+describe("validateCustomWord", () => {
+  it("returns valid for clean single words", () => {
+    expect(validateCustomWord("APPLE")).toEqual({ valid: true });
+    expect(validateCustomWord("word")).toEqual({ valid: true });
+  });
+
+  it("returns valid for words with spaces (like ICE CREAM)", () => {
+    expect(validateCustomWord("ICE CREAM")).toEqual({ valid: true });
+    expect(validateCustomWord("NEW YORK")).toEqual({ valid: true });
+  });
+
+  it("trims whitespace before validation", () => {
+    expect(validateCustomWord("  APPLE  ")).toEqual({ valid: true });
+  });
+
+  it("returns error for empty words", () => {
+    const result = validateCustomWord("");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Word cannot be empty");
+  });
+
+  it("returns error for whitespace-only words", () => {
+    const result = validateCustomWord("   ");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Word cannot be empty");
+  });
+
+  it("returns error for words exceeding max length", () => {
+    const longWord = "A".repeat(MAX_CUSTOM_WORD_LENGTH + 1);
+    const result = validateCustomWord(longWord);
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe(`Word must be ${MAX_CUSTOM_WORD_LENGTH} characters or less`);
+  });
+
+  it("returns valid for words at max length", () => {
+    const maxWord = "A".repeat(MAX_CUSTOM_WORD_LENGTH);
+    expect(validateCustomWord(maxWord)).toEqual({ valid: true });
+  });
+
+  it("returns error for profane words", () => {
+    const result = validateCustomWord("shit");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Word contains inappropriate content");
+  });
+
+  it("returns error for words containing profanity", () => {
+    const result = validateCustomWord("fucking great");
+    expect(result.valid).toBe(false);
+    expect(result.error).toBe("Word contains inappropriate content");
+  });
+});
+
+describe("parseCustomWordsInput", () => {
+  it("parses comma-separated words", () => {
+    const result = parseCustomWordsInput("apple,banana,cherry");
+    expect(result.words).toEqual(["APPLE", "BANANA", "CHERRY"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("parses newline-separated words", () => {
+    const result = parseCustomWordsInput("apple\nbanana\ncherry");
+    expect(result.words).toEqual(["APPLE", "BANANA", "CHERRY"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("parses mixed comma and newline separated words", () => {
+    const result = parseCustomWordsInput("apple,banana\ncherry,date");
+    expect(result.words).toEqual(["APPLE", "BANANA", "CHERRY", "DATE"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("trims whitespace from words", () => {
+    const result = parseCustomWordsInput("  apple  ,  banana  \n  cherry  ");
+    expect(result.words).toEqual(["APPLE", "BANANA", "CHERRY"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("converts words to uppercase", () => {
+    const result = parseCustomWordsInput("Apple,BANANA,cherry");
+    expect(result.words).toEqual(["APPLE", "BANANA", "CHERRY"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("filters out empty entries", () => {
+    const result = parseCustomWordsInput("apple,,banana,\n,cherry");
+    expect(result.words).toEqual(["APPLE", "BANANA", "CHERRY"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("handles words with spaces (like ICE CREAM)", () => {
+    const result = parseCustomWordsInput("ICE CREAM,NEW YORK");
+    expect(result.words).toEqual(["ICE CREAM", "NEW YORK"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("rejects empty words", () => {
+    const result = parseCustomWordsInput("apple,,banana");
+    // Empty entries are filtered, not rejected
+    expect(result.words).toEqual(["APPLE", "BANANA"]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("rejects words that are too long", () => {
+    const longWord = "A".repeat(MAX_CUSTOM_WORD_LENGTH + 1);
+    const result = parseCustomWordsInput(`apple,${longWord},banana`);
+    expect(result.words).toEqual(["APPLE", "BANANA"]);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain("must be");
+    expect(result.errors[0]).toContain("characters or less");
+  });
+
+  it("rejects profane words", () => {
+    const result = parseCustomWordsInput("apple,shit,banana");
+    expect(result.words).toEqual(["APPLE", "BANANA"]);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain("inappropriate content");
+  });
+
+  it("detects duplicate words within input", () => {
+    const result = parseCustomWordsInput("apple,banana,APPLE");
+    expect(result.words).toEqual(["APPLE", "BANANA"]);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain("Already added");
+  });
+
+  it("detects duplicates against existing words", () => {
+    const existing = ["APPLE", "BANANA"];
+    const result = parseCustomWordsInput("cherry,APPLE,date", existing);
+    expect(result.words).toEqual(["CHERRY", "DATE"]);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain("Already added");
+  });
+
+  it("case-insensitive duplicate detection", () => {
+    const result = parseCustomWordsInput("apple,APPLE,Apple");
+    expect(result.words).toEqual(["APPLE"]);
+    expect(result.errors.length).toBe(2);
+    expect(result.errors[0]).toContain("Already added");
+    expect(result.errors[1]).toContain("Already added");
+  });
+
+  it("enforces max custom words limit", () => {
+    const existing = Array(MAX_CUSTOM_WORDS - 2).fill(null).map((_, i) => `WORD${i}`);
+    const result = parseCustomWordsInput("apple,banana,cherry", existing);
+    expect(result.words).toEqual(["APPLE", "BANANA"]); // Only 2 should be added
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain(`Maximum ${MAX_CUSTOM_WORDS}`);
+  });
+
+  it("stops processing at max limit", () => {
+    const existing = Array(MAX_CUSTOM_WORDS - 1).fill(null).map((_, i) => `WORD${i}`);
+    const result = parseCustomWordsInput("apple,banana,cherry,date", existing);
+    expect(result.words).toEqual(["APPLE"]); // Only 1 spot left
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toContain(`Maximum ${MAX_CUSTOM_WORDS}`);
+  });
+
+  it("truncates long word names in error messages", () => {
+    const longWord = "A".repeat(MAX_CUSTOM_WORD_LENGTH + 5); // Make it longer than max
+    const result = parseCustomWordsInput(longWord);
+    expect(result.errors.length).toBe(1);
+    expect(result.errors[0]).toMatch(/^".{20}\.\.\.":/); // Should be truncated to 20 chars + "..."
+  });
+
+  it("handles empty input", () => {
+    const result = parseCustomWordsInput("");
+    expect(result.words).toEqual([]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("handles whitespace-only input", () => {
+    const result = parseCustomWordsInput("   \n\n   ");
+    expect(result.words).toEqual([]);
+    expect(result.errors).toEqual([]);
+  });
+
+  it("accumulates multiple errors", () => {
+    const longWord = "A".repeat(MAX_CUSTOM_WORD_LENGTH + 1);
+    const result = parseCustomWordsInput(`apple,shit,${longWord},apple`);
+    expect(result.words).toEqual(["APPLE"]); // Only first apple is valid
+    expect(result.errors.length).toBe(3); // profanity, too long, duplicate
   });
 });

@@ -6,6 +6,27 @@ let app: FirebaseApp | undefined;
 let auth: Auth | undefined;
 let rtdb: Database | undefined;
 
+// Test mode support - allows injecting database for testing
+let testDb: Database | undefined;
+let isTestMode = false;
+
+/**
+ * Enable test mode and inject a test database instance.
+ * Used by integration tests to bypass browser-only checks.
+ */
+export function enableTestMode(db: Database): void {
+  isTestMode = true;
+  testDb = db;
+}
+
+/**
+ * Disable test mode and clear test database.
+ */
+export function disableTestMode(): void {
+  isTestMode = false;
+  testDb = undefined;
+}
+
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -50,6 +71,11 @@ export function getFirebaseAuth(): Auth | undefined {
 }
 
 export function getDatabase(): Database | undefined {
+  // In test mode, return the injected test database
+  if (isTestMode && testDb) {
+    return testDb;
+  }
+  
   if (typeof window === "undefined") return undefined;
   
   if (!rtdb) {

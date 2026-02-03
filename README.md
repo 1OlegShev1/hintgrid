@@ -33,9 +33,10 @@ See [`docs/INDEX.md`](docs/INDEX.md) for documentation overview and file index.
 ## Testing
 
 ```bash
-npm run test:run      # Unit tests
-npm run test:e2e      # E2E tests (Playwright)
-npm run typecheck     # TypeScript check
+npm run test:run           # Unit tests
+npm run test:integration   # Integration tests (requires: npm run firebase:emulators)
+npm run test:e2e           # E2E tests (Playwright)
+npm run typecheck          # TypeScript check
 ```
 
 ## License
