@@ -7,6 +7,7 @@ import TransitionOverlay from "@/components/TransitionOverlay";
 import { ThemeBackground, type SunPosition } from "@/components/ThemeBackground";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
 import { goOffline, goOnline, getDatabase } from "@/lib/firebase";
+import { leaveRoom } from "@/lib/rtdb-actions";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useFirebaseConnection } from "@/hooks/useFirebaseConnection";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
@@ -155,13 +156,34 @@ export default function RoomPage() {
     enabled: !!playerName && !isInActiveGame, // Only track when in lobby
   });
 
-  // Leave room handler - triggers clean Firebase disconnect
+  // Leave room handler - explicitly clean up before disconnecting
   const handleLeaveRoom = () => {
-    console.log("[Room] Leave button clicked - disconnecting...");
-    goOffline(); // Triggers onDisconnect immediately (clean disconnect)
-    // Reconnect so home page can work normally
-    setTimeout(() => goOnline(), 100);
-    router.push("/");
+    console.log("[Room] Leave button clicked - cleaning up...");
+    
+    // Explicitly call leaveRoom to handle proper cleanup (room + publicRooms index)
+    // This ensures both room and index are deleted atomically with proper permissions.
+    // For accidental disconnects (tab close, crash), onDisconnect handles room deletion,
+    // and orphaned publicRooms entries are cleaned up by home page + cleanup scripts.
+    if (uid && roomCode) {
+      leaveRoom(roomCode, uid)
+        .then(() => {
+          console.log("[Room] Left room successfully");
+        })
+        .catch((err: Error) => {
+          console.warn("[Room] Failed to leave room cleanly:", err);
+        })
+        .finally(() => {
+          // Disconnect and navigate away (happens whether leaveRoom succeeds or fails)
+          goOffline(); // Ensures any remaining onDisconnect handlers fire
+          setTimeout(() => goOnline(), 100); // Reconnect for home page
+          router.push("/");
+        });
+    } else {
+      // No uid or roomCode - just disconnect and navigate
+      goOffline();
+      setTimeout(() => goOnline(), 100);
+      router.push("/");
+    }
   };
 
   // Handle idle warning responses
