@@ -11,32 +11,31 @@ interface EmojiPickerButtonProps {
 
 export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
-  const [isMobile, setIsMobile] = useState(false);
+  const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0, width: 320 });
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
 
-  // Detect mobile on mount and resize
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 640);
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
-
-  // Calculate picker position when opening (desktop only)
+  // Calculate picker position when opening
   const openPicker = useCallback(() => {
-    if (buttonRef.current && !isMobile) {
+    if (buttonRef.current) {
       const rect = buttonRef.current.getBoundingClientRect();
-      // Position above the button, aligned to the right edge
+      const viewportWidth = window.innerWidth;
+      const pickerWidth = Math.min(320, viewportWidth - 16); // Max 320px, leave 8px margins
+      
+      // Position above the button, keep within viewport
+      let left = rect.right - pickerWidth;
+      if (left < 8) left = 8;
+      if (left + pickerWidth > viewportWidth - 8) left = viewportWidth - pickerWidth - 8;
+      
       setPickerPosition({
-        top: rect.top - 8, // 8px gap above button
-        left: Math.max(8, rect.right - 320), // Align right edge, but keep 8px from screen edge
+        top: rect.top - 8,
+        left: left,
+        width: pickerWidth,
       });
     }
     setIsOpen(true);
-  }, [isMobile]);
+  }, []);
 
   // Close picker when clicking/touching outside
   useEffect(() => {
@@ -110,36 +109,27 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
 
       {/* Fixed position picker to escape overflow containers */}
       {isOpen && (
-        <>
-          {/* Mobile backdrop */}
-          {isMobile && (
-            <div 
-              className="fixed inset-0 z-40 bg-black/30"
-              onClick={() => setIsOpen(false)}
-            />
-          )}
-          <div
-            ref={pickerRef}
-            className="fixed z-50"
-            style={
-              isMobile
-                ? { bottom: 0, left: 0, right: 0 }
-                : { top: pickerPosition.top, left: pickerPosition.left, transform: "translateY(-100%)" }
-            }
-          >
-            <EmojiPicker
-              onEmojiClick={handleEmojiClick}
-              theme={resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT}
-              width={isMobile ? "100%" : 320}
-              height={isMobile ? 350 : 400}
-              searchPlaceholder="Search emoji..."
-              previewConfig={{ showPreview: false }}
-              skinTonesDisabled
-              lazyLoadEmojis
-              autoFocusSearch={false}
-            />
-          </div>
-        </>
+        <div
+          ref={pickerRef}
+          className="fixed z-50"
+          style={{
+            top: pickerPosition.top,
+            left: pickerPosition.left,
+            transform: "translateY(-100%)",
+          }}
+        >
+          <EmojiPicker
+            onEmojiClick={handleEmojiClick}
+            theme={resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT}
+            width={pickerPosition.width}
+            height={350}
+            searchPlaceholder="Search emoji..."
+            previewConfig={{ showPreview: false }}
+            skinTonesDisabled
+            lazyLoadEmojis
+            autoFocusSearch={false}
+          />
+        </div>
       )}
     </>
   );
