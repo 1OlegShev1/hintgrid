@@ -515,6 +515,7 @@ export default function TeamLobby({
                       {clueGiver.id === currentPlayer?.id && showControls && (
                         <button
                           type="button"
+                          data-testid="lobby-leave-team-btn"
                           onClick={() => onSetRole(null, null)}
                           className="ml-auto text-xs font-semibold uppercase tracking-wide text-muted hover:text-foreground"
                         >
@@ -588,6 +589,7 @@ export default function TeamLobby({
                       {player.id === currentPlayer?.id && showControls && (
                         <button
                           type="button"
+                          data-testid="lobby-leave-team-btn"
                           onClick={() => onSetRole(null, null)}
                           className="ml-auto text-xs font-semibold uppercase tracking-wide text-muted hover:text-foreground"
                         >

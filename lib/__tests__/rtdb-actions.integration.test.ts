@@ -38,8 +38,16 @@ import {
   kickPlayer,
   randomizeTeams,
   endGame,
+  setRoomLocked,
+  updatePublicRoomIndex,
+  getPublicRooms,
+  removeFromPublicRoomIndex,
+  pruneStalePlayers,
+  pruneOldMessages,
+  sendMessage,
   OWNER_DISCONNECT_GRACE_PERIOD_MS,
 } from "../rtdb-actions";
+import { STALE_PLAYER_GRACE_MS } from "@/shared/constants";
 
 describe("rtdb-actions integration tests", () => {
   beforeAll(async () => {
@@ -1436,6 +1444,727 @@ describe("rtdb-actions integration tests", () => {
         (m) => m.type === "game-system" && m.message.includes("ended by room owner")
       );
       expect(endGameMessage).toBeDefined();
+    });
+  });
+
+  describe("Room Locking", () => {
+    it("should lock room and reject new players", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: newPlayerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${ownerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Lock the room
+      await setRoomLocked(roomCode, ownerId, true);
+
+      // Verify room is locked
+      const roomSnap = await get(ref(db, `rooms/${roomCode}`));
+      expect(roomSnap.val().locked).toBe(true);
+
+      // New player should be rejected
+      await expect(joinRoom(roomCode, newPlayerId, "NewPlayer", "🐶")).rejects.toThrow(/locked/i);
+    });
+
+    it("should allow existing players to rejoin locked room", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      // Both players join
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${ownerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      await joinRoom(roomCode, playerId, "Player2", "🐶");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Lock the room
+      await setRoomLocked(roomCode, ownerId, true);
+
+      // Player2 leaves
+      await leaveRoom(roomCode, playerId);
+
+      // Player2 should be able to rejoin (existing player)
+      await joinRoom(roomCode, playerId, "Player2", "🐶");
+
+      const playerSnap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+      expect(playerSnap.exists()).toBe(true);
+      expect(playerSnap.val().connected).toBe(true);
+    });
+
+    it("should unlock room and allow new players", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: newPlayerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${ownerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Lock and then unlock
+      await setRoomLocked(roomCode, ownerId, true);
+      await setRoomLocked(roomCode, ownerId, false);
+
+      // Verify room is unlocked
+      const roomSnap = await get(ref(db, `rooms/${roomCode}`));
+      expect(roomSnap.val().locked).toBe(false);
+
+      // New player should be able to join
+      await joinRoom(roomCode, newPlayerId, "NewPlayer", "🐶");
+
+      const playerSnap = await get(ref(db, `rooms/${roomCode}/players/${newPlayerId}`));
+      expect(playerSnap.exists()).toBe(true);
+    });
+
+    it("should reject non-owner trying to lock room", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await joinRoom(roomCode, playerId, "Player2", "🐶");
+
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Non-owner tries to lock - should fail
+      await expect(setRoomLocked(roomCode, playerId, true)).rejects.toThrow(/not room owner/i);
+    });
+  });
+
+  describe("Public Room Index", () => {
+    it("should add public room to index", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const db = getTestDb();
+
+      // Create room (default is public)
+      await joinRoom(roomCode, ownerId, "Owner", "🐱", "public");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${ownerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Room should be in public index
+      const publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.exists()).toBe(true);
+      expect(publicSnap.val().ownerName).toBe("Owner");
+      expect(publicSnap.val().playerCount).toBe(1);
+      expect(publicSnap.val().status).toBe("lobby");
+    });
+
+    it("should not add private room to index", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const db = getTestDb();
+
+      // Create private room
+      await joinRoom(roomCode, ownerId, "Owner", "🐱", "private");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${ownerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Room should NOT be in public index
+      const publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.exists()).toBe(false);
+    });
+
+    it("should remove locked room from public index", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const db = getTestDb();
+
+      // Create public room
+      await joinRoom(roomCode, ownerId, "Owner", "🐱", "public");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `publicRooms/${roomCode}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Lock room
+      await setRoomLocked(roomCode, ownerId, true);
+
+      // Should be removed from public index
+      const publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.exists()).toBe(false);
+    });
+
+    it("should re-add unlocked room to public index", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const db = getTestDb();
+
+      // Create public room and lock it
+      await joinRoom(roomCode, ownerId, "Owner", "🐱", "public");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `publicRooms/${roomCode}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      await setRoomLocked(roomCode, ownerId, true);
+
+      // Verify removed
+      let publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.exists()).toBe(false);
+
+      // Unlock room
+      await setRoomLocked(roomCode, ownerId, false);
+
+      // Should be back in public index
+      publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.exists()).toBe(true);
+    });
+
+    it("should update player count in public index", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: player2Id } = await createTestUser();
+      const db = getTestDb();
+
+      // Create public room
+      await joinRoom(roomCode, ownerId, "Owner", "🐱", "public");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `publicRooms/${roomCode}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Check initial count
+      let publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.val().playerCount).toBe(1);
+
+      // Second player joins
+      await joinRoom(roomCode, player2Id, "Player2", "🐶");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${player2Id}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Count should update
+      publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.val().playerCount).toBe(2);
+    });
+
+    it("should update status when game starts", async () => {
+      const roomCode = generateTestRoomCode();
+      const users = await setupGameWith4Players(roomCode);
+      const db = getTestDb();
+
+      // Initially in lobby
+      let publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.val().status).toBe("lobby");
+
+      // Start game
+      await startGame(roomCode, users[0].uid);
+
+      // Allow time for async index update
+      await waitFor(async () => {
+        const snap = await get(ref(db, `publicRooms/${roomCode}`));
+        return snap.val()?.status === "playing";
+      }, 2000, 50);
+
+      publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.val().status).toBe("playing");
+    });
+
+    it("should update status when game paused", async () => {
+      const roomCode = generateTestRoomCode();
+      const users = await setupGameWith4Players(roomCode);
+      const db = getTestDb();
+
+      await startGame(roomCode, users[0].uid);
+
+      // Pause game
+      await pauseGame(roomCode, users[0].uid);
+
+      // Allow time for async index update
+      await waitFor(async () => {
+        const snap = await get(ref(db, `publicRooms/${roomCode}`));
+        return snap.val()?.status === "paused";
+      }, 2000, 50);
+
+      const publicSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(publicSnap.val().status).toBe("paused");
+    });
+
+    it("should clean up orphaned public room entries via getPublicRooms", async () => {
+      const roomCode = generateTestRoomCode();
+      const db = getTestDb();
+
+      // Manually create orphaned public room entry (room doesn't exist)
+      const { set } = await import("firebase/database");
+      await set(ref(db, `publicRooms/${roomCode}`), {
+        roomName: "Orphaned Room",
+        ownerName: "Ghost",
+        playerCount: 5,
+        status: "lobby",
+        timerPreset: "normal",
+        createdAt: Date.now(),
+      });
+
+      // Verify orphan exists
+      let orphanSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(orphanSnap.exists()).toBe(true);
+
+      // Call getPublicRooms which should detect and clean orphans
+      await getPublicRooms(10);
+
+      // Allow time for cleanup
+      await waitFor(async () => {
+        const snap = await get(ref(db, `publicRooms/${roomCode}`));
+        return !snap.exists();
+      }, 3000, 100);
+
+      // Orphan should be cleaned up
+      orphanSnap = await get(ref(db, `publicRooms/${roomCode}`));
+      expect(orphanSnap.exists()).toBe(false);
+    });
+  });
+
+  describe("Stale Player Cleanup", () => {
+    it("should demote stale players to spectators", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${ownerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      await joinRoom(roomCode, playerId, "Player2", "🐶");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Assign player to team
+      await setLobbyRole(roomCode, playerId, "red", "guesser");
+
+      // Simulate disconnect with stale timestamp
+      const { update } = await import("firebase/database");
+      const staleTime = Date.now() - STALE_PLAYER_GRACE_MS - 1000;
+      await update(ref(db, `rooms/${roomCode}/players/${playerId}`), {
+        connected: false,
+        lastSeen: staleTime,
+      });
+
+      // Run stale player cleanup
+      const pruned = await pruneStalePlayers(roomCode, ownerId, STALE_PLAYER_GRACE_MS);
+
+      expect(pruned).toContain(playerId);
+
+      // Player should be demoted to spectator (team/role cleared)
+      const playerSnap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+      expect(playerSnap.val().team).toBeUndefined();
+      expect(playerSnap.val().role).toBeUndefined();
+    });
+
+    it("should not demote players within grace period", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await joinRoom(roomCode, playerId, "Player2", "🐶");
+
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Assign player to team
+      await setLobbyRole(roomCode, playerId, "red", "guesser");
+
+      // Simulate recent disconnect (within grace period)
+      const { update } = await import("firebase/database");
+      const recentTime = Date.now() - 1000; // 1 second ago
+      await update(ref(db, `rooms/${roomCode}/players/${playerId}`), {
+        connected: false,
+        lastSeen: recentTime,
+      });
+
+      // Run stale player cleanup
+      const pruned = await pruneStalePlayers(roomCode, ownerId, STALE_PLAYER_GRACE_MS);
+
+      expect(pruned).not.toContain(playerId);
+
+      // Player should still have team/role
+      const playerSnap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+      expect(playerSnap.val().team).toBe("red");
+      expect(playerSnap.val().role).toBe("guesser");
+    });
+
+    it("should clear stale player votes from board", async () => {
+      const roomCode = generateTestRoomCode();
+      const users = await setupGameWith4Players(roomCode);
+      const db = getTestDb();
+
+      await startGame(roomCode, users[0].uid);
+
+      const roomSnapshot = await get(ref(db, `rooms/${roomCode}`));
+      const currentTeam = roomSnapshot.val().currentTeam;
+      const hinterId = currentTeam === "red" ? users[0].uid : users[2].uid;
+      const guesserId = currentTeam === "red" ? users[1].uid : users[3].uid;
+
+      // Give clue and vote
+      await giveClue(roomCode, hinterId, "TEST", 2);
+      await voteCard(roomCode, guesserId, 5);
+
+      // Verify vote exists
+      let votesBefore = await get(ref(db, `rooms/${roomCode}/board/5/votes`));
+      expect(votesBefore.val()?.[guesserId]).toBe(true);
+
+      // Simulate guesser disconnect as stale
+      const { update } = await import("firebase/database");
+      const staleTime = Date.now() - STALE_PLAYER_GRACE_MS - 1000;
+      await update(ref(db, `rooms/${roomCode}/players/${guesserId}`), {
+        connected: false,
+        lastSeen: staleTime,
+      });
+
+      // Run stale player cleanup
+      await pruneStalePlayers(roomCode, users[0].uid, STALE_PLAYER_GRACE_MS);
+
+      // Vote should be cleared
+      const votesAfter = await get(ref(db, `rooms/${roomCode}/board/5/votes`));
+      expect(votesAfter.val()?.[guesserId]).toBeUndefined();
+    });
+
+    it("should add system message when players are demoted", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await joinRoom(roomCode, playerId, "StalePerson", "🐶");
+
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      await setLobbyRole(roomCode, playerId, "blue", "clueGiver");
+
+      // Make stale
+      const { update } = await import("firebase/database");
+      const staleTime = Date.now() - STALE_PLAYER_GRACE_MS - 1000;
+      await update(ref(db, `rooms/${roomCode}/players/${playerId}`), {
+        connected: false,
+        lastSeen: staleTime,
+      });
+
+      await pruneStalePlayers(roomCode, ownerId, STALE_PLAYER_GRACE_MS);
+
+      // Check for system message
+      const messagesSnap = await get(ref(db, `rooms/${roomCode}/messages`));
+      const messages = messagesSnap.val();
+      const messageValues = Object.values(messages) as any[];
+
+      const demotedMessage = messageValues.find(
+        (m) => m.type === "system" && m.message.includes("StalePerson") && m.message.includes("spectators")
+      );
+      expect(demotedMessage).toBeDefined();
+    });
+
+    it("should reject non-owner trying to prune stale players", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: ownerId } = await createTestUser();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, ownerId, "Owner", "🐱");
+      await joinRoom(roomCode, playerId, "Player2", "🐶");
+
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Non-owner tries to prune
+      await expect(pruneStalePlayers(roomCode, playerId, STALE_PLAYER_GRACE_MS)).rejects.toThrow(/not room owner/i);
+    });
+  });
+
+  describe("Message Pruning", () => {
+    it("should prune messages when exceeding threshold", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, playerId, "Chatter", "🐱");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Create 410 messages directly (above 400 threshold)
+      const { set, push } = await import("firebase/database");
+      const messagesRef = ref(db, `rooms/${roomCode}/messages`);
+      
+      const messagePromises = [];
+      for (let i = 0; i < 410; i++) {
+        messagePromises.push(
+          set(push(messagesRef), {
+            playerId,
+            playerName: "Chatter",
+            message: `Message ${i}`,
+            timestamp: i, // Use index as timestamp for ordering
+            type: "chat",
+          })
+        );
+      }
+      await Promise.all(messagePromises);
+
+      // Verify we have 410 messages
+      let messagesSnap = await get(messagesRef);
+      expect(Object.keys(messagesSnap.val()).length).toBe(410);
+
+      // Run prune
+      const pruned = await pruneOldMessages(roomCode);
+
+      // Should prune down to 300
+      expect(pruned).toBe(110); // 410 - 300 = 110
+
+      messagesSnap = await get(messagesRef);
+      expect(Object.keys(messagesSnap.val()).length).toBe(300);
+    });
+
+    it("should not prune when below threshold", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, playerId, "Chatter", "🐱");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Create 50 messages (below 400 threshold)
+      const { set, push } = await import("firebase/database");
+      const messagesRef = ref(db, `rooms/${roomCode}/messages`);
+      
+      for (let i = 0; i < 50; i++) {
+        await set(push(messagesRef), {
+          playerId,
+          playerName: "Chatter",
+          message: `Message ${i}`,
+          timestamp: Date.now() + i,
+          type: "chat",
+        });
+      }
+
+      // Run prune
+      const pruned = await pruneOldMessages(roomCode);
+
+      // Should not prune anything
+      expect(pruned).toBe(0);
+
+      const messagesSnap = await get(messagesRef);
+      expect(Object.keys(messagesSnap.val()).length).toBe(50);
+    });
+
+    it("should delete oldest messages first", async () => {
+      const roomCode = generateTestRoomCode();
+      const { uid: playerId } = await createTestUser();
+      const db = getTestDb();
+
+      await joinRoom(roomCode, playerId, "Chatter", "🐱");
+      await waitFor(async () => {
+        const snap = await get(ref(db, `rooms/${roomCode}/players/${playerId}`));
+        return snap.exists();
+      }, 2000, 50);
+
+      // Create 410 messages with timestamps
+      const { set, push } = await import("firebase/database");
+      const messagesRef = ref(db, `rooms/${roomCode}/messages`);
+      
+      for (let i = 0; i < 410; i++) {
+        await set(push(messagesRef), {
+          playerId,
+          playerName: "Chatter",
+          message: `Message ${i}`,
+          timestamp: i, // Lower = older
+          type: "chat",
+        });
+      }
+
+      // Run prune
+      await pruneOldMessages(roomCode);
+
+      // Check remaining messages have higher timestamps (newer)
+      const messagesSnap = await get(messagesRef);
+      const remaining = Object.values(messagesSnap.val()) as any[];
+      const timestamps = remaining.map((m) => m.timestamp).sort((a, b) => a - b);
+
+      // Oldest remaining should be 110 (0-109 were deleted)
+      expect(timestamps[0]).toBe(110);
+      expect(timestamps[timestamps.length - 1]).toBe(409);
+    });
+  });
+
+  describe("Rematch Behavior", () => {
+    it("should preserve team assignments on rematch", async () => {
+      const roomCode = generateTestRoomCode();
+      const users = await setupGameWith4Players(roomCode);
+      const db = getTestDb();
+
+      // Store original team assignments
+      const playersBeforeSnap = await get(ref(db, `rooms/${roomCode}/players`));
+      const playersBefore = playersBeforeSnap.val();
+      const originalTeams: Record<string, { team: string; role: string }> = {};
+      Object.entries(playersBefore).forEach(([uid, data]: [string, any]) => {
+        originalTeams[uid] = { team: data.team, role: data.role };
+      });
+
+      // Start and end game via trap
+      await startGame(roomCode, users[0].uid);
+      
+      const boardSnap = await get(ref(db, `rooms/${roomCode}/board`));
+      const board = boardSnap.val();
+      const trapIndex = board.findIndex((c: any) => c.team === "trap");
+
+      const roomSnap = await get(ref(db, `rooms/${roomCode}`));
+      const currentTeam = roomSnap.val().currentTeam;
+      const hinterId = currentTeam === "red" ? users[0].uid : users[2].uid;
+      const guesserId = currentTeam === "red" ? users[1].uid : users[3].uid;
+
+      await giveClue(roomCode, hinterId, "OOPS", 1);
+      await voteCard(roomCode, guesserId, trapIndex);
+      await confirmReveal(roomCode, guesserId, trapIndex);
+
+      // Verify game over
+      const roomAfterTrap = await get(ref(db, `rooms/${roomCode}`));
+      expect(roomAfterTrap.val().gameOver).toBe(true);
+
+      // Rematch
+      await rematch(roomCode, users[0].uid);
+
+      // Verify teams are preserved
+      const playersAfterSnap = await get(ref(db, `rooms/${roomCode}/players`));
+      const playersAfter = playersAfterSnap.val();
+      
+      Object.entries(playersAfter).forEach(([uid, data]: [string, any]) => {
+        expect(data.team).toBe(originalTeams[uid].team);
+        expect(data.role).toBe(originalTeams[uid].role);
+      });
+    });
+
+    it("should clear game log messages on rematch but keep chat", async () => {
+      const roomCode = generateTestRoomCode();
+      const users = await setupGameWith4Players(roomCode);
+      const db = getTestDb();
+
+      await startGame(roomCode, users[0].uid);
+
+      // Send a chat message
+      await sendMessage(roomCode, users[1].uid, "Good luck team!", "chat");
+
+      // Give a clue (creates clue message)
+      const roomSnap = await get(ref(db, `rooms/${roomCode}`));
+      const currentTeam = roomSnap.val().currentTeam;
+      const hinterId = currentTeam === "red" ? users[0].uid : users[2].uid;
+      const guesserId = currentTeam === "red" ? users[1].uid : users[3].uid;
+
+      await giveClue(roomCode, hinterId, "ANIMAL", 1);
+
+      // Reveal a card (creates reveal message)
+      const boardSnap = await get(ref(db, `rooms/${roomCode}/board`));
+      const board = boardSnap.val();
+      const teamCardIndex = board.findIndex((c: any) => c.team === currentTeam);
+      await voteCard(roomCode, guesserId, teamCardIndex);
+      await confirmReveal(roomCode, guesserId, teamCardIndex);
+
+      // End game via trap
+      const trapIndex = board.findIndex((c: any) => c.team === "trap");
+      await voteCard(roomCode, guesserId, trapIndex);
+      await confirmReveal(roomCode, guesserId, trapIndex);
+
+      // Verify we have clue, reveal, and chat messages
+      let messagesSnap = await get(ref(db, `rooms/${roomCode}/messages`));
+      let messages = Object.values(messagesSnap.val()) as any[];
+      
+      const clueMessages = messages.filter((m) => m.type === "clue");
+      const revealMessages = messages.filter((m) => m.type === "reveal");
+      const chatMessages = messages.filter((m) => m.type === "chat");
+      
+      expect(clueMessages.length).toBeGreaterThan(0);
+      expect(revealMessages.length).toBeGreaterThan(0);
+      expect(chatMessages.length).toBe(1);
+
+      // Rematch
+      await rematch(roomCode, users[0].uid);
+
+      // Check messages after rematch
+      messagesSnap = await get(ref(db, `rooms/${roomCode}/messages`));
+      messages = Object.values(messagesSnap.val()) as any[];
+
+      // Game messages (clue, reveal) should be cleared
+      const clueAfter = messages.filter((m) => m.type === "clue");
+      const revealAfter = messages.filter((m) => m.type === "reveal");
+      expect(clueAfter.length).toBe(0);
+      expect(revealAfter.length).toBe(0);
+
+      // Chat messages should be preserved
+      const chatAfter = messages.filter((m) => m.type === "chat");
+      expect(chatAfter.length).toBe(1);
+      expect(chatAfter[0].message).toBe("Good luck team!");
+    });
+
+    it("should generate fresh board on rematch", async () => {
+      const roomCode = generateTestRoomCode();
+      const users = await setupGameWith4Players(roomCode);
+      const db = getTestDb();
+
+      await startGame(roomCode, users[0].uid);
+
+      // Get first board
+      const boardSnap1 = await get(ref(db, `rooms/${roomCode}/board`));
+      const board1 = boardSnap1.val().map((c: any) => c.word);
+
+      // End game via trap
+      const trapIndex = boardSnap1.val().findIndex((c: any) => c.team === "trap");
+      const roomSnap = await get(ref(db, `rooms/${roomCode}`));
+      const currentTeam = roomSnap.val().currentTeam;
+      const hinterId = currentTeam === "red" ? users[0].uid : users[2].uid;
+      const guesserId = currentTeam === "red" ? users[1].uid : users[3].uid;
+
+      await giveClue(roomCode, hinterId, "OOPS", 1);
+      await voteCard(roomCode, guesserId, trapIndex);
+      await confirmReveal(roomCode, guesserId, trapIndex);
+
+      // Rematch
+      await rematch(roomCode, users[0].uid);
+
+      // Get new board
+      const boardSnap2 = await get(ref(db, `rooms/${roomCode}/board`));
+      const board2 = boardSnap2.val().map((c: any) => c.word);
+
+      // Boards should be different (statistically near-certain with 250+ word list)
+      expect(board1.join(",")).not.toBe(board2.join(","));
     });
   });
 });

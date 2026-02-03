@@ -244,6 +244,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
             </button>
           ) : isLocked ? (
             <span 
+              data-testid="room-locked-badge"
               className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-warning/20 text-warning text-sm font-medium"
               title="Room is locked - new players cannot join"
             >

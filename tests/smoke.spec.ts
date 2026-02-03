@@ -52,7 +52,7 @@ test.describe('Smoke Tests', () => {
     await expect(page2).toHaveURL(new RegExp(`/room/${roomCode}`));
     await expect(page2.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
     
-    // Player1 should see Player2 joined (use exact match to avoid matching "Player2 (you)")
-    await expect(page.getByText('Player2', { exact: true })).toBeVisible({ timeout: 10000 });
+    // Player1 should see Player2 joined - use the data-testid from TeamLobby's player cards
+    await expect(page.getByTestId('lobby-player-Player2')).toBeVisible({ timeout: 10000 });
   });
 });

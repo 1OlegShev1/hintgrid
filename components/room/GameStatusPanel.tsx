@@ -139,6 +139,7 @@ export default function GameStatusPanel({
           {isRoomOwner && !gameState.gameOver && !gameState.paused && (
             <Button
               onClick={onPauseGame}
+              data-testid="game-pause-btn"
               variant="warning"
             >
               Pause
@@ -192,6 +193,7 @@ export default function GameStatusPanel({
                 {canResume ? (
                   <Button
                     onClick={onResumeGame}
+                    data-testid="game-resume-btn"
                     variant="success"
                   >
                     Resume Game

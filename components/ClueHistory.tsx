@@ -47,7 +47,7 @@ export default function ClueHistory({ clues }: ClueHistoryProps) {
   };
 
   return (
-    <div className="bg-surface rounded-lg flex-1 min-h-0 flex flex-col">
+    <div data-testid="game-log" className="bg-surface rounded-lg flex-1 min-h-0 flex flex-col">
       <h3 className="font-semibold px-4 py-3 border-b border-border shrink-0 text-foreground">
         Game Log
       </h3>

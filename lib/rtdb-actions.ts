@@ -484,6 +484,10 @@ export async function startGame(roomCode: string, playerId: string): Promise<voi
     pausedForTeam: null,
     board,
   });
+  
+  // Update public room index (status changed to "playing")
+  const updatedRoomData = { ...roomData, gameStarted: true, gameOver: false, paused: false };
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
 }
 
 export async function rematch(roomCode: string, playerId: string): Promise<void> {
@@ -765,10 +769,11 @@ export async function setRoomLocked(roomCode: string, playerId: string, locked: 
     if (locked) {
       await removeFromPublicRoomIndex(roomCode);
     } else {
-      // Re-add to index when unlocked
+      // Re-add to index when unlocked - pass updated roomData with locked: false
       const playersSnap = await get(ref(db, `rooms/${roomCode}/players`));
       const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
-      await updatePublicRoomIndex(roomCode, roomData, players);
+      const updatedRoomData = { ...roomData, locked: false };
+      await updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, players);
     }
   }
 }
