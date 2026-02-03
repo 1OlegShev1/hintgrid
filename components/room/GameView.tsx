@@ -84,7 +84,6 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
         showGameOverOverlay={overlays.showGameOver}
         onEndTurn={room.handleEndTurn}
         onEndGame={room.handleEndGame}
-        onPauseGame={room.handlePauseGame}
         onResumeGame={room.handleResumeGame}
         onRematch={room.handleRematch}
         onGiveClue={room.handleGiveClue}
@@ -116,7 +115,6 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
             <GameBoard
               board={gameState.board}
               currentPlayer={currentPlayer}
-              currentTeam={gameState.currentTeam}
               cardVotes={gameState.cardVotes}
               currentPlayerId={currentPlayer?.id ?? null}
               requiredVotes={requiredVotes}

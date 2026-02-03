@@ -23,12 +23,21 @@ export function MessageReactions({
 }: MessageReactionsProps) {
   const [showPicker, setShowPicker] = useState(false);
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const [isMobile, setIsMobile] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
 
-  // Calculate picker position when opening
+  // Detect mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Calculate picker position when opening (desktop only)
   const openPicker = useCallback(() => {
-    if (buttonRef.current) {
+    if (buttonRef.current && !isMobile) {
       const rect = buttonRef.current.getBoundingClientRect();
       const viewportWidth = window.innerWidth;
       const pickerWidth = 200; // approximate picker width
@@ -46,7 +55,7 @@ export function MessageReactions({
       });
     }
     setShowPicker(true);
-  }, []);
+  }, [isMobile]);
 
   // Close picker when clicking/touching outside
   useEffect(() => {
@@ -168,27 +177,36 @@ export function MessageReactions({
 
       {/* Reaction picker popup - fixed position to escape overflow container */}
       {showPicker && (
-        <div
-          ref={pickerRef}
-          className="fixed p-2 bg-surface-elevated rounded-lg shadow-lg border border-border z-50"
-          style={{
-            top: pickerPosition.top,
-            left: pickerPosition.left,
-            transform: "translateY(-100%)",
-          }}
-        >
-          <div className="grid grid-cols-5 gap-1">
-            {REACTION_EMOJIS.map((emoji) => (
-              <button
-                key={emoji}
-                onClick={() => handlePickerSelect(emoji)}
-                className="w-9 h-9 flex items-center justify-center text-xl hover:bg-surface active:bg-surface-elevated rounded transition-colors"
-              >
-                {emoji}
-              </button>
-            ))}
+        <>
+          {/* Mobile backdrop */}
+          {isMobile && (
+            <div 
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={() => setShowPicker(false)}
+            />
+          )}
+          <div
+            ref={pickerRef}
+            className="fixed p-3 bg-surface-elevated rounded-t-lg sm:rounded-lg shadow-lg border border-border z-50"
+            style={
+              isMobile
+                ? { bottom: 0, left: 0, right: 0 }
+                : { top: pickerPosition.top, left: pickerPosition.left, transform: "translateY(-100%)" }
+            }
+          >
+            <div className="grid grid-cols-5 sm:grid-cols-5 gap-2 sm:gap-1">
+              {REACTION_EMOJIS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => handlePickerSelect(emoji)}
+                  className="w-12 h-12 sm:w-9 sm:h-9 flex items-center justify-center text-2xl sm:text-xl hover:bg-surface active:bg-surface-elevated rounded transition-colors"
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        </>
       )}
     </div>
   );

@@ -2,15 +2,8 @@
 
 import { createContext, useContext, useState, useEffect, useRef, ReactNode } from "react";
 import { User, onAuthStateChanged } from "firebase/auth";
-import { getFirebaseAuth, goOffline } from "@/lib/firebase";
+import { getFirebaseAuth } from "@/lib/firebase";
 import { signInAnonymous } from "@/lib/firebase-auth";
-
-// Extend Window interface for test utilities
-declare global {
-  interface Window {
-    __hintgrid_goOffline?: () => void;
-  }
-}
 
 interface AuthContextValue {
   user: User | null;
@@ -35,12 +28,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       setError("Firebase Auth not initialized");
       setIsLoading(false);
       return;
-    }
-
-    // Expose goOffline to window for E2E test cleanup
-    // This allows tests to trigger a clean Firebase disconnect before closing browsers
-    if (typeof window !== "undefined") {
-      window.__hintgrid_goOffline = goOffline;
     }
 
     // Listen for auth state changes
@@ -80,13 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       }
     );
 
-    return () => {
-      unsubscribe();
-      // Clean up window property
-      if (typeof window !== "undefined") {
-        delete window.__hintgrid_goOffline;
-      }
-    };
+    return () => unsubscribe();
   }, []);
 
   return (

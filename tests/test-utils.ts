@@ -5,6 +5,13 @@
 
 import { Page, BrowserContext, Browser } from '@playwright/test';
 
+// Extend Window interface for HintGrid's custom goOffline function
+declare global {
+  interface Window {
+    __hintgrid_goOffline?: () => void;
+  }
+}
+
 /** 
  * Prefix for test player names - helps identify and clean up test data.
  * Using timestamp ensures uniqueness across parallel runs.

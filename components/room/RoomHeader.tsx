@@ -310,13 +310,13 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
                     }
                     setIsEditingName(false);
                   }}
-                  className="flex items-center"
+                  className="flex items-center max-w-[180px]"
                 >
                   <input
                     type="text"
                     value={editedName}
                     onChange={(e) => setEditedName(e.target.value)}
-                    className="px-2 py-1 text-sm border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
+                    className="w-full px-2 py-1 text-sm border border-border rounded-lg bg-surface text-foreground focus:ring-2 focus:ring-primary focus:border-transparent"
                     maxLength={40}
                     autoFocus
                     onBlur={() => {

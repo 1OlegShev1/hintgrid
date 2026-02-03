@@ -4,10 +4,6 @@ import { execSync } from 'child_process';
  * Global teardown for Playwright tests.
  * Cleans up any orphaned rooms left by tests.
  * 
- * Cleanup strategy:
- * 1. First pass: Delete rooms where all players are disconnected (immediate cleanup)
- * 2. Second pass: Delete rooms older than 5 minutes (fallback for stuck rooms)
- * 
  * Requires Firebase Admin credentials:
  * - Run `gcloud auth application-default login` before tests, OR
  * - Set GOOGLE_APPLICATION_CREDENTIALS to a service account key
@@ -15,47 +11,29 @@ import { execSync } from 'child_process';
 async function globalTeardown() {
   console.log('\n🧹 Cleaning up test rooms...');
   
-  // Give Firebase a moment to process any remaining onDisconnect handlers
-  // This helps catch rooms where cleanup was triggered but not yet completed
-  await new Promise(resolve => setTimeout(resolve, 2000));
-  
   try {
-    // First pass: Delete rooms where all players disconnected
-    // This catches rooms where goOffline() was called successfully
-    console.log('Pass 1: Cleaning disconnected rooms...');
-    const disconnectedResult = execSync('npm run cleanup:rooms -- --disconnected', {
+    // Run cleanup script - delete disconnected rooms or those older than 5 minutes
+    // With clean disconnect (goOffline), onDisconnect fires immediately
+    const result = execSync('npm run cleanup:rooms -- --hours 0.083', {
       cwd: process.cwd(),
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: 60000,
+      timeout: 60000, // 60 second timeout
     });
     
-    const disconnectedDeleted = (disconnectedResult.match(/\[delete\]/g) || []).length;
-    if (disconnectedDeleted > 0) {
-      console.log(`  Deleted ${disconnectedDeleted} disconnected room(s)`);
-    }
+    // Extract summary from output
+    const lines = result.split('\n');
+    const summaryLines = lines.filter(l => 
+      l.includes('Rooms scanned') || 
+      l.includes('Deleted') || 
+      l.includes('Kept') ||
+      l.includes('[delete]')
+    );
     
-    // Second pass: Delete rooms older than 5 minutes
-    // This catches rooms where onDisconnect didn't fire (abrupt browser close)
-    console.log('Pass 2: Cleaning stale rooms (>5 min old)...');
-    const staleResult = execSync('npm run cleanup:rooms -- --hours 0.083', {
-      cwd: process.cwd(),
-      encoding: 'utf-8',
-      stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: 60000,
-    });
-    
-    const staleDeleted = (staleResult.match(/\[delete\]/g) || []).length;
-    if (staleDeleted > 0) {
-      console.log(`  Deleted ${staleDeleted} stale room(s)`);
-    }
-    
-    // Print summary
-    const totalDeleted = disconnectedDeleted + staleDeleted;
-    if (totalDeleted > 0) {
-      console.log(`✓ Total rooms cleaned: ${totalDeleted}`);
+    if (summaryLines.length > 0) {
+      console.log(summaryLines.join('\n'));
     } else {
-      console.log('✓ No rooms to clean up');
+      console.log('✓ Cleanup completed');
     }
   } catch (error: unknown) {
     // Don't fail tests if cleanup fails - just log it

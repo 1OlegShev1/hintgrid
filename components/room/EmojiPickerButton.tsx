@@ -12,13 +12,22 @@ interface EmojiPickerButtonProps {
 export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [pickerPosition, setPickerPosition] = useState({ top: 0, left: 0 });
+  const [isMobile, setIsMobile] = useState(false);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const pickerRef = useRef<HTMLDivElement>(null);
   const { resolvedTheme } = useTheme();
 
-  // Calculate picker position when opening
+  // Detect mobile on mount and resize
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 640);
+    checkMobile();
+    window.addEventListener("resize", checkMobile);
+    return () => window.removeEventListener("resize", checkMobile);
+  }, []);
+
+  // Calculate picker position when opening (desktop only)
   const openPicker = useCallback(() => {
-    if (buttonRef.current) {
+    if (buttonRef.current && !isMobile) {
       const rect = buttonRef.current.getBoundingClientRect();
       // Position above the button, aligned to the right edge
       setPickerPosition({
@@ -27,7 +36,7 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
       });
     }
     setIsOpen(true);
-  }, []);
+  }, [isMobile]);
 
   // Close picker when clicking/touching outside
   useEffect(() => {
@@ -101,26 +110,36 @@ export function EmojiPickerButton({ onEmojiSelect, disabled }: EmojiPickerButton
 
       {/* Fixed position picker to escape overflow containers */}
       {isOpen && (
-        <div
-          ref={pickerRef}
-          className="fixed z-50"
-          style={{
-            top: pickerPosition.top,
-            left: pickerPosition.left,
-            transform: "translateY(-100%)",
-          }}
-        >
-          <EmojiPicker
-            onEmojiClick={handleEmojiClick}
-            theme={resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT}
-            width={320}
-            height={400}
-            searchPlaceholder="Search emoji..."
-            previewConfig={{ showPreview: false }}
-            skinTonesDisabled
-            lazyLoadEmojis
-          />
-        </div>
+        <>
+          {/* Mobile backdrop */}
+          {isMobile && (
+            <div 
+              className="fixed inset-0 z-40 bg-black/30"
+              onClick={() => setIsOpen(false)}
+            />
+          )}
+          <div
+            ref={pickerRef}
+            className="fixed z-50"
+            style={
+              isMobile
+                ? { bottom: 0, left: 0, right: 0 }
+                : { top: pickerPosition.top, left: pickerPosition.left, transform: "translateY(-100%)" }
+            }
+          >
+            <EmojiPicker
+              onEmojiClick={handleEmojiClick}
+              theme={resolvedTheme === "dark" ? Theme.DARK : Theme.LIGHT}
+              width={isMobile ? "100%" : 320}
+              height={isMobile ? 350 : 400}
+              searchPlaceholder="Search emoji..."
+              previewConfig={{ showPreview: false }}
+              skinTonesDisabled
+              lazyLoadEmojis
+              autoFocusSearch={false}
+            />
+          </div>
+        </>
       )}
     </>
   );
