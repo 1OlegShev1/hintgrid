@@ -14,13 +14,16 @@ import { defineConfig, devices } from '@playwright/test';
 
 const baseURL = process.env.BASE_URL || 'http://localhost:3000';
 const isDeployed = baseURL.startsWith('https://');
+const workersEnv = process.env.PW_WORKERS ? Number(process.env.PW_WORKERS) : NaN;
+const workers = Number.isFinite(workersEnv) && workersEnv > 0 ? workersEnv : 1;
 
 export default defineConfig({
   testDir: './tests',
-  fullyParallel: true,
+  // Avoid parallelism by default to reduce Firebase rate limiting on free tier.
+  fullyParallel: false,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  workers,
   reporter: 'html',
   
   /* Clean up orphaned test rooms after all tests complete */

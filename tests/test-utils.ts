@@ -87,6 +87,42 @@ export async function cleanupContexts(contexts: BrowserContext[]): Promise<void>
 }
 
 /**
+ * Wait for lobby to load or fail fast if a connection error appears.
+ * 
+ * This helps distinguish real app issues from Firebase rate limits or other
+ * connection problems, so tests don't time out with ambiguous failures.
+ */
+export async function waitForLobbyReady(page: Page, timeout = 15000): Promise<void> {
+  const lobbyJoin = page.getByTestId('lobby-join-red-clueGiver');
+  const errorHeading = page.getByRole('heading', {
+    name: /Name Already Taken|Room is Locked|Too Many Requests|Connection Failed/i,
+  });
+
+  const start = Date.now();
+  while (Date.now() - start < timeout) {
+    if (await lobbyJoin.isVisible().catch(() => false)) {
+      return;
+    }
+
+    if (await errorHeading.first().isVisible().catch(() => false)) {
+      const title = (await errorHeading.first().textContent())?.trim() || 'Connection error';
+      let detail = '';
+      try {
+        const mainText = await page.locator('main').innerText();
+        detail = mainText.replace(/\s+/g, ' ').trim();
+      } catch {
+        // Ignore if main is not present
+      }
+      throw new Error(detail ? `${title} - ${detail}` : title);
+    }
+
+    await new Promise(resolve => setTimeout(resolve, 250));
+  }
+
+  throw new Error('Timed out waiting for lobby to load');
+}
+
+/**
  * Wait for expected player count in the lobby.
  * Counts visible player cards in the "All Players" section.
  */
@@ -129,34 +165,31 @@ export async function joinTeamRole(
 
 /**
  * Get card indices by team from clue giver's view.
- * Clue giver cards have distinctive border colors.
  * 
- * The clue giver sees all cards with colored borders indicating their team.
+ * The clue giver sees each card's team via the data-card-team attribute.
  * This function retries to handle cases where the board is still rendering.
  * 
- * IMPORTANT: The clue giver view shows team colors via border classes like
- * 'border-red-team' and 'border-blue-team'. If this returns empty, ensure
- * the page is actually the clue giver's page and the game has started.
+ * IMPORTANT: data-card-team is only present for clue givers or revealed cards.
+ * If this returns empty, ensure the page is actually the clue giver's page
+ * and the game has started.
  */
 export async function getTeamCards(clueGiverPage: Page, team: 'red' | 'blue'): Promise<number[]> {
-  const borderClass = team === 'red' ? 'border-red-team' : 'border-blue-team';
   const { expect } = await import('@playwright/test');
   
   // First, ensure the board is visible
   await expect(clueGiverPage.getByTestId('board-card-0')).toBeVisible({ timeout: 10000 });
   
-  // Wait for colored cards to appear - clue givers see colored borders
-  // Use a locator that matches any card with the team's border color
-  const coloredCardLocator = clueGiverPage.locator(`[data-testid^="board-card-"][class*="${borderClass}"]`);
+  // Wait for team attributes to appear - clue givers see data-card-team on all cards
+  const teamCardLocator = clueGiverPage.locator(`[data-testid^="board-card-"][data-card-team="${team}"]`);
   
   try {
-    // Wait for at least one colored card to be visible (proves we're in clue giver view)
-    await coloredCardLocator.first().waitFor({ state: 'visible', timeout: 15000 });
+    // Wait for at least one team card to be visible (proves we're in clue giver view)
+    await teamCardLocator.first().waitFor({ state: 'visible', timeout: 15000 });
   } catch {
-    console.warn(`  getTeamCards: No ${team} cards with colored borders found - might not be clue giver view`);
-    // Try to debug by checking what classes the first card has
-    const card0Classes = await clueGiverPage.getByTestId('board-card-0').getAttribute('class').catch(() => 'N/A');
-    console.log(`  Card 0 classes: ${card0Classes}`);
+    console.warn(`  getTeamCards: No ${team} cards with data-card-team found - might not be clue giver view`);
+    // Try to debug by checking what attribute the first card has
+    const card0Team = await clueGiverPage.getByTestId('board-card-0').getAttribute('data-card-team').catch(() => 'N/A');
+    console.log(`  Card 0 data-card-team: ${card0Team}`);
     return [];
   }
   
@@ -165,8 +198,8 @@ export async function getTeamCards(clueGiverPage: Page, team: 'red' | 'blue'): P
   for (let i = 0; i < 25; i++) {
     const card = clueGiverPage.getByTestId(`board-card-${i}`);
     try {
-      const classes = await card.getAttribute('class');
-      if (classes?.includes(borderClass)) {
+      const cardTeam = await card.getAttribute('data-card-team');
+      if (cardTeam === team) {
         indices.push(i);
       }
     } catch {
@@ -260,8 +293,8 @@ export async function createRoomAndWaitForLobby(
     throw new Error('Failed to extract room code from URL');
   }
   
-  // Wait for lobby to be fully loaded
-  await expect(page.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 15000 });
+  // Wait for lobby to be fully loaded (or surface connection errors)
+  await waitForLobbyReady(page, 15000);
   
   return roomCode;
 }
@@ -275,13 +308,11 @@ export async function joinRoomAndWaitForLobby(
   roomCode: string,
   playerName: string
 ): Promise<void> {
-  const { expect } = await import('@playwright/test');
-  
   await page.goto('/');
   await page.getByTestId('home-name-input').fill(playerName);
   await page.getByTestId('home-code-input').fill(roomCode);
   await page.getByTestId('home-join-btn').click();
   
-  // Wait for lobby to be fully loaded
-  await expect(page.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 15000 });
+  // Wait for lobby to be fully loaded (or surface connection errors)
+  await waitForLobbyReady(page, 15000);
 }
