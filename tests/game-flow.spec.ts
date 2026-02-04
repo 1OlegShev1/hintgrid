@@ -9,6 +9,7 @@ import {
   testPlayerName,
   waitForFirebaseSync,
   waitForPlayerCount,
+  checkRateLimited,
 } from './test-utils';
 
 /**
@@ -28,6 +29,10 @@ import {
  */
 
 test.describe('Full Game Flow', () => {
+  // Check if rate limited before each test
+  test.beforeEach(() => {
+    checkRateLimited();
+  });
   test('complete game flow with 4 players', async ({ browser }) => {
     test.setTimeout(120000); // 2 minutes for multi-player test with Firebase latency
     
@@ -525,8 +530,11 @@ test.describe('Full Game Flow', () => {
       await expect(resumeBtn).toBeVisible({ timeout: 5000 });
       await resumeBtn.click();
 
-      // Paused indicator should disappear
-      await expect(pages[0].getByText(/paused/i).first()).not.toBeVisible({ timeout: 5000 });
+      // Resume button should disappear (game is no longer paused)
+      await expect(resumeBtn).not.toBeVisible({ timeout: 5000 });
+      
+      // Pause button should reappear (owner can pause again)
+      await expect(pauseBtn).toBeVisible({ timeout: 5000 });
 
       // Wait for Firebase to sync resumed state
       await waitForFirebaseSync(500);

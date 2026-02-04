@@ -16,15 +16,20 @@ declare global {
  * Prefix for test player names - helps identify and clean up test data.
  * Using timestamp ensures uniqueness across parallel runs.
  */
-export const TEST_PREFIX = 'E2E';
+export const TEST_PREFIX = 'T'; // Short prefix for test player names
 
 /**
  * Generate a unique test player name.
- * Format: E2E_<timestamp>_<name>
+ * Format: T<last4digits>_<counter>_<name>
+ * 
+ * Must fit within MAX_PLAYER_NAME_LENGTH (20 chars) after sanitization.
+ * Example: T1234_0_Player1 = 15 chars
  */
 let nameCounter = 0;
+const sessionId = Date.now().toString().slice(-4); // Last 4 digits of timestamp
 export function testPlayerName(baseName: string): string {
-  return `${TEST_PREFIX}_${Date.now()}_${nameCounter++}_${baseName}`;
+  // Format: T{sessionId}_{counter}_{name} - fits in 20 chars
+  return `T${sessionId}_${nameCounter++}_${baseName}`;
 }
 
 /**
@@ -88,12 +93,64 @@ export async function cleanupContexts(contexts: BrowserContext[]): Promise<void>
 }
 
 /**
+ * Custom error class for rate limiting - allows test setup to abort early.
+ */
+export class RateLimitError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = 'RateLimitError';
+  }
+}
+
+// Track if we've been rate limited - skip all subsequent tests
+let rateLimited = false;
+let rateLimitReason = '';
+
+/**
+ * Check if we've been rate limited. Call this at the start of tests to skip early.
+ */
+export function checkRateLimited(): void {
+  if (rateLimited) {
+    throw new RateLimitError(`Skipping test - ${rateLimitReason}`);
+  }
+}
+
+/**
+ * Set up network monitoring to detect rate limiting (429 responses).
+ * Call this once per page before navigating.
+ */
+export function setupRateLimitDetection(page: Page): void {
+  page.on('response', (response) => {
+    if (response.status() === 429) {
+      rateLimited = true;
+      rateLimitReason = `HTTP 429 from ${response.url()}`;
+      console.error(`🚫 RATE LIMITED: ${rateLimitReason}`);
+    }
+  });
+  
+  // Also listen for console errors that might indicate rate limiting
+  page.on('console', (msg) => {
+    const text = msg.text();
+    if (msg.type() === 'error' && /rate.?limit|too many requests|quota exceeded/i.test(text)) {
+      rateLimited = true;
+      rateLimitReason = `Console error: ${text.slice(0, 100)}`;
+      console.error(`🚫 RATE LIMITED: ${rateLimitReason}`);
+    }
+  });
+}
+
+/**
  * Wait for lobby to load or fail fast if a connection error appears.
  * 
  * This helps distinguish real app issues from Firebase rate limits or other
  * connection problems, so tests don't time out with ambiguous failures.
  */
 export async function waitForLobbyReady(page: Page, timeout = 15000): Promise<void> {
+  // If we've been rate limited before, fail immediately
+  if (rateLimited) {
+    throw new RateLimitError(`Firebase rate limit - ${rateLimitReason}`);
+  }
+
   const lobbyJoin = page.getByTestId('lobby-join-red-clueGiver');
   const errorHeading = page.getByRole('heading', {
     name: /Name Already Taken|Room is Locked|Too Many Requests|Connection Failed/i,
@@ -101,10 +158,16 @@ export async function waitForLobbyReady(page: Page, timeout = 15000): Promise<vo
 
   const start = Date.now();
   while (Date.now() - start < timeout) {
+    // Check rate limit status (might have been set by network listener)
+    if (rateLimited) {
+      throw new RateLimitError(`Firebase rate limit - ${rateLimitReason}`);
+    }
+
     if (await lobbyJoin.isVisible().catch(() => false)) {
       return;
     }
 
+    // Check for error headings in UI
     if (await errorHeading.first().isVisible().catch(() => false)) {
       const title = (await errorHeading.first().textContent())?.trim() || 'Connection error';
       let detail = '';
@@ -114,6 +177,14 @@ export async function waitForLobbyReady(page: Page, timeout = 15000): Promise<vo
       } catch {
         // Ignore if main is not present
       }
+      
+      // Check for rate limiting in UI text
+      if (/too many requests|rate limit/i.test(title) || /too many requests|rate limit/i.test(detail)) {
+        rateLimited = true;
+        rateLimitReason = `UI error: ${title}`;
+        throw new RateLimitError(`Firebase rate limit - ${rateLimitReason}`);
+      }
+      
       throw new Error(detail ? `${title} - ${detail}` : title);
     }
 
@@ -258,12 +329,19 @@ export async function createMultipleContexts(
   count: number,
   delayMs = 500 // Increased to reduce Firebase Auth rate limit risk
 ): Promise<{ contexts: BrowserContext[]; pages: Page[] }> {
+  // Check if already rate limited before creating contexts
+  checkRateLimited();
+  
   const contexts: BrowserContext[] = [];
   const pages: Page[] = [];
   
   for (let i = 0; i < count; i++) {
     const context = await browser.newContext();
     const page = await context.newPage();
+    
+    // Set up rate limit detection on each page
+    setupRateLimitDetection(page);
+    
     contexts.push(context);
     pages.push(page);
     

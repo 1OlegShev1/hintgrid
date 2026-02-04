@@ -5,9 +5,18 @@ import {
   createRoomAndWaitForLobby,
   joinRoomAndWaitForLobby,
   testPlayerName,
+  setupRateLimitDetection,
+  checkRateLimited,
+  waitForLobbyReady,
 } from './test-utils';
 
 test.describe('Smoke Tests', () => {
+  // Set up rate limit detection and skip if already rate limited
+  test.beforeEach(async ({ page }) => {
+    checkRateLimited();
+    setupRateLimitDetection(page);
+  });
+
   test('home page loads correctly', async ({ page }) => {
     await page.goto('/');
     
@@ -28,8 +37,10 @@ test.describe('Smoke Tests', () => {
     // Should redirect to room page
     await expect(page).toHaveURL(/\/room\/[A-Z0-9]+/);
     
-    // Room should load with lobby visible - use data-testid for reliability
-    await expect(page.getByTestId('lobby-join-red-clueGiver')).toBeVisible({ timeout: 10000 });
+    // Wait for lobby to load (includes rate limit detection)
+    await waitForLobbyReady(page, 15000);
+    
+    // Verify lobby elements are visible
     await expect(page.getByTestId('lobby-join-blue-clueGiver')).toBeVisible();
   });
 

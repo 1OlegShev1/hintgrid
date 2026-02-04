@@ -14,6 +14,7 @@ interface GameStatusPanelProps {
   showGameOverOverlay?: boolean;
   onEndTurn: () => void;
   onEndGame: () => void;
+  onPauseGame: () => void;
   onResumeGame: () => void;
   onRematch?: () => void;
   onGiveClue: (word: string, count: number) => void;
@@ -30,6 +31,7 @@ export default function GameStatusPanel({
   showGameOverOverlay = false,
   onEndTurn,
   onEndGame,
+  onPauseGame,
   onResumeGame,
   onRematch,
   onGiveClue,
@@ -132,6 +134,15 @@ export default function GameStatusPanel({
               End Turn
             </button>
           )}
+          {isRoomOwner && !gameState.gameOver && !gameState.paused && (
+            <button
+              onClick={onPauseGame}
+              data-testid="game-pause-btn"
+              className="bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition-all"
+            >
+              Pause
+            </button>
+          )}
           {isRoomOwner && !gameState.gameOver && (
             <button
               onClick={() => setShowEndGameModal(true)}
@@ -177,6 +188,7 @@ export default function GameStatusPanel({
                 {canResume ? (
                   <button
                     onClick={onResumeGame}
+                    data-testid="game-resume-btn"
                     className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all"
                   >
                     Resume Game

@@ -22,7 +22,8 @@ export default defineConfig({
   // Avoid parallelism by default to reduce Firebase rate limiting on free tier.
   fullyParallel: false,
   forbidOnly: !!process.env.CI,
-  retries: process.env.CI ? 2 : 0,
+  // Always retry - Firebase rate limits are unpredictable
+  retries: process.env.CI ? 2 : 1,
   workers,
   reporter: 'html',
   

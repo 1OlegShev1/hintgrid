@@ -1,4 +1,22 @@
 import { execSync } from 'child_process';
+import { existsSync } from 'fs';
+import { join } from 'path';
+
+/**
+ * Check if Firebase Admin credentials are available.
+ * Returns true if gcloud ADC or service account key is configured.
+ */
+function hasFirebaseCredentials(): boolean {
+  // Check for explicit service account key
+  if (process.env.GOOGLE_APPLICATION_CREDENTIALS) {
+    return existsSync(process.env.GOOGLE_APPLICATION_CREDENTIALS);
+  }
+  
+  // Check for gcloud Application Default Credentials
+  const homeDir = process.env.HOME || process.env.USERPROFILE || '';
+  const adcPath = join(homeDir, '.config', 'gcloud', 'application_default_credentials.json');
+  return existsSync(adcPath);
+}
 
 /**
  * Global teardown for Playwright tests.
@@ -11,6 +29,13 @@ import { execSync } from 'child_process';
 async function globalTeardown() {
   console.log('\n🧹 Cleaning up test rooms...');
   
+  // Skip cleanup if no credentials available (prevents hanging)
+  if (!hasFirebaseCredentials()) {
+    console.log('⚠️  Cleanup skipped (no Firebase Admin credentials)');
+    console.log('   Run: gcloud auth application-default login');
+    return;
+  }
+  
   try {
     // Run cleanup script - delete disconnected rooms or those older than 5 minutes
     // With clean disconnect (goOffline), onDisconnect fires immediately
@@ -18,7 +43,7 @@ async function globalTeardown() {
       cwd: process.cwd(),
       encoding: 'utf-8',
       stdio: ['pipe', 'pipe', 'pipe'],
-      timeout: 60000, // 60 second timeout
+      timeout: 15000, // 15 second timeout (was 60s - too long)
     });
     
     // Extract summary from output
