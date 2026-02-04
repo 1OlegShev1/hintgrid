@@ -384,11 +384,29 @@ button:disabled,
   container-type: inline-size;
 }
 
+/* Normal words (up to 7 chars) */
 .card-text {
   font-size: clamp(0.5rem, 3.5cqw, 0.875rem);
-  line-height: 1.2;
+  line-height: 1;
   word-break: break-word;
   hyphens: auto;
+}
+
+/* Long words (8-9 chars like SMUGGLER) */
+.card-text-sm {
+  font-size: clamp(0.45rem, 3cqw, 0.75rem);
+  line-height: 1;
+  word-break: break-word;
+  hyphens: auto;
+}
+
+/* Extra long words (10+ chars like LEPRECHAUN, ANTARCTICA) */
+.card-text-xs {
+  font-size: clamp(0.4rem, 2.5cqw, 0.675rem);
+  line-height: 1;
+  word-break: break-word;
+  hyphens: auto;
+  letter-spacing: -0.02em;
 }
 
 /* ============================================

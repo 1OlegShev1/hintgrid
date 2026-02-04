@@ -245,9 +245,17 @@ export default function GameBoard({
     }
   }, [getCardBackIconColor]);
 
+  // Helper to get text size class based on word length
+  const getWordSizeClass = (word: string) => {
+    const len = word.length;
+    if (len >= 10) return "card-text-xs"; // Extra long words like LEPRECHAUN
+    if (len >= 8) return "card-text-sm";  // Long words like SMUGGLER
+    return "card-text";                    // Normal words
+  };
+
   return (
     <div 
-      className="grid grid-cols-5 gap-2 max-w-2xl mx-auto"
+      className="game-board-grid grid grid-cols-5 gap-1.5 sm:gap-2 max-w-2xl mx-auto"
       onKeyDown={handleKeyDown}
       role="grid"
       aria-label="Game board"
@@ -273,7 +281,7 @@ export default function GameBoard({
               data-card-team={card.revealed || isClueGiver ? card.team : undefined}
               aria-label={`${card.revealed ? `Revealed: ${card.team}` : card.word}${hasVoted ? ", you voted" : ""}${votes.length > 0 ? `, ${votes.length} votes` : ""}`}
               className={`
-                aspect-square p-2 rounded-lg font-semibold text-sm w-full
+                aspect-square p-1 sm:p-2 rounded-lg font-semibold w-full overflow-hidden
                 transition-all duration-200
                 ${getCardColor(card)}
                 ${card.revealed || !canVote
@@ -286,8 +294,10 @@ export default function GameBoard({
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2
               `}
             >
-              <div className="flex items-center justify-center h-full text-center">
-                {card.revealed ? renderCardBackIcon(card) : card.word}
+              <div className="flex items-center justify-center h-full w-full">
+                <div className={`text-center ${!card.revealed ? getWordSizeClass(card.word) : ""}`}>
+                  {card.revealed ? renderCardBackIcon(card) : card.word}
+                </div>
               </div>
             </button>
             {votes.length > 0 && !card.revealed && (
