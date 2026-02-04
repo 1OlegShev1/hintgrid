@@ -211,7 +211,7 @@ const isTeamManagementAllowed = !isActiveGame;
 **Player Removal:**
 - Removing a player clears their team/role, making them a spectator
 - Spectators can rejoin a team or leave the room
-- Truly kicking a player from the room is not implemented; they just become spectators
+- Kicking a player is separate: it removes them from the room entirely and applies a temporary ban
 
 ### Real-time Subscriptions
 
@@ -610,6 +610,10 @@ data-testid="game-clue-input"
 data-testid={`board-card-${index}`}
 data-testid={`lobby-join-${team}-${role}`}
 ```
+
+**Board card attributes (testing):**
+- `data-card-team` is set to `red|blue|neutral|trap` for clue givers and for revealed cards.
+- Use this attribute in tests when you need stable team ownership checks.
 
 **When to add test IDs:**
 - All buttons that trigger actions

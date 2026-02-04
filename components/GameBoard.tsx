@@ -39,6 +39,8 @@ export default function GameBoard({
   // Track vote counts for badge animation
   const prevVotesRef = useRef<Record<number, number>>({});
   const [animatingBadges, setAnimatingBadges] = useState<Set<number>>(new Set());
+  const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const badgeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keyboard navigation state
   const [focusedIndex, setFocusedIndex] = useState<number | null>(null);
@@ -116,7 +118,10 @@ export default function GameBoard({
       });
       
       // Remove after animation completes
-      setTimeout(() => {
+      if (revealTimeoutRef.current) {
+        clearTimeout(revealTimeoutRef.current);
+      }
+      revealTimeoutRef.current = setTimeout(() => {
         setAnimatingCards(prev => {
           const next = new Set(prev);
           newlyRevealed.forEach(i => next.delete(i));
@@ -126,6 +131,13 @@ export default function GameBoard({
     }
     
     prevRevealedRef.current = board.map(c => c.revealed);
+
+    return () => {
+      if (revealTimeoutRef.current) {
+        clearTimeout(revealTimeoutRef.current);
+        revealTimeoutRef.current = null;
+      }
+    };
   }, [board, soundContext]);
 
   // Detect vote changes for badge animation
@@ -149,7 +161,10 @@ export default function GameBoard({
       });
       
       // Remove animation class after animation completes
-      setTimeout(() => {
+      if (badgeTimeoutRef.current) {
+        clearTimeout(badgeTimeoutRef.current);
+      }
+      badgeTimeoutRef.current = setTimeout(() => {
         setAnimatingBadges(prev => {
           const next = new Set(prev);
           newAnimating.forEach(i => next.delete(i));
@@ -161,6 +176,13 @@ export default function GameBoard({
     prevVotesRef.current = Object.fromEntries(
       Object.entries(cardVotes).map(([k, v]) => [k, v.length])
     );
+
+    return () => {
+      if (badgeTimeoutRef.current) {
+        clearTimeout(badgeTimeoutRef.current);
+        badgeTimeoutRef.current = null;
+      }
+    };
   }, [cardVotes]);
 
   // Memoize card color function based on isClueGiver
@@ -248,6 +270,7 @@ export default function GameBoard({
               disabled={card.revealed || !canVote}
               tabIndex={canVote && !card.revealed ? 0 : -1}
               data-testid={`board-card-${index}`}
+              data-card-team={card.revealed || isClueGiver ? card.team : undefined}
               aria-label={`${card.revealed ? `Revealed: ${card.team}` : card.word}${hasVoted ? ", you voted" : ""}${votes.length > 0 ? `, ${votes.length} votes` : ""}`}
               className={`
                 aspect-square p-2 rounded-lg font-semibold text-sm w-full
