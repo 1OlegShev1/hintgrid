@@ -22,8 +22,9 @@ export const TEST_PREFIX = 'E2E';
  * Generate a unique test player name.
  * Format: E2E_<timestamp>_<name>
  */
+let nameCounter = 0;
 export function testPlayerName(baseName: string): string {
-  return `${TEST_PREFIX}_${Date.now()}_${baseName}`;
+  return `${TEST_PREFIX}_${Date.now()}_${nameCounter++}_${baseName}`;
 }
 
 /**
@@ -157,9 +158,15 @@ export async function joinTeamRole(
   await expect(page.getByTestId('lobby-leave-team-btn')).toBeVisible({ timeout: 10000 });
   
   // If ownerPage provided, verify the sync propagated to owner
-  // The join button should disappear on owner's page when slot is filled
+  // For clueGiver, the join button should disappear (only 1 per team)
+  // For guesser, button stays visible (multiple seekers allowed), so just wait for Firebase sync
   if (ownerPage && ownerPage !== page) {
-    await expect(ownerPage.getByTestId(`lobby-join-${team}-${role}`)).not.toBeVisible({ timeout: 10000 });
+    if (role === 'clueGiver') {
+      await expect(ownerPage.getByTestId(`lobby-join-${team}-${role}`)).not.toBeVisible({ timeout: 10000 });
+    } else {
+      // For guesser, just wait a bit for Firebase to sync
+      await waitForFirebaseSync(750);
+    }
   }
 }
 
