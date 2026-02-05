@@ -192,7 +192,14 @@ export function EmojiPickerButton({ onEmojiSelect, disabled, inputRef }: EmojiPi
             left: pickerPosition.left,
             transform: "translateY(-100%)",
           }}
-          onMouseDown={(e) => e.preventDefault()}
+          onMouseDown={(e) => {
+            // Prevent focus stealing from chat input (keeps mobile keyboard open),
+            // but allow focus on the picker's own input elements (emoji search).
+            const tag = (e.target as HTMLElement).tagName;
+            if (tag !== "INPUT" && tag !== "TEXTAREA") {
+              e.preventDefault();
+            }
+          }}
           onTouchEnd={() => {
             // Refocus input after touch interaction to keep keyboard open
             inputRef?.current?.focus();

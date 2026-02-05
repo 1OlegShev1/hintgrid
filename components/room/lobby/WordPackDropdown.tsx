@@ -48,7 +48,7 @@ export function WordPackDropdown({ selectedPacks, onPackChange }: WordPackDropdo
             ref={dropdownRef}
             className="fixed sm:absolute left-4 right-4 sm:left-0 sm:right-auto top-1/4 sm:top-full sm:mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 sm:min-w-[260px] touch-pan-y overscroll-contain"
           >
-            <div className="p-2 space-y-1 max-h-[50vh] sm:max-h-[300px] overflow-y-auto">
+            <div className="p-2 space-y-1 max-h-[50vh] sm:max-h-[400px] overflow-y-auto scrollbar-thin">
               {wordPackOptions.map((option) => {
                 const isSelected = selectedPacks.includes(option.value);
                 const packWordCount = getWordCount(option.value);

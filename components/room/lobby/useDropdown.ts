@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 
 /**
- * Shared hook for dropdown behavior: open/close state, click-outside, and body scroll lock.
+ * Shared hook for dropdown behavior: open/close state, click-outside, and close-on-scroll.
  */
 export function useDropdown() {
   const [isOpen, setIsOpen] = useState(false);
@@ -20,24 +20,12 @@ export function useDropdown() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  // Lock body scroll when open (mobile)
-  // iOS needs position:fixed + stored scroll position to truly lock scrolling
+  // Close dropdown on page scroll (keeps scrollbar visible, prevents stale positioning)
   useEffect(() => {
     if (!isOpen) return;
-    const scrollY = window.scrollY;
-    document.body.style.position = "fixed";
-    document.body.style.top = `-${scrollY}px`;
-    document.body.style.left = "0";
-    document.body.style.right = "0";
-    document.body.style.overflow = "hidden";
-    return () => {
-      document.body.style.position = "";
-      document.body.style.top = "";
-      document.body.style.left = "";
-      document.body.style.right = "";
-      document.body.style.overflow = "";
-      window.scrollTo(0, scrollY);
-    };
+    const handleScroll = () => setIsOpen(false);
+    window.addEventListener("scroll", handleScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleScroll);
   }, [isOpen]);
 
   return { isOpen, setIsOpen, containerRef, dropdownRef };

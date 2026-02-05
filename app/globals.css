@@ -110,7 +110,7 @@ html {
 body {
   color: inherit;
   background: transparent;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, Helvetica, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
 }
 
 /* Synthwave background override - let synthwave-bg handle it */
@@ -339,7 +339,36 @@ button:disabled,
   animation: pulse-subtle 2s ease-in-out infinite;
 }
 
-/* Custom scrollbar - thin and always visible */
+/* Page-level scrollbar styling — if any page scrolls (e.g. mobile),
+   the scrollbar matches the theme instead of the native gray one. */
+
+/* If a page-level scrollbar ever appears, style it to match the theme */
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-muted) var(--color-surface);
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--color-surface);
+  border-radius: 4px;
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: var(--color-border);
+  border-radius: 4px;
+  border: 2px solid var(--color-surface);
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: var(--color-muted);
+}
+
+/* Custom scrollbar - thin and always visible (for inner scrollable elements) */
 .scrollbar-thin {
   scrollbar-width: thin;
   scrollbar-color: var(--color-muted) var(--color-surface);

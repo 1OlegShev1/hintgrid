@@ -94,7 +94,7 @@ export function CustomWordsDropdown({ customWords, onCustomWordsChange }: Custom
 
               {/* Word chips */}
               {customWords.length > 0 && (
-                <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
+                <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto scrollbar-thin">
                   {customWords.map((word) => (
                     <span
                       key={word}

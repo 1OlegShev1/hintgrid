@@ -71,7 +71,7 @@ function DefaultErrorFallback({ error, onRetry }: { error?: Error; onRetry: () =
             <summary className="text-sm text-muted cursor-pointer hover:text-foreground">
               Error details
             </summary>
-            <pre className="mt-2 p-3 bg-surface rounded-lg text-xs text-foreground overflow-auto max-h-32">
+            <pre className="mt-2 p-3 bg-surface rounded-lg text-xs text-foreground overflow-auto scrollbar-thin max-h-32">
               {error.message}
             </pre>
           </details>

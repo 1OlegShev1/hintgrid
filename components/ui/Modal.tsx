@@ -162,11 +162,8 @@ export function Modal({
   useEffect(() => {
     if (open) {
       document.addEventListener("keydown", handleEscape);
-      // Prevent body scroll when modal is open
-      document.body.style.overflow = "hidden";
       return () => {
         document.removeEventListener("keydown", handleEscape);
-        document.body.style.overflow = "";
       };
     }
   }, [open, handleEscape]);
@@ -221,7 +218,7 @@ export function Modal({
         </div>
 
         {/* Content - scrollable */}
-        <div className="text-muted overflow-y-auto min-h-0 my-4">
+        <div className="text-muted overflow-y-auto scrollbar-thin min-h-0 my-4">
           {children}
         </div>
 

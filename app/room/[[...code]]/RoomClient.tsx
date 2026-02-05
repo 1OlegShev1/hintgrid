@@ -316,7 +316,7 @@ export default function RoomPage() {
   }
 
   return (
-    <main className="min-h-screen p-4 relative bg-transparent">
+    <main className="min-h-[calc(100vh-3.5rem-1px)] p-4 relative bg-transparent">
       {/* Theme-aware Background - sun moves left (game) to right (game over) */}
       <ThemeBackground sunPosition={sunPosition} />
 

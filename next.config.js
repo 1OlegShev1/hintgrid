@@ -5,6 +5,13 @@ const nextConfig = {
   images: {
     unoptimized: true,
   },
+  // Help Turbopack resolve bare `@import "tailwindcss"` in CSS without
+  // walking up past the project root (avoids noisy resolution errors).
+  turbopack: {
+    resolveAlias: {
+      tailwindcss: require.resolve('tailwindcss/index.css'),
+    },
+  },
 }
 
 module.exports = nextConfig
