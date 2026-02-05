@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPicker from "@/components/AvatarPicker";
-import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
+import { LOCAL_STORAGE_AVATAR_KEY, LOCAL_STORAGE_PLAYER_NAME_KEY, LOCAL_STORAGE_LAST_ROOM_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
 import { subscribeToPublicRooms, type PublicRoomData } from "@/lib/rtdb";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
 import { ThemeBackground } from "@/components/ThemeBackground";
@@ -19,10 +19,14 @@ export default function Home() {
   const [loadingRooms, setLoadingRooms] = useState(true);
   const router = useRouter();
 
-  // Initialize avatar from localStorage or random on mount
+  // Initialize avatar and player name from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(LOCAL_STORAGE_AVATAR_KEY);
-    setAvatar(stored || getRandomAvatar());
+    const storedAvatar = localStorage.getItem(LOCAL_STORAGE_AVATAR_KEY);
+    setAvatar(storedAvatar || getRandomAvatar());
+    const storedName = localStorage.getItem(LOCAL_STORAGE_PLAYER_NAME_KEY);
+    if (storedName) setPlayerName(storedName);
+    const storedRoom = localStorage.getItem(LOCAL_STORAGE_LAST_ROOM_KEY);
+    if (storedRoom) setRoomCode(storedRoom);
   }, []);
 
   // Subscribe to public rooms in real-time
@@ -49,18 +53,24 @@ export default function Home() {
 
   const handleCreateRoom = () => {
     if (!playerName.trim()) return;
+    localStorage.setItem(LOCAL_STORAGE_PLAYER_NAME_KEY, playerName.trim());
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
+    localStorage.setItem(LOCAL_STORAGE_LAST_ROOM_KEY, code);
     const visibility = isPrivateRoom ? "private" : "public";
     router.push(`/room/${code}?name=${encodeURIComponent(playerName)}&create=true&visibility=${visibility}`);
   };
 
   const handleJoinRoom = () => {
     if (!playerName.trim() || !roomCode.trim()) return;
+    localStorage.setItem(LOCAL_STORAGE_PLAYER_NAME_KEY, playerName.trim());
+    localStorage.setItem(LOCAL_STORAGE_LAST_ROOM_KEY, roomCode.toUpperCase());
     router.push(`/room/${roomCode.toUpperCase()}?name=${encodeURIComponent(playerName)}`);
   };
 
   const handleJoinPublicRoom = (code: string) => {
     if (!playerName.trim()) return;
+    localStorage.setItem(LOCAL_STORAGE_PLAYER_NAME_KEY, playerName.trim());
+    localStorage.setItem(LOCAL_STORAGE_LAST_ROOM_KEY, code);
     router.push(`/room/${code}?name=${encodeURIComponent(playerName)}`);
   };
 

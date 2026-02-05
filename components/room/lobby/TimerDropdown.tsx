@@ -1,3 +1,4 @@
+import { ChevronDown, Check } from "lucide-react";
 import type { TimerPreset } from "@/shared/types";
 import { TIMER_PRESETS } from "@/shared/constants";
 import { useDropdown } from "./useDropdown";
@@ -24,14 +25,7 @@ export function TimerDropdown({ selectedPreset, onPresetChange }: TimerDropdownP
         className="px-2 py-1 border border-border rounded-lg bg-surface-elevated text-sm font-medium flex items-center gap-1 min-w-[100px] hover:border-muted transition-colors"
       >
         <span>{TIMER_PRESETS[selectedPreset].label}</span>
-        <svg
-          className={`w-4 h-4 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown className={`w-4 h-4 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
       {isOpen && (
         <>
@@ -64,9 +58,7 @@ export function TimerDropdown({ selectedPreset, onPresetChange }: TimerDropdownP
                       </div>
                     </div>
                     {isSelected && (
-                      <svg className="w-4 h-4 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                      </svg>
+                      <Check className="w-4 h-4 text-primary" />
                     )}
                   </button>
                 );

@@ -75,6 +75,9 @@ Every file in the project, grouped by directory.
 | `TeamLobby.tsx` | Team selection panel — composes sub-components from `lobby/` |
 | `CompactTeams.tsx` | Compact team roster shown during active game |
 | `GameStatusPanel.tsx` | Turn info, clue input, pause/end controls, game-over panel |
+| `PauseBanner.tsx` | Game paused UI with resume logic (extracted from GameStatusPanel) |
+| `GameOverPanel.tsx` | Game over stats and rematch/lobby buttons (extracted from GameStatusPanel) |
+| `ChatInput.tsx` | Shared chat input form with emoji picker (used in GameView & LobbyView) |
 | `ClueInput.tsx` | Clue word + count input with board-word validation |
 | `ConnectionStatus.tsx` | Loading skeleton + error states for room connection |
 | `JoinRoomForm.tsx` | Name + avatar form shown before entering a room |

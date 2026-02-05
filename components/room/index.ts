@@ -11,3 +11,4 @@ export { GameView } from "./GameView";
 export { LobbyView } from "./LobbyView";
 export { EmojiPickerButton } from "./EmojiPickerButton";
 export { MessageReactions } from "./MessageReactions";
+export { ChatInput } from "./ChatInput";

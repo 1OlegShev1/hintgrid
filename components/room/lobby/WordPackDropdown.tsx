@@ -1,3 +1,4 @@
+import { ChevronDown } from "lucide-react";
 import type { WordPack } from "@/shared/types";
 import { WORD_PACKS } from "@/shared/constants";
 import { getPackDisplayName, getWordCount } from "@/shared/words";
@@ -28,14 +29,7 @@ export function WordPackDropdown({ selectedPacks, onPackChange }: WordPackDropdo
             ? getPackDisplayName(selectedPacks[0])
             : `${selectedPacks.length} packs selected`}
         </span>
-        <svg
-          className={`w-4 h-4 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown className={`w-4 h-4 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
       {isOpen && (
         <>

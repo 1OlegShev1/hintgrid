@@ -1,8 +1,9 @@
 import { useState } from "react";
 import type { GameState, Player } from "@/shared/types";
-import GameStats from "@/components/GameStats";
-import { ConfirmModal } from "@/components/ui";
+import { ConfirmModal, Button } from "@/components/ui";
 import ClueInput from "./ClueInput";
+import { PauseBanner } from "./PauseBanner";
+import { GameOverPanel } from "./GameOverPanel";
 
 interface GameStatusPanelProps {
   gameState: GameState;
@@ -114,30 +115,33 @@ export default function GameStatusPanel({
         {/* Row 2 (mobile) / Right side (desktop): Action buttons */}
         <div className="flex items-center gap-2">
           {isMyTurn && (
-            <button
+            <Button
               onClick={onEndTurn}
               data-testid="game-end-turn-btn"
-              className="flex-1 sm:flex-none bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-all whitespace-nowrap"
+              variant="secondary"
+              className="flex-1 sm:flex-none whitespace-nowrap"
             >
               End Turn
-            </button>
+            </Button>
           )}
           {isRoomOwner && !gameState.gameOver && !gameState.paused && (
-            <button
+            <Button
               onClick={onPauseGame}
               data-testid="game-pause-btn"
-              className="flex-1 sm:flex-none bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition-all whitespace-nowrap"
+              variant="warning"
+              className="flex-1 sm:flex-none whitespace-nowrap"
             >
               Pause
-            </button>
+            </Button>
           )}
           {isRoomOwner && !gameState.gameOver && (
-            <button
+            <Button
               onClick={() => setShowEndGameModal(true)}
-              className="flex-1 sm:flex-none bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-all whitespace-nowrap"
+              variant="danger"
+              className="flex-1 sm:flex-none whitespace-nowrap"
             >
               End
-            </button>
+            </Button>
           )}
         </div>
       </div>
@@ -166,54 +170,14 @@ export default function GameStatusPanel({
       )}
       
       {/* Game Paused Banner */}
-      {gameState.paused && (() => {
-        // Check if conditions are met to resume
-        const pausedTeam = gameState.pausedForTeam;
-        const teamPlayers = players.filter((p) => p.team === pausedTeam);
-        // connected !== false treats undefined as connected (backwards compatible)
-        const hasClueGiver = teamPlayers.some((p) => p.role === "clueGiver" && p.connected !== false);
-        const hasGuesser = teamPlayers.some((p) => p.role === "guesser" && p.connected !== false);
-        const canResume = hasClueGiver && hasGuesser;
-        
-        return (
-          <div className="bg-amber-100 dark:bg-amber-900/30 border-2 border-amber-400 dark:border-amber-600 rounded-lg p-4 text-center mb-4">
-            <div className="flex items-center justify-center gap-2 mb-2">
-              <svg className="w-5 h-5 text-amber-600 dark:text-amber-400 animate-pulse" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <span className="text-lg font-bold text-amber-800 dark:text-amber-200">Game Paused</span>
-            </div>
-            <p className="text-sm text-amber-700 dark:text-amber-300 mb-3">
-              {gameState.pauseReason === "teamDisconnected" && (
-                <>{gameState.pausedForTeam?.toUpperCase()} team has no connected players. Waiting for reconnection...</>
-              )}
-              {gameState.pauseReason === "clueGiverDisconnected" && (
-                <>{gameState.pausedForTeam?.toUpperCase()} team hinter disconnected. Waiting for reconnection...</>
-              )}
-              {gameState.pauseReason === "noGuessers" && (
-                <>{gameState.pausedForTeam?.toUpperCase()} team has no connected guessers. Waiting for reconnection...</>
-              )}
-            </p>
-            {isRoomOwner && (
-              <div className="mt-2">
-                {canResume ? (
-                  <button
-                    onClick={onResumeGame}
-                    data-testid="game-resume-btn"
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all"
-                  >
-                    Resume Game
-                  </button>
-                ) : (
-                  <p className="text-xs text-amber-600 dark:text-amber-400">
-                    Need a connected hinter and at least one connected seeker to resume
-                  </p>
-                )}
-              </div>
-            )}
-          </div>
-        );
-      })()}
+      {gameState.paused && (
+        <PauseBanner
+          gameState={gameState}
+          players={players}
+          isRoomOwner={isRoomOwner}
+          onResumeGame={onResumeGame}
+        />
+      )}
       
       {gameState.gameStarted && !gameState.gameOver && !gameState.paused && !gameState.currentClue && !canGiveClue && (
         <div className={`rounded-lg p-3 text-center mb-4 border-2 ${
@@ -231,47 +195,15 @@ export default function GameStatusPanel({
         </div>
       )}
       
-      {gameState.gameOver && !showGameOverOverlay && (
-        <div data-testid="game-over-panel" className="bg-white dark:bg-gray-800 border-2 border-yellow-400 rounded-lg p-6">
-          <h3 data-testid="game-winner-text" className="text-2xl font-bold text-center mb-6">
-            🎮 Game Over! {gameState.winner?.toUpperCase()} Team Wins!
-          </h3>
-          
-          {/* Game Stats */}
-          <GameStats 
-            board={gameState.board} 
-            players={players} 
-            winner={gameState.winner}
-          />
-          
-          {/* Action Buttons */}
-          <div className="mt-6 pt-4 border-t border-gray-200 dark:border-gray-700">
-            {isRoomOwner && (
-              <div className="flex items-center justify-center gap-3">
-                {onRematch && (
-                  <button
-                    onClick={onRematch}
-                    data-testid="game-rematch-btn"
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-green-700 transition-all"
-                  >
-                    Rematch
-                  </button>
-                )}
-                <button
-                  onClick={onEndGame}
-                  className="bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-all"
-                >
-                  Back to Lobby
-                </button>
-              </div>
-            )}
-            {!isRoomOwner && (
-              <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                Waiting for room owner to start rematch or return to lobby...
-              </p>
-            )}
-          </div>
-        </div>
+      {gameState.gameOver && (
+        <GameOverPanel
+          gameState={gameState}
+          players={players}
+          isRoomOwner={isRoomOwner}
+          showGameOverOverlay={showGameOverOverlay}
+          onRematch={onRematch}
+          onEndGame={onEndGame}
+        />
       )}
       
       {canGiveClue && (

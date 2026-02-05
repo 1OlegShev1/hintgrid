@@ -1,3 +1,4 @@
+import { Lock, AlertCircle, Clock } from "lucide-react";
 import { Card } from "@/components/ui/Card";
 import { Button } from "@/components/ui/Button";
 import { ThemeBackground } from "@/components/ThemeBackground";
@@ -74,23 +75,6 @@ function LoadingSkeleton() {
   );
 }
 
-function LockIcon({ className }: { className?: string }) {
-  return (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth={2} 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
-  );
-}
-
 // Check if error looks like a rate limit / quota error from Firebase
 function isRateLimitError(error: string): boolean {
   const lower = error.toLowerCase();
@@ -126,11 +110,7 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
     const getErrorDetails = () => {
       if (isNameTaken) {
         return {
-          icon: (
-            <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ),
+          icon: <AlertCircle className="w-8 h-8 text-error" />,
           iconBg: "bg-error/20 border border-error/50",
           title: "Name Already Taken",
           message: "Someone in this room is already using that name. Please choose a different one.",
@@ -138,7 +118,7 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
       }
       if (isRoomLocked) {
         return {
-          icon: <LockIcon className="w-8 h-8 text-warning" />,
+          icon: <Lock className="w-8 h-8 text-warning" />,
           iconBg: "bg-warning/20 border border-warning/50",
           title: "Room is Locked",
           message: "This room is currently locked by the owner. New players cannot join at this time.",
@@ -146,22 +126,14 @@ export default function ConnectionStatus({ isConnecting, connectionError }: Conn
       }
       if (isRateLimit) {
         return {
-          icon: (
-            <svg className="w-8 h-8 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-            </svg>
-          ),
+          icon: <Clock className="w-8 h-8 text-warning" />,
           iconBg: "bg-warning/20 border border-warning/50",
           title: "Too Many Requests",
           message: "Please wait a moment before trying again.",
         };
       }
       return {
-        icon: (
-          <svg className="w-8 h-8 text-error" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-        ),
+        icon: <AlertCircle className="w-8 h-8 text-error" />,
         iconBg: "bg-error/20 border border-error/50",
         title: "Connection Failed",
         message: connectionError,

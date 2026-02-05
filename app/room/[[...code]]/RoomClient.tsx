@@ -1,7 +1,7 @@
 "use client";
 
 import { useSearchParams, useRouter, useParams } from "next/navigation";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { ref, get } from "firebase/database";
 import TransitionOverlay from "@/components/TransitionOverlay";
 import { ThemeBackground, type SunPosition } from "@/components/ThemeBackground";
@@ -15,7 +15,7 @@ import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
 import { useTimerSound } from "@/hooks/useTimerSound";
 import { useRoomDerivedState } from "@/hooks/useRoomDerivedState";
 import { useSoundContextOptional, type MusicTrack } from "@/contexts/SoundContext";
-import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar } from "@/shared/constants";
+import { LOCAL_STORAGE_AVATAR_KEY, LOCAL_STORAGE_LAST_ROOM_KEY, getRandomAvatar } from "@/shared/constants";
 import {
   RoomHeader,
   RoomClosedModal,
@@ -109,6 +109,15 @@ export default function RoomPage() {
   const derived = useRoomDerivedState(state.gameState, state.currentPlayer, state.players);
   const firebaseConnection = useFirebaseConnection();
 
+  // Save room code to localStorage once connection succeeds (for quick rejoin)
+  const savedRoomRef = useRef(false);
+  useEffect(() => {
+    if (!connection.isConnecting && !connection.error && state.gameState && !savedRoomRef.current) {
+      savedRoomRef.current = true;
+      localStorage.setItem(LOCAL_STORAGE_LAST_ROOM_KEY, roomCode);
+    }
+  }, [connection.isConnecting, connection.error, state.gameState, roomCode]);
+
   // Determine who should trigger timeouts:
   // - Primary: the owner (if connected)
   // - Fallback: first connected player by ID (if owner is disconnected)
@@ -161,6 +170,7 @@ export default function RoomPage() {
   // Leave room handler - explicitly clean up before disconnecting
   const handleLeaveRoom = () => {
     console.log("[Room] Leave button clicked - cleaning up...");
+    localStorage.removeItem(LOCAL_STORAGE_LAST_ROOM_KEY);
     
     // Explicitly call leaveRoom to handle proper cleanup (room + publicRooms index)
     // This ensures both room and index are deleted atomically with proper permissions.

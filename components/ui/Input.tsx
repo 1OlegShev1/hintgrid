@@ -1,6 +1,7 @@
 "use client";
 
 import { forwardRef } from "react";
+import { AlertCircle } from "lucide-react";
 import { cva, type VariantProps } from "class-variance-authority";
 import { cn } from "@/lib/utils";
 
@@ -96,14 +97,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={`${inputId}-error`}
             className="mt-1.5 text-sm text-error flex items-center gap-1.5"
           >
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </p>
         )}
@@ -202,14 +196,7 @@ export const Textarea = forwardRef<HTMLTextAreaElement, TextareaProps>(
             id={`${inputId}-error`}
             className="mt-1.5 text-sm text-error flex items-center gap-1.5"
           >
-            <svg className="w-4 h-4 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-              />
-            </svg>
+            <AlertCircle className="w-4 h-4 shrink-0" />
             {error}
           </p>
         )}

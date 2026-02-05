@@ -250,6 +250,8 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 | Key | Description | Default |
 |-----|-------------|---------|
 | `hintgrid_avatar` | Player's selected emoji avatar | Random from preset list |
+| `hintgrid_player_name` | Player's last used display name | Empty (not pre-filled) |
+| `hintgrid_last_room` | Last active room code (for quick rejoin) | Empty |
 | `hintgrid_sound_volume` | Master volume (0-1) | `0.5` |
 | `hintgrid_sound_muted` | Whether sounds are muted | `false` |
 | `hintgrid_music_enabled` | Whether music is enabled | `false` |
@@ -257,6 +259,12 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 | `hintgrid-style` | Theme style (classic/synthwave) | `synthwave` |
 
 **Note:** Keys are defined in `shared/constants.ts` (except theme keys which are in `ThemeProvider.tsx`). Music volume is derived from master volume (30%).
+
+**Name Persistence & Quick Rejoin:**
+- Player name is saved to `hintgrid_player_name` whenever the player creates/joins a room (from home page or JoinRoomForm)
+- Last room code is saved to `hintgrid_last_room` when room connection succeeds
+- Home page reads both on mount to pre-fill the name and room code fields
+- Room code is cleared on explicit leave (Leave button), so the rejoin hint only appears after unexpected disconnections
 
 ### sessionStorage Keys
 
@@ -447,6 +455,7 @@ Team color helpers in `TeamIndicator`:
 - Each sidebar section takes 50% of available height with internal scrolling
 
 **Chat Components:**
+- `ChatInput` (`components/room/ChatInput.tsx`) — Shared chat input form with emoji picker and send button (used in GameView & LobbyView)
 - `EmojiPickerButton` (`components/room/EmojiPickerButton.tsx`) — Full emoji picker dropdown for chat input (uses `emoji-picker-react`)
 - `MessageReactions` (`components/room/MessageReactions.tsx`) — Reaction display and picker for chat messages
 - `ChatLog` (`components/ChatLog.tsx`) — IRC-style chat log with reaction support and auto-scroll toggle

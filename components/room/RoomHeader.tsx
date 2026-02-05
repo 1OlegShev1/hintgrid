@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Crown, QrCode, Lock, Unlock, Globe, EyeOff, Check, Share2, LogOut } from "lucide-react";
 import { QRCodeSVG } from "qrcode.react";
 import type { Player } from "@/shared/types";
 import { Card, Button, Badge } from "@/components/ui";
@@ -16,70 +17,18 @@ interface RoomHeaderProps {
 }
 
 function CrownIcon({ className }: { className?: string }) {
-  return (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
-      fill="currentColor"
-      aria-label="Room owner"
-    >
-      <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
-    </svg>
-  );
+  return <Crown className={className} aria-label="Room owner" />;
 }
 
 function QrCodeIcon({ className }: { className?: string }) {
-  return (
-    <svg
-      className={className}
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth={2}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-label="Show QR code"
-    >
-      <rect x="3" y="3" width="7" height="7" />
-      <rect x="14" y="3" width="7" height="7" />
-      <rect x="3" y="14" width="7" height="7" />
-      <rect x="14" y="14" width="3" height="3" />
-      <rect x="18" y="14" width="3" height="3" />
-      <rect x="14" y="18" width="3" height="3" />
-      <rect x="18" y="18" width="3" height="3" />
-    </svg>
-  );
+  return <QrCode className={className} aria-label="Show QR code" />;
 }
 
 function LockIcon({ className, locked }: { className?: string; locked: boolean }) {
   return locked ? (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth={2} 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-      aria-label="Room locked"
-    >
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-    </svg>
+    <Lock className={className} aria-label="Room locked" />
   ) : (
-    <svg 
-      className={className} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth={2} 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-      aria-label="Room unlocked"
-    >
-      <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
-      <path d="M7 11V7a5 5 0 0 1 9.9-1" />
-    </svg>
+    <Unlock className={className} aria-label="Room unlocked" />
   );
 }
 
@@ -158,21 +107,11 @@ async function copyToClipboard(text: string): Promise<boolean> {
 }
 
 function GlobeIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <circle cx="12" cy="12" r="10" />
-      <path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" />
-    </svg>
-  );
+  return <Globe className={className} />;
 }
 
 function EyeOffIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round">
-      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24" />
-      <line x1="1" y1="1" x2="23" y2="23" />
-    </svg>
-  );
+  return <EyeOff className={className} />;
 }
 
 export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLocked, roomName, visibility, onSetRoomLocked, onSetRoomName, onLeaveRoom }: RoomHeaderProps) {
@@ -196,6 +135,17 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
 
   const handleShareRoom = async () => {
     const roomUrl = `${window.location.origin}/room/${roomCode}`;
+    
+    // Use native share sheet on mobile if available
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: "Join HintGrid", url: roomUrl });
+        return;
+      } catch {
+        // User cancelled or share failed - fall through to clipboard
+      }
+    }
+    
     const success = await copyToClipboard(roomUrl);
     if (success) {
       setCopiedUrl(true);
@@ -268,16 +218,12 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
             >
               {copiedUrl ? (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
-                  </svg>
+                  <Check className="w-4 h-4" />
                   <span className="hidden xs:inline">Copied!</span>
                 </>
               ) : (
                 <>
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                  </svg>
+                  <Share2 className="w-4 h-4" />
                   <span>Share</span>
                 </>
               )}
@@ -289,9 +235,7 @@ export default function RoomHeader({ roomCode, currentPlayer, isRoomOwner, isLoc
                 className="flex items-center gap-1.5 px-2.5 py-1.5 bg-surface hover:bg-error/10 text-muted hover:text-error rounded-lg text-sm font-medium transition-all"
                 title="Leave room"
               >
-                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
-                </svg>
+                <LogOut className="w-4 h-4" />
                 <span>Leave</span>
               </button>
             )}

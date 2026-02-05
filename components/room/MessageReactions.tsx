@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect, useCallback } from "react";
+import { Smile } from "lucide-react";
 import { REACTION_EMOJIS } from "@/shared/constants";
 import type { Player } from "@/shared/types";
 
@@ -126,21 +127,7 @@ export function MessageReactions({
         title="Add reaction"
         className="inline-flex items-center justify-center w-6 h-6 rounded text-muted hover:text-foreground hover:bg-surface transition-colors disabled:cursor-not-allowed disabled:opacity-50 opacity-60 md:opacity-0 md:group-hover:opacity-100 focus:opacity-100"
       >
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          className="w-3.5 h-3.5"
-        >
-          <circle cx="12" cy="12" r="10" />
-          <path d="M8 14s1.5 2 4 2 4-2 4-2" />
-          <line x1="9" y1="9" x2="9.01" y2="9" />
-          <line x1="15" y1="9" x2="15.01" y2="9" />
-        </svg>
+        <Smile className="w-3.5 h-3.5" />
       </button>
 
       {/* Existing reactions */}

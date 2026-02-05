@@ -27,6 +27,7 @@ export function setupIntegrationSuite() {
   });
 
   afterAll(async () => {
+    await cleanupTestData();
     disableTestMode();
     await cleanupTestFirebase();
   });

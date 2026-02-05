@@ -1,6 +1,6 @@
 import { useState, useEffect, FormEvent } from "react";
 import AvatarPicker from "@/components/AvatarPicker";
-import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar } from "@/shared/constants";
+import { LOCAL_STORAGE_AVATAR_KEY, LOCAL_STORAGE_PLAYER_NAME_KEY, getRandomAvatar } from "@/shared/constants";
 import { validatePlayerName } from "@/shared/validation";
 import { ThemeBackground } from "@/components/ThemeBackground";
 import { Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
@@ -15,10 +15,12 @@ export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
   const [avatar, setAvatar] = useState("");
   const [nameError, setNameError] = useState<string | null>(null);
 
-  // Initialize avatar from localStorage or random on mount
+  // Initialize avatar and name from localStorage on mount
   useEffect(() => {
-    const stored = localStorage.getItem(LOCAL_STORAGE_AVATAR_KEY);
-    setAvatar(stored || getRandomAvatar());
+    const storedAvatar = localStorage.getItem(LOCAL_STORAGE_AVATAR_KEY);
+    setAvatar(storedAvatar || getRandomAvatar());
+    const storedName = localStorage.getItem(LOCAL_STORAGE_PLAYER_NAME_KEY);
+    if (storedName) setPendingName(storedName);
   }, []);
 
   const handleAvatarSelect = (newAvatar: string) => {
@@ -42,6 +44,7 @@ export default function JoinRoomForm({ roomCode, onJoin }: JoinRoomFormProps) {
       return;
     }
 
+    localStorage.setItem(LOCAL_STORAGE_PLAYER_NAME_KEY, trimmed);
     onJoin(trimmed, avatar);
   };
 

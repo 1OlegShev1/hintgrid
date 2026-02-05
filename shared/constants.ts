@@ -1,5 +1,7 @@
 // localStorage keys
 export const LOCAL_STORAGE_AVATAR_KEY = "hintgrid_avatar";
+export const LOCAL_STORAGE_PLAYER_NAME_KEY = "hintgrid_player_name";
+export const LOCAL_STORAGE_LAST_ROOM_KEY = "hintgrid_last_room";
 export const LOCAL_STORAGE_SOUND_VOLUME_KEY = "hintgrid_sound_volume";
 export const LOCAL_STORAGE_SOUND_MUTED_KEY = "hintgrid_sound_muted";
 export const LOCAL_STORAGE_MUSIC_ENABLED_KEY = "hintgrid_music_enabled";

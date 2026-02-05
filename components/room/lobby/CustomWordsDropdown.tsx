@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ChevronDown, X } from "lucide-react";
 import { MAX_CUSTOM_WORDS_ON_BOARD } from "@/shared/constants";
 import { parseCustomWordsInput } from "@/shared/validation";
 import { useDropdown } from "./useDropdown";
@@ -40,14 +41,7 @@ export function CustomWordsDropdown({ customWords, onCustomWordsChange }: Custom
         className="px-2 py-1 border border-border rounded-lg bg-surface-elevated text-sm font-medium flex items-center gap-1.5 hover:border-muted transition-colors"
       >
         <span>{customWords.length || "0"}</span>
-        <svg
-          className={`w-4 h-4 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-        </svg>
+        <ChevronDown className={`w-4 h-4 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`} />
       </button>
       {isOpen && (
         <>
@@ -106,14 +100,7 @@ export function CustomWordsDropdown({ customWords, onCustomWordsChange }: Custom
                         onClick={() => handleRemove(word)}
                         className="hover:text-accent/80"
                       >
-                        <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M6 18L18 6M6 6l12 12"
-                          />
-                        </svg>
+                        <X className="w-3 h-3" />
                       </button>
                     </span>
                   ))}

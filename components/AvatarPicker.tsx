@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
+import { Pencil } from "lucide-react";
 import { AVATARS } from "@/shared/constants";
 
 interface AvatarPickerProps {
@@ -45,9 +46,7 @@ export default function AvatarPicker({ selected, onSelect }: AvatarPickerProps) 
       
       {/* Edit indicator */}
       <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-primary rounded-full flex items-center justify-center shadow-sm">
-        <svg className="w-3 h-3 text-primary-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-        </svg>
+        <Pencil className="w-3 h-3 text-primary-foreground" />
       </div>
 
       {/* Popover Picker */}
