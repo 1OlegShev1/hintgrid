@@ -906,8 +906,9 @@ export async function getPublicRooms(limit: number = 6): Promise<Array<{
     .sort((a, b) => b.playerCount - a.playerCount);
   
   // Check if each candidate room actually exists (verify not orphaned)
-  // Only check up to limit + a few extra to account for orphans
-  const toCheck = candidates.slice(0, limit + 5);
+  // Check up to 50 entries to catch accumulated orphans from onDisconnect
+  // (onDisconnect can't atomically remove publicRooms due to permission races)
+  const toCheck = candidates.slice(0, Math.min(candidates.length, 50));
   const validRooms: typeof candidates = [];
   const orphanedCodes: string[] = [];
   
@@ -988,8 +989,9 @@ export function subscribeToPublicRooms(
           .sort((a, b) => b.playerCount - a.playerCount);
         
         // Check if each candidate room actually exists (verify not orphaned)
-        // Only check up to limit + a few extra to account for orphans
-        const toCheck = candidates.slice(0, limit + 5);
+        // Check up to 50 entries to catch accumulated orphans from onDisconnect
+        // (onDisconnect can't atomically remove publicRooms due to permission races)
+        const toCheck = candidates.slice(0, Math.min(candidates.length, 50));
         const validRooms: typeof candidates = [];
         const orphanedCodes: string[] = [];
         
