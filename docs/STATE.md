@@ -116,13 +116,14 @@ Requires Firebase Admin credentials (`gcloud auth application-default login`).
 This also cleans up corresponding `publicRooms` entries.
 
 **Orphaned public index cleanup**:
-- The `onDisconnect` handler now removes both `/rooms/{roomCode}` and `/publicRooms/{roomCode}`
+- The `onDisconnect` handler removes both `/rooms/{roomCode}` and `/publicRooms/{roomCode}` atomically
 - The cleanup script also removes both collections
-- If orphaned entries exist (from before this fix), run: `npm run cleanup:orphaned-public-rooms`
-- The home page (`getPublicRooms`) also detects and cleans orphans as a fallback:
-  - Before displaying rooms, it verifies each room actually exists
+- If orphaned entries accumulate, run: `npm run cleanup:orphaned-public-rooms`
+- The home page (`subscribeToPublicRooms` and `getPublicRooms`) also detects and cleans orphans as a fallback:
+  - Checks up to 50 public room entries to verify each room actually exists
   - Orphaned entries are deleted in the background (any authenticated user can delete)
   - Security rule: anyone can delete `/publicRooms/{roomCode}` if `/rooms/{roomCode}` doesn't exist
+  - This provides automatic cleanup when users visit the home page
 
 ### Public Rooms
 
