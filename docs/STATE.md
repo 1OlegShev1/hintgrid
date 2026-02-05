@@ -268,10 +268,18 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 
 **Audio Context Handling:**
 - On each page load, the code attempts to resume the audio context immediately (may succeed if user recently interacted)
-- Event listeners are always set up for click/touchstart/keydown to unlock audio on first interaction
+- Event listeners are set up for click/touchstart/keydown to unlock audio on first interaction
+- Listeners are only removed after a **successful** unlock — if the first interaction fails to resume the context (common on iOS), they keep retrying on subsequent interactions
 - When `setMusicTrack()` is called but audio isn't ready, the track is stored as pending
 - An `audioUnlockTrigger` state forces the music effect to re-run once audio becomes available
 - The Howl instance uses `onplayerror` callback to retry playback on the "unlock" event
+
+**iOS Navigation Workaround:**
+- iOS can suspend the audio context during client-side navigation even after it was previously unlocked
+- `SoundContext` sets up persistent click/touchstart listeners that detect a suspended context
+- On interaction, the context is resumed directly in the gesture handler (maintaining the gesture-to-audio link iOS requires)
+- A `retryTrigger` counter forces the music playback effect to re-run once the context is recovered
+- The retry only fires if music isn't already playing, avoiding unnecessary interruptions
 
 ### Game Configuration Constants
 
