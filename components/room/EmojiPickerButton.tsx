@@ -160,7 +160,6 @@ export function EmojiPickerButton({ onEmojiSelect, disabled, inputRef }: EmojiPi
         type="button"
         onClick={handleClick}
         onMouseDown={handlePointerDown}
-        onTouchStart={handlePointerDown}
         disabled={disabled}
         className="p-2.5 text-muted hover:text-foreground hover:bg-surface active:bg-surface-elevated rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         aria-label="Open emoji picker"

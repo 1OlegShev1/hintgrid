@@ -150,7 +150,7 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
         </div>
 
         <div 
-          className="md:col-span-2 flex flex-col gap-4 h-[600px] md:h-auto overflow-hidden"
+          className="md:col-span-2 flex flex-col gap-4 h-[720px] md:h-auto overflow-hidden"
           style={sidebarHeight ? { height: sidebarHeight } : undefined}
         >
           <Card variant="elevated" padding="md" className="overflow-hidden flex flex-col" style={{ height: 'calc(50% - 8px)', minHeight: 0 }}>
