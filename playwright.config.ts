@@ -47,7 +47,10 @@ export default defineConfig({
     webServer: {
       command: 'npm run dev',
       url: 'http://localhost:3000',
-      reuseExistingServer: !process.env.CI,
+      // Always reuse an existing server if one is running.
+      // In CI, the workflow should start the server explicitly before tests.
+      // This also avoids issues where CI=1 is set by dev tooling (e.g. Cursor IDE).
+      reuseExistingServer: true,
       stdout: 'ignore',
       stderr: 'pipe',
     },
