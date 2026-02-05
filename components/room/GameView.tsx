@@ -164,11 +164,12 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
               onAddReaction={room.handleAddReaction}
               onRemoveReaction={room.handleRemoveReaction}
             />
-            <form onSubmit={room.handleSendMessage} className="mt-3 pt-2 border-t border-border shrink-0">
+            <form onSubmit={room.handleSendMessage} className="chat-input-container mt-3 pt-2 border-t border-border shrink-0">
               <div className="flex gap-2 items-center">
                 <EmojiPickerButton
                   onEmojiSelect={room.handleEmojiSelect}
                   disabled={isSendingChat}
+                  inputRef={chatInputRef}
                 />
                 <input
                   ref={chatInputRef}

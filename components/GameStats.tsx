@@ -67,7 +67,7 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
     <div className="space-y-4">
       {/* Game Summary */}
       <div className="grid grid-cols-2 gap-4">
-        <div className={`rounded-lg p-4 sm:p-6 text-center ${
+        <div className={`rounded-lg p-3 sm:p-6 text-center overflow-hidden ${
           winner === "red" 
             ? "bg-red-team-light border-2 border-red-team" 
             : "bg-red-team-light/50 border border-red-team/30"
@@ -80,11 +80,11 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
           </div>
           {winner === "red" && (
             <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-red-team">
-              🎉 🏆 Winner! 🏆 🎉
+              <span className="hidden sm:inline">🎉 </span>🏆 Winner!<span className="hidden sm:inline"> 🏆 🎉</span>
             </div>
           )}
         </div>
-        <div className={`rounded-lg p-4 sm:p-6 text-center ${
+        <div className={`rounded-lg p-3 sm:p-6 text-center overflow-hidden ${
           winner === "blue" 
             ? "bg-blue-team-light border-2 border-blue-team" 
             : "bg-blue-team-light/50 border border-blue-team/30"
@@ -97,7 +97,7 @@ export default function GameStats({ board, players, winner }: GameStatsProps) {
           </div>
           {winner === "blue" && (
             <div className="mt-2 sm:mt-3 text-fluid-winner font-bold text-blue-team">
-              🎉 🏆 Winner! 🏆 🎉
+              <span className="hidden sm:inline">🎉 </span>🏆 Winner!<span className="hidden sm:inline"> 🏆 🎉</span>
             </div>
           )}
         </div>
