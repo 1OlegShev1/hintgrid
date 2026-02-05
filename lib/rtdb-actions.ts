@@ -254,12 +254,13 @@ export async function updateDisconnectBehavior(
     // Set up room deletion - if this fires, it removes everything including players
     // If it doesn't fire (network issues), at least player-level handler above
     // will mark us as disconnected so cleanup script can delete the room later
-    //
-    // NOTE: onDisconnect does NOT support removing publicRooms entry atomically
-    // due to permission race conditions (publicRooms rules check if room owner exists,
-    // but we're deleting the room at the same time). The explicit leaveRoom() function
-    // and cleanup scripts handle publicRooms cleanup instead.
     await onDisconnect(roomRef).remove();
+    
+    // Also remove from public room index on disconnect
+    // Security rules allow any authenticated user to delete orphaned entries
+    // (when the room doesn't exist)
+    const publicRoomRef = ref(db, `publicRooms/${roomCode}`);
+    await onDisconnect(publicRoomRef).remove();
   } else if (isOwner) {
     // Owner but others are connected - cancel room-level handler if we had one
     await onDisconnect(roomRef).cancel();
