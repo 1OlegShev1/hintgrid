@@ -69,10 +69,11 @@ export default function GameStatusPanel({
           )}
         </div>
       )}
-      <div className="p-6">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center gap-4 flex-wrap">
-          {/* Score display */}
+      <div className="p-4 sm:p-6">
+      {/* Mobile: Stack vertically | Desktop: Single row */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
+        {/* Row 1 (mobile) / Left side (desktop): Scores + Timer */}
+        <div className="flex items-center justify-between sm:justify-start gap-4">
           <div className="flex items-center gap-2">
             <span className={`px-3 py-1 rounded font-bold ${
               !gameState.gameOver && gameState.currentTeam === "red" 
@@ -91,7 +92,7 @@ export default function GameStatusPanel({
           </div>
           {timeRemaining !== null && (
             <div className={`
-              text-lg font-mono flex items-center gap-2
+              text-xl font-mono flex items-center gap-2
               ${gameState.paused ? "text-amber-600 dark:text-amber-400" : ""}
               ${!gameState.paused && timeRemaining <= 10 && timeRemaining > 0 ? "timer-urgent text-red-600 font-bold" : ""}
             `}>
@@ -103,33 +104,15 @@ export default function GameStatusPanel({
               )}
             </div>
           )}
-          {gameState.currentClue && (
-            <div className={`
-              flex items-center gap-3 bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-400 dark:border-amber-600 rounded-lg px-4 py-2
-              ${clueAnimating ? "clue-announce" : ""}
-            `}>
-              <span className="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">Clue</span>
-              <span className="font-bold text-xl text-amber-900 dark:text-amber-100">{gameState.currentClue.word}</span>
-              <span className="bg-amber-600 text-white text-sm font-bold px-2 py-0.5 rounded-full">{gameState.currentClue.count}</span>
-              {gameState.remainingGuesses !== null && (
-                <span className="text-sm text-amber-700 dark:text-amber-300 ml-2">
-                  {gameState.remainingGuesses} guess{gameState.remainingGuesses !== 1 ? 'es' : ''} left
-                </span>
-              )}
-            </div>
-          )}
-          {gameState.remainingGuesses !== null && !gameState.currentClue && (
-            <div className="text-sm text-gray-600 dark:text-gray-400">
-              Guesses left: {gameState.remainingGuesses}
-            </div>
-          )}
         </div>
+        
+        {/* Row 2 (mobile) / Right side (desktop): Action buttons */}
         <div className="flex items-center gap-2">
           {isMyTurn && (
             <button
               onClick={onEndTurn}
               data-testid="game-end-turn-btn"
-              className="bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-all"
+              className="flex-1 sm:flex-none bg-gray-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-gray-700 transition-all whitespace-nowrap"
             >
               End Turn
             </button>
@@ -138,7 +121,7 @@ export default function GameStatusPanel({
             <button
               onClick={onPauseGame}
               data-testid="game-pause-btn"
-              className="bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition-all"
+              className="flex-1 sm:flex-none bg-amber-500 text-white px-4 py-2 rounded-lg font-semibold hover:bg-amber-600 transition-all whitespace-nowrap"
             >
               Pause
             </button>
@@ -146,13 +129,36 @@ export default function GameStatusPanel({
           {isRoomOwner && !gameState.gameOver && (
             <button
               onClick={() => setShowEndGameModal(true)}
-              className="bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-all"
+              className="flex-1 sm:flex-none bg-red-600 text-white px-4 py-2 rounded-lg font-semibold hover:bg-red-700 transition-all whitespace-nowrap"
             >
-              End Game
+              End
             </button>
           )}
         </div>
       </div>
+
+      {/* Clue display (when present) */}
+      {gameState.currentClue && (
+        <div className={`
+          flex items-center justify-center gap-3 bg-amber-100 dark:bg-amber-900/40 border-2 border-amber-400 dark:border-amber-600 rounded-lg px-4 py-2 mb-4
+          ${clueAnimating ? "clue-announce" : ""}
+        `}>
+          <span className="text-xs font-medium text-amber-700 dark:text-amber-300 uppercase tracking-wide">Clue</span>
+          <span className="font-bold text-xl text-amber-900 dark:text-amber-100">{gameState.currentClue.word}</span>
+          <span className="bg-amber-600 text-white text-sm font-bold px-2 py-0.5 rounded-full">{gameState.currentClue.count}</span>
+          {gameState.remainingGuesses !== null && (
+            <span className="text-sm text-amber-700 dark:text-amber-300">
+              ({gameState.remainingGuesses} left)
+            </span>
+          )}
+        </div>
+      )}
+      
+      {gameState.remainingGuesses !== null && !gameState.currentClue && (
+        <div className="text-sm text-gray-600 dark:text-gray-400 text-center mb-4">
+          Guesses left: {gameState.remainingGuesses}
+        </div>
+      )}
       
       {/* Game Paused Banner */}
       {gameState.paused && (() => {

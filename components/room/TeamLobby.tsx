@@ -62,6 +62,10 @@ export default function TeamLobby({
   const [customWordsInput, setCustomWordsInput] = useState("");
   const [customWordsErrors, setCustomWordsErrors] = useState<string[]>([]);
 
+  // Refs for dropdown content (for scroll isolation)
+  const wordPackDropdownRef = useRef<HTMLDivElement>(null);
+  const customWordsDropdownRef = useRef<HTMLDivElement>(null);
+
   // Close dropdowns when clicking outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -80,6 +84,16 @@ export default function TeamLobby({
       return () => document.removeEventListener("mousedown", handleClickOutside);
     }
   }, [isWordPackOpen, isTimerOpen, isCustomWordsOpen]);
+
+  // Lock body scroll when dropdowns are open (mobile)
+  useEffect(() => {
+    if (isWordPackOpen || isCustomWordsOpen) {
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.overflow = '';
+      };
+    }
+  }, [isWordPackOpen, isCustomWordsOpen]);
   
   // Custom words handlers
   const handleAddCustomWords = () => {
@@ -202,53 +216,63 @@ export default function TeamLobby({
                     </svg>
                   </button>
                   {isWordPackOpen && (
-                    <div className="absolute top-full left-0 mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 min-w-[220px] max-w-[calc(100vw-2rem)]">
-                      <div className="p-2 space-y-1 max-h-[300px] overflow-y-auto">
-                        {wordPackOptions.map((option) => {
-                          const isSelected = gameState.wordPack.includes(option.value);
-                          const packWordCount = getWordCount(option.value);
-                          const isLastSelected = isSelected && gameState.wordPack.length === 1;
-                          return (
-                            <label
-                              key={option.value}
-                              className={`flex items-center gap-2 px-2 py-1.5 rounded cursor-pointer ${
-                                isLastSelected 
-                                  ? 'opacity-50 cursor-not-allowed' 
-                                  : 'hover:bg-surface'
-                              }`}
-                            >
-                              <input
-                                type="checkbox"
-                                checked={isSelected}
-                                disabled={isLastSelected}
-                                onChange={() => {
-                                  if (isLastSelected) return;
-                                  const newPacks = isSelected
-                                    ? gameState.wordPack.filter(p => p !== option.value)
-                                    : [...gameState.wordPack, option.value];
-                                  onWordPackChange(newPacks);
-                                }}
-                                className="w-4 h-4 rounded border-border text-primary focus:ring-primary"
-                              />
-                              <span className="text-sm font-medium flex-1">{option.label}</span>
-                              <span className="text-xs text-muted">{packWordCount}</span>
-                            </label>
-                          );
-                        })}
+                    <>
+                      {/* Mobile backdrop */}
+                      <div 
+                        className="fixed inset-0 bg-black/30 z-40 sm:hidden" 
+                        onClick={() => setIsWordPackOpen(false)}
+                      />
+                      <div 
+                        ref={wordPackDropdownRef}
+                        className="fixed sm:absolute left-4 right-4 sm:left-0 sm:right-auto top-1/4 sm:top-full sm:mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 sm:min-w-[260px] touch-pan-y overscroll-contain"
+                      >
+                        <div className="p-2 space-y-1 max-h-[50vh] sm:max-h-[300px] overflow-y-auto">
+                          {wordPackOptions.map((option) => {
+                            const isSelected = gameState.wordPack.includes(option.value);
+                            const packWordCount = getWordCount(option.value);
+                            const isLastSelected = isSelected && gameState.wordPack.length === 1;
+                            return (
+                              <label
+                                key={option.value}
+                                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer ${
+                                  isLastSelected 
+                                    ? 'opacity-50 cursor-not-allowed' 
+                                    : 'hover:bg-surface active:bg-surface'
+                                }`}
+                              >
+                                <input
+                                  type="checkbox"
+                                  checked={isSelected}
+                                  disabled={isLastSelected}
+                                  onChange={() => {
+                                    if (isLastSelected) return;
+                                    const newPacks = isSelected
+                                      ? gameState.wordPack.filter(p => p !== option.value)
+                                      : [...gameState.wordPack, option.value];
+                                    onWordPackChange(newPacks);
+                                  }}
+                                  className="w-5 h-5 rounded border-border text-primary focus:ring-primary"
+                                />
+                                <span className="text-base font-medium flex-1">{option.label}</span>
+                                <span className="text-sm text-muted">{packWordCount}</span>
+                              </label>
+                            );
+                          })}
+                        </div>
+                        <div className="border-t border-border px-3 py-2.5 flex justify-between items-center">
+                          <span className="text-sm text-muted">
+                            Total: {getWordCount(gameState.wordPack)} words
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => setIsWordPackOpen(false)}
+                            className="text-sm text-primary hover:text-primary/80 font-medium px-3 py-1"
+                          >
+                            Done
+                          </button>
+                        </div>
                       </div>
-                      <div className="border-t border-border px-3 py-2 flex justify-between items-center">
-                        <span className="text-xs text-muted">
-                          Total: {getWordCount(gameState.wordPack)} words
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() => setIsWordPackOpen(false)}
-                          className="text-xs text-primary hover:text-primary/80 font-medium"
-                        >
-                          Done
-                        </button>
-                      </div>
-                    </div>
+                    </>
                   )}
                 </div>
               ) : (
@@ -281,80 +305,90 @@ export default function TeamLobby({
                     </svg>
                   </button>
                   {isCustomWordsOpen && (
-                    <div className="absolute top-full right-0 mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 w-[320px] max-w-[calc(100vw-2rem)]">
-                      <div className="p-3 space-y-3">
-                        {/* Input section */}
-                        <div>
-                          <label className="block text-xs text-muted mb-1">
-                            Add words (comma or newline separated):
-                          </label>
-                          <textarea
-                            value={customWordsInput}
-                            onChange={(e) => setCustomWordsInput(e.target.value)}
-                            placeholder="pizza, rocket, unicorn..."
-                            className="w-full h-16 px-2 py-1.5 text-sm border border-border rounded-lg bg-surface resize-none focus:outline-none focus:ring-2 focus:ring-primary"
-                          />
-                          <button
-                            type="button"
-                            onClick={handleAddCustomWords}
-                            disabled={!customWordsInput.trim()}
-                            className="mt-2 w-full px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                          >
-                            Add Words
-                          </button>
-                        </div>
-                        
-                        {/* Errors */}
-                        {customWordsErrors.length > 0 && (
-                          <div className="text-xs text-error space-y-0.5">
-                            {customWordsErrors.slice(0, 3).map((err, i) => (
-                              <p key={i}>{err}</p>
-                            ))}
-                            {customWordsErrors.length > 3 && (
-                              <p>...and {customWordsErrors.length - 3} more</p>
-                            )}
+                    <>
+                      {/* Mobile backdrop */}
+                      <div 
+                        className="fixed inset-0 bg-black/30 z-40 sm:hidden" 
+                        onClick={() => setIsCustomWordsOpen(false)}
+                      />
+                      <div 
+                        ref={customWordsDropdownRef}
+                        className="fixed sm:absolute left-4 right-4 sm:left-auto sm:right-0 top-1/4 sm:top-full sm:mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 sm:w-[320px] touch-pan-y overscroll-contain"
+                      >
+                        <div className="p-3 space-y-3">
+                          {/* Input section */}
+                          <div>
+                            <label className="block text-xs text-muted mb-1">
+                              Add words (comma or newline separated):
+                            </label>
+                            <textarea
+                              value={customWordsInput}
+                              onChange={(e) => setCustomWordsInput(e.target.value)}
+                              placeholder="pizza, rocket, unicorn..."
+                              className="w-full h-16 px-2 py-1.5 text-sm border border-border rounded-lg bg-surface resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                            />
+                            <button
+                              type="button"
+                              onClick={handleAddCustomWords}
+                              disabled={!customWordsInput.trim()}
+                              className="mt-2 w-full px-3 py-1.5 bg-primary text-primary-foreground text-sm font-medium rounded-lg hover:opacity-90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                            >
+                              Add Words
+                            </button>
                           </div>
-                        )}
-                        
-                        {/* Word chips */}
-                        {gameState.customWords.length > 0 && (
-                          <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
-                            {gameState.customWords.map((word) => (
-                              <span
-                                key={word}
-                                className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/20 text-accent text-xs rounded-full"
-                              >
-                                {word}
-                                <button
-                                  type="button"
-                                  onClick={() => handleRemoveCustomWord(word)}
-                                  className="hover:text-accent/80"
+                          
+                          {/* Errors */}
+                          {customWordsErrors.length > 0 && (
+                            <div className="text-xs text-error space-y-0.5">
+                              {customWordsErrors.slice(0, 3).map((err, i) => (
+                                <p key={i}>{err}</p>
+                              ))}
+                              {customWordsErrors.length > 3 && (
+                                <p>...and {customWordsErrors.length - 3} more</p>
+                              )}
+                            </div>
+                          )}
+                          
+                          {/* Word chips */}
+                          {gameState.customWords.length > 0 && (
+                            <div className="flex flex-wrap gap-1.5 max-h-[120px] overflow-y-auto">
+                              {gameState.customWords.map((word) => (
+                                <span
+                                  key={word}
+                                  className="inline-flex items-center gap-1 px-2 py-0.5 bg-accent/20 text-accent text-xs rounded-full"
                                 >
-                                  <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                                  </svg>
-                                </button>
-                              </span>
-                            ))}
-                          </div>
-                        )}
+                                  {word}
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveCustomWord(word)}
+                                    className="hover:text-accent/80"
+                                  >
+                                    <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                  </button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                        {/* Footer */}
+                        <div className="border-t border-border px-3 py-2 flex justify-between items-center">
+                          <span className="text-xs text-muted">
+                            {gameState.customWords.length} words (up to {MAX_CUSTOM_WORDS_ON_BOARD} appear)
+                          </span>
+                          {gameState.customWords.length > 0 && (
+                            <button
+                              type="button"
+                              onClick={handleClearAllCustomWords}
+                              className="text-xs text-error hover:text-error/80 font-medium"
+                            >
+                              Clear All
+                            </button>
+                          )}
+                        </div>
                       </div>
-                      {/* Footer */}
-                      <div className="border-t border-border px-3 py-2 flex justify-between items-center">
-                        <span className="text-xs text-muted">
-                          {gameState.customWords.length} words (up to {MAX_CUSTOM_WORDS_ON_BOARD} appear)
-                        </span>
-                        {gameState.customWords.length > 0 && (
-                          <button
-                            type="button"
-                            onClick={handleClearAllCustomWords}
-                            className="text-xs text-error hover:text-error/80 font-medium"
-                          >
-                            Clear All
-                          </button>
-                        )}
-                      </div>
-                    </div>
+                    </>
                   )}
                 </div>
               ) : (

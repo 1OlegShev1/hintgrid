@@ -111,8 +111,8 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
 
       {/* Board and Chat */}
       <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-        <div ref={boardRef} className="md:col-span-3">
-          <Card variant="elevated" padding="lg" className={turnGlowClass}>
+        <div ref={boardRef} className="md:col-span-3 -mx-5 sm:mx-0">
+          <Card variant="elevated" padding="lg" className={cn("p-1.5! sm:p-6!", turnGlowClass)}>
             <GameBoard
               board={gameState.board}
               currentPlayer={currentPlayer}
@@ -126,28 +126,22 @@ export function GameView({ room, derived, timer, overlays }: GameViewProps) {
             
             {/* Player/Team indicator below board - only show if player has team */}
             {currentPlayer?.team && currentPlayer?.role && (
-              <div className="mt-4 flex justify-center">
+              <div className="mt-3 sm:mt-4 flex justify-center">
                 <div className={cn(
-                  "inline-flex items-center gap-3 px-5 py-3 rounded-xl border-2 shadow-sm",
+                  "inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-3 rounded-xl border-2 shadow-sm",
                   getTeamClasses(currentPlayer.team, "card")
                 )}>
                   <span className={cn(
-                    "text-xs font-medium uppercase tracking-wide",
+                    "text-xs font-medium uppercase tracking-wide hidden sm:inline",
                     getTeamTextClass(currentPlayer.team)
                   )}>
                     You are
                   </span>
                   <span className={cn(
-                    "font-bold text-lg",
+                    "font-bold text-base sm:text-lg",
                     getTeamTextClass(currentPlayer.team)
                   )}>
                     {currentPlayer.team.toUpperCase()} {currentPlayer.role === "clueGiver" ? "Hinter" : "Seeker"}
-                  </span>
-                  <span className={cn(
-                    "text-sm",
-                    getTeamTextClass(currentPlayer.team)
-                  )}>
-                    ({currentPlayer.name})
                   </span>
                 </div>
               </div>

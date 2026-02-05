@@ -80,7 +80,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen flex items-center justify-center p-4 relative bg-transparent">
+    <main className="min-h-screen flex items-center justify-center px-5 sm:px-6 py-6 relative bg-transparent">
       {/* Theme-aware Background */}
       <ThemeBackground />
 

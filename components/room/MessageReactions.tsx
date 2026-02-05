@@ -48,7 +48,7 @@ export function MessageReactions({
     setShowPicker(true);
   }, []);
 
-  // Close picker when clicking/touching outside
+  // Close picker when clicking/touching outside + prevent background scroll
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (
@@ -61,12 +61,21 @@ export function MessageReactions({
       }
     }
 
+    // Prevent background scroll when touching inside the picker
+    function handleTouchMove(event: TouchEvent) {
+      if (pickerRef.current?.contains(event.target as Node)) {
+        event.preventDefault();
+      }
+    }
+
     if (showPicker) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
+      document.addEventListener("touchmove", handleTouchMove, { passive: false });
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
         document.removeEventListener("touchstart", handleClickOutside);
+        document.removeEventListener("touchmove", handleTouchMove);
       };
     }
   }, [showPicker]);
@@ -170,7 +179,7 @@ export function MessageReactions({
       {showPicker && (
         <div
           ref={pickerRef}
-          className="fixed p-2 bg-surface-elevated rounded-lg shadow-lg border border-border z-50"
+          className="fixed p-2 bg-surface-elevated rounded-lg shadow-lg border border-border z-50 touch-none overscroll-contain"
           style={{
             top: pickerPosition.top,
             left: pickerPosition.left,
