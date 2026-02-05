@@ -7,7 +7,8 @@ import TransitionOverlay from "@/components/TransitionOverlay";
 import { ThemeBackground, type SunPosition } from "@/components/ThemeBackground";
 import { useRtdbRoom } from "@/hooks/useRtdbRoom";
 import { goOffline, goOnline, getDatabase } from "@/lib/firebase";
-import { leaveRoom } from "@/lib/rtdb-actions";
+import { leaveRoom } from "@/lib/rtdb";
+import { RECONNECT_DELAY_MS } from "@/hooks/room/constants";
 import { useGameTimer } from "@/hooks/useGameTimer";
 import { useFirebaseConnection } from "@/hooks/useFirebaseConnection";
 import { useTransitionOverlays } from "@/hooks/useTransitionOverlays";
@@ -104,7 +105,8 @@ export default function RoomPage() {
 
   // Custom hooks - only join room once avatar is loaded to prevent re-join race condition
   const room = useRtdbRoom(roomCode, playerName, playerAvatar || "", visibility);
-  const derived = useRoomDerivedState(room.gameState, room.currentPlayer, room.players);
+  const { state, connection, actions } = room;
+  const derived = useRoomDerivedState(state.gameState, state.currentPlayer, state.players);
   const firebaseConnection = useFirebaseConnection();
 
   // Determine who should trigger timeouts:
@@ -112,45 +114,45 @@ export default function RoomPage() {
   // - Fallback: first connected player by ID (if owner is disconnected)
   const shouldTriggerTimeout = useMemo(() => {
     if (firebaseConnection !== "connected") return false;
-    if (room.currentPlayer?.connected === false) return false;
-    if (!room.currentPlayer?.id) return false;
+    if (state.currentPlayer?.connected === false) return false;
+    if (!state.currentPlayer?.id) return false;
 
     // If I'm the owner, I trigger
     if (derived.isRoomOwner) return true;
 
     // Check if owner is disconnected
-    const ownerPlayer = room.players.find((p) => p.id === room.gameState?.ownerId);
+    const ownerPlayer = state.players.find((p) => p.id === state.gameState?.ownerId);
     const ownerConnected = ownerPlayer?.connected !== false;
     if (ownerConnected) return false;
 
     // Owner is disconnected - am I the first connected player by ID?
-    const connectedPlayerIds = room.players
+    const connectedPlayerIds = state.players
       .filter((p) => p.connected !== false)
       .map((p) => p.id)
       .sort();
-    return connectedPlayerIds[0] === room.currentPlayer.id;
+    return connectedPlayerIds[0] === state.currentPlayer.id;
   }, [
     firebaseConnection,
-    room.currentPlayer?.connected,
-    room.currentPlayer?.id,
-    room.players,
-    room.gameState?.ownerId,
+    state.currentPlayer?.connected,
+    state.currentPlayer?.id,
+    state.players,
+    state.gameState?.ownerId,
     derived.isRoomOwner,
   ]);
 
-  const timer = useGameTimer(room.gameState, room.handleEndTurn, { shouldTriggerTimeout });
-  const overlays = useTransitionOverlays(room.gameState, room.currentPlayer?.team ?? null);
+  const timer = useGameTimer(state.gameState, actions.endTurn, { shouldTriggerTimeout });
+  const overlays = useTransitionOverlays(state.gameState, state.currentPlayer?.team ?? null);
   
   // Timer tick sounds
   useTimerSound({
     timeRemaining: timer.timeRemaining,
-    isPaused: room.gameState?.paused,
-    isGameOver: room.gameState?.gameOver,
+    isPaused: state.gameState?.paused,
+    isGameOver: state.gameState?.gameOver,
   });
 
   // Idle timeout - only active in lobby (not during game)
   // Shows warning after 1 hour of inactivity, then redirects to home
-  const isInActiveGame = room.gameState?.gameStarted && !room.gameState?.gameOver;
+  const isInActiveGame = state.gameState?.gameStarted && !state.gameState?.gameOver;
   const { isIdle, resetIdleTimer } = useIdleTimeout({
     timeout: IDLE_TIMEOUT_MS,
     enabled: !!playerName && !isInActiveGame, // Only track when in lobby
@@ -175,13 +177,13 @@ export default function RoomPage() {
         .finally(() => {
           // Disconnect and navigate away (happens whether leaveRoom succeeds or fails)
           goOffline(); // Ensures any remaining onDisconnect handlers fire
-          setTimeout(() => goOnline(), 100); // Reconnect for home page
+          setTimeout(() => goOnline(), RECONNECT_DELAY_MS); // Reconnect for home page
           router.push("/");
         });
     } else {
       // No uid or roomCode - just disconnect and navigate
       goOffline();
-      setTimeout(() => goOnline(), 100);
+      setTimeout(() => goOnline(), RECONNECT_DELAY_MS);
       router.push("/");
     }
   };
@@ -203,10 +205,10 @@ export default function RoomPage() {
   const setMusicTrack = soundContext?.setMusicTrack;
   
   // Track whether gameState exists (for dependency tracking)
-  const hasGameState = !!room.gameState;
-  const gameStarted = room.gameState?.gameStarted ?? false;
-  const gameOver = room.gameState?.gameOver ?? false;
-  const timerPreset = room.gameState?.timerPreset ?? "normal";
+  const hasGameState = !!state.gameState;
+  const gameStarted = state.gameState?.gameStarted ?? false;
+  const gameOver = state.gameState?.gameOver ?? false;
+  const timerPreset = state.gameState?.timerPreset ?? "normal";
   
   // Sun position: right on game over (podium), left otherwise (lobby/game)
   const sunPosition: SunPosition = gameOver ? "right" : "left";
@@ -256,8 +258,8 @@ export default function RoomPage() {
   }, [setMusicTrack]);
 
   // Early returns for special states
-  if (room.roomClosedReason) {
-    return <RoomClosedModal reason={room.roomClosedReason} />;
+  if (state.roomClosedReason) {
+    return <RoomClosedModal reason={state.roomClosedReason} />;
   }
 
   if (!playerName) {
@@ -295,20 +297,20 @@ export default function RoomPage() {
 
   // Check for connection errors BEFORE checking gameState
   // (Firebase listeners may populate gameState even if joinRoom fails)
-  if (room.connectionError) {
+  if (connection.error) {
     return (
       <ConnectionStatus
         isConnecting={false}
-        connectionError={room.connectionError}
+        connectionError={connection.error}
       />
     );
   }
 
-  if (!room.gameState || room.isConnecting) {
+  if (!state.gameState || connection.isConnecting) {
     return (
       <ConnectionStatus
-        isConnecting={room.isConnecting}
-        connectionError={room.connectionError}
+        isConnecting={connection.isConnecting}
+        connectionError={connection.error}
       />
     );
   }
@@ -352,10 +354,10 @@ export default function RoomPage() {
       )}
       
       <div className="max-w-6xl mx-auto relative z-10">
-        <RoomHeader roomCode={roomCode} currentPlayer={room.currentPlayer} isRoomOwner={derived.isRoomOwner} isLocked={room.gameState.locked} roomName={room.gameState.roomName} visibility={room.gameState.visibility} onSetRoomLocked={room.handleSetRoomLocked} onSetRoomName={room.handleSetRoomName} onLeaveRoom={handleLeaveRoom} />
+        <RoomHeader roomCode={roomCode} currentPlayer={state.currentPlayer} isRoomOwner={derived.isRoomOwner} isLocked={state.gameState.locked} roomName={state.gameState.roomName} visibility={state.gameState.visibility} onSetRoomLocked={actions.setRoomLocked} onSetRoomName={actions.setRoomName} onLeaveRoom={handleLeaveRoom} />
         <OfflineBanner />
 
-        {room.gameState.gameStarted ? (
+        {state.gameState.gameStarted ? (
           <GameView 
             room={room} 
             derived={derived} 

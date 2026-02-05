@@ -3,7 +3,7 @@
  */
 
 import { useState, useCallback, useRef } from "react";
-import * as actions from "@/lib/rtdb-actions";
+import * as actions from "@/lib/rtdb";
 import { useError } from "@/contexts/ErrorContext";
 import { withRetry, isRetryableError } from "@/lib/retry";
 import { sanitizeChatMessageWithCensor } from "@/shared/validation";

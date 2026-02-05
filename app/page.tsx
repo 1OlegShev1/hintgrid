@@ -4,7 +4,7 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
-import { subscribeToPublicRooms, type PublicRoomData } from "@/lib/rtdb-actions";
+import { subscribeToPublicRooms, type PublicRoomData } from "@/lib/rtdb";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
 import { ThemeBackground } from "@/components/ThemeBackground";
 import { useTheme } from "@/components/ThemeProvider";

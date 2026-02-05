@@ -1,48 +1,13 @@
 import { useState, useEffect, useRef, FormEvent } from "react";
 import type { GameState } from "@/shared/types";
 import { validateClueWord } from "@/shared/validation";
+import { getClueValidationError } from "@/shared/game-utils";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 
 interface ClueInputProps {
   gameState: GameState;
   onGiveClue: (word: string, count: number) => void;
-}
-
-function validateClue(word: string, gameState: GameState): string | null {
-  const normalized = word.toUpperCase();
-  const boardWords = gameState.board.map((c) => c.word.toUpperCase());
-  
-  // Exact match
-  if (boardWords.includes(normalized)) {
-    return `"${word}" is a word on the board`;
-  }
-  
-  // Substring check
-  for (const boardWord of boardWords) {
-    if (boardWord.includes(normalized)) {
-      return `"${word}" is contained in "${boardWord}"`;
-    }
-    if (normalized.includes(boardWord)) {
-      return `"${word}" contains the board word "${boardWord}"`;
-    }
-  }
-  
-  // Plural variants
-  const variants = [
-    normalized + "S",
-    normalized + "ES", 
-    normalized.endsWith("S") ? normalized.slice(0, -1) : null,
-    normalized.endsWith("ES") ? normalized.slice(0, -2) : null,
-  ].filter(Boolean) as string[];
-  
-  for (const variant of variants) {
-    if (boardWords.includes(variant)) {
-      return `"${word}" is too similar to "${variant}"`;
-    }
-  }
-  
-  return null;
 }
 
 export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
@@ -74,7 +39,7 @@ export default function ClueInput({ gameState, onGiveClue }: ClueInputProps) {
     }
     
     // Validate against board words
-    const boardValidationError = validateClue(trimmed, gameState);
+    const boardValidationError = getClueValidationError(trimmed, gameState.board.map((c) => c.word));
     if (boardValidationError) {
       setClueError(boardValidationError);
       return;

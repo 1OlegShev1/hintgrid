@@ -5,6 +5,7 @@ import {
   teamsAreReady,
   getRequiredVotes,
   isValidClue,
+  getClueValidationError,
 } from '../game-utils';
 import type { Player } from '../types';
 
@@ -423,5 +424,48 @@ describe('isValidClue', () => {
       expect(isValidClue('APPLE', mixedCaseBoard)).toBe(false);
       expect(isValidClue('bank', mixedCaseBoard)).toBe(false);
     });
+  });
+});
+
+describe('getClueValidationError', () => {
+  const sampleBoard = ['APPLE', 'BANK', 'CAR', 'DOG', 'FARMER', 'DWARF'];
+
+  it('returns null for valid clues', () => {
+    expect(getClueValidationError('TESTING', sampleBoard)).toBeNull();
+    expect(getClueValidationError('WAR', sampleBoard)).toBeNull();
+  });
+
+  it('returns error message for exact match', () => {
+    const error = getClueValidationError('apple', sampleBoard);
+    expect(error).not.toBeNull();
+    expect(error).toContain('apple');
+    expect(error).toContain('on the board');
+  });
+
+  it('returns error message for prefix/suffix match', () => {
+    const error = getClueValidationError('FARM', sampleBoard);
+    expect(error).not.toBeNull();
+    expect(error).toContain('too similar');
+  });
+
+  it('returns error message for plural variants', () => {
+    const error = getClueValidationError('CARS', sampleBoard);
+    expect(error).not.toBeNull();
+    expect(error).toContain('too similar');
+  });
+
+  it('is consistent with isValidClue', () => {
+    // Every word that isValidClue rejects should have an error message
+    const testWords = ['APPLE', 'FARM', 'CARS', 'DOGHOUSE', 'RIVERBANK', 'ARF'];
+    for (const word of testWords) {
+      expect(isValidClue(word, sampleBoard)).toBe(false);
+      expect(getClueValidationError(word, sampleBoard)).not.toBeNull();
+    }
+    // Every word that isValidClue accepts should have no error
+    const validWords = ['TESTING', 'WAR', 'PLUS', 'GLASS'];
+    for (const word of validWords) {
+      expect(isValidClue(word, sampleBoard)).toBe(true);
+      expect(getClueValidationError(word, sampleBoard)).toBeNull();
+    }
   });
 });

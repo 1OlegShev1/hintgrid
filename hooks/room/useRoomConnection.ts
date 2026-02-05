@@ -8,8 +8,9 @@ import { useEffect, useState, useRef } from "react";
 import { ref, onValue, query, orderByChild, limitToLast, DatabaseReference, update, serverTimestamp } from "firebase/database";
 import { getDatabase } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
-import * as actions from "@/lib/rtdb-actions";
+import * as actions from "@/lib/rtdb";
 import { toGameState, toPlayers, toMessages, PlayerData, GameState, Player, ChatMessage, RoomClosedReason, FirebaseRoomData } from "./types";
+import { DISCONNECT_BEHAVIOR_DEBOUNCE_MS, LEAVE_ROOM_DELAY_MS, OWNER_REASSIGN_RETRY_BUFFER_MS } from "./constants";
 
 export interface UseRoomConnectionReturn {
   gameState: GameState | null;
@@ -160,7 +161,7 @@ export function useRoomConnection(
             // Log but don't show to user - this is a background operation
             console.warn("[Room] Failed to update disconnect behavior:", err.message);
           });
-        }, 200); // Increased to 200ms for more settling time
+        }, DISCONNECT_BEHAVIOR_DEBOUNCE_MS);
         
         // Fix race condition: Only try to reassign owner if this player could become owner
         // (i.e., they are the first connected player alphabetically by ID)
@@ -184,7 +185,7 @@ export function useRoomConnection(
               // If owner is disconnected but within grace period, schedule a re-check
               if (result.withinGracePeriod && result.gracePeriodRemainingMs > 0) {
                 // Add a small buffer to ensure we're past the grace period
-                const delay = result.gracePeriodRemainingMs + 1000;
+                const delay = result.gracePeriodRemainingMs + OWNER_REASSIGN_RETRY_BUFFER_MS;
                 ownerReassignTimeoutRef.current = setTimeout(() => {
                   if (isCleanedUp) return;
                   ownerReassignTimeoutRef.current = null;
@@ -301,7 +302,7 @@ export function useRoomConnection(
           });
         }
         leaveTimeoutRef.current = null;
-      }, 200);
+      }, LEAVE_ROOM_DELAY_MS);
     };
   }, [roomCode, playerName, playerAvatar, uid, authLoading]);
 

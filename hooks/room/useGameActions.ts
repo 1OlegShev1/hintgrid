@@ -4,7 +4,7 @@
  */
 
 import { useCallback } from "react";
-import * as actions from "@/lib/rtdb-actions";
+import * as actions from "@/lib/rtdb";
 import { useError } from "@/contexts/ErrorContext";
 import type { WordPack, TimerPreset } from "./types";
 

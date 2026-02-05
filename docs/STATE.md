@@ -398,7 +398,7 @@ Music auto-switches based on game state (lobby → game → victory).
 
 | Hook | Location | Purpose |
 |------|----------|---------|
-| `useRtdbRoom` | `hooks/useRtdbRoom.ts` | Main room hook, composes connection + actions |
+| `useRtdbRoom` | `hooks/useRtdbRoom.ts` | Main room hook, composes connection + actions; returns grouped API (`state`, `connection`, `chat`, `actions`) |
 | `useRoomConnection` | `hooks/room/useRoomConnection.ts` | Firebase listeners, presence, player state |
 | `useGameActions` | `hooks/room/useGameActions.ts` | Game action handlers (vote, reveal, clue) |
 | `useChatActions` | `hooks/room/useChatActions.ts` | Chat messages, emoji picker, and reactions |
@@ -457,11 +457,19 @@ Team color helpers in `TeamIndicator`:
 |------|---------|
 | `lib/firebase.ts` | Firebase app/auth/database initialization |
 | `lib/firebase-auth.ts` | Anonymous sign-in helper |
-| `lib/rtdb-actions.ts` | All Firebase Realtime Database operations + stale player cleanup + public rooms subscription |
+| `lib/rtdb/index.ts` | Barrel re-export for all database operations (import via `@/lib/rtdb`) |
+| `lib/rtdb/room-management.ts` | Room creation, joining, leaving, owner transfer |
+| `lib/rtdb/game-lifecycle.ts` | `startGame`, `endGame`, `pauseGame`, `resumeGame`, `rematch` |
+| `lib/rtdb/lobby-actions.ts` | Team assignment, kick/ban, timer/word-pack settings, room locking |
+| `lib/rtdb/gameplay.ts` | `giveClue`, `voteCard`, `confirmReveal`, `endTurn` |
+| `lib/rtdb/chat.ts` | `sendMessage`, reactions, `pruneOldMessages` |
+| `lib/rtdb/public-rooms.ts` | Public room index CRUD + `subscribeToPublicRooms` |
+| `lib/rtdb/maintenance.ts` | `pruneStalePlayers` |
+| `lib/rtdb/helpers.ts` | Internal shared helpers (`getDb`, `checkPause`, `roomRef`, etc.) |
 | `lib/retry.ts` | Retry utility with exponential backoff for network operations |
 | `lib/utils.ts` | `cn()` utility for merging Tailwind classes |
 | `shared/types.ts` | TypeScript types for game state and Firebase data structures |
-| `shared/game-utils.ts` | Pure game logic (vote threshold, clue validation) |
+| `shared/game-utils.ts` | Pure game logic (vote threshold, `isValidClue`, `getClueValidationError`) |
 | `shared/validation.ts` | Input sanitization and validation utilities |
 | `shared/words.ts` | Word lists and board generation |
 | `shared/constants.ts` | Game config, localStorage keys, avatars, presence cleanup timing |
@@ -525,22 +533,27 @@ The `database.rules.json` file enforces server-side validation:
 ### Test Layers
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  E2E (Playwright)                                          │
-│  - Full user flows: create room → play game → win          │
-│  - Multi-player with separate browser contexts             │
-│  - Run: npm run test:e2e                                   │
-├─────────────────────────────────────────────────────────────┤
-│  Integration (Vitest + Firebase Emulator)                  │
-│  - rtdb-actions.ts: game flow, kick/ban, pause, etc.       │
-│  - Requires: npm run firebase:emulators (separate terminal)│
-│  - Run: npm run test:integration                           │
-├─────────────────────────────────────────────────────────────┤
-│  Unit (Vitest)                                             │
-│  - shared/*: validation, game-utils, words, constants      │
-│  - lib/retry.ts, lib/utils.ts                              │
-│  - Run: npm test                                           │
-└─────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────┐
+│  E2E (Playwright)                                                │
+│  - Full user flows: create room → play game → win                │
+│  - Multi-player with separate browser contexts                   │
+│  - Files: tests/*.spec.ts                                        │
+│  - Run: npm run test:e2e                                         │
+├──────────────────────────────────────────────────────────────────┤
+│  Integration (Vitest + Firebase Emulator)                        │
+│  - Split by domain, mirrors lib/rtdb/ modules:                   │
+│    room-management, lobby-actions, game-lifecycle,                │
+│    gameplay, public-rooms, chat, maintenance                     │
+│  - Files: lib/__tests__/rtdb/*.integration.test.ts               │
+│  - Shared setup: lib/__tests__/setup/integration-helpers.ts      │
+│  - Requires: npm run firebase:emulators (separate terminal)      │
+│  - Run: npm run test:integration                                 │
+├──────────────────────────────────────────────────────────────────┤
+│  Unit (Vitest)                                                   │
+│  - shared/__tests__/*: validation, game-utils, words, constants  │
+│  - lib/__tests__/*: retry, utils                                 │
+│  - Run: npm test                                                 │
+└──────────────────────────────────────────────────────────────────┘
 ```
 
 ### What's Worth Integration Testing
@@ -560,10 +573,16 @@ The `database.rules.json` file enforces server-side validation:
 
 ### Coverage Expectations
 
+Both `vitest.config.ts` and `vitest.integration.config.ts` enforce coverage thresholds:
+- **Statements**: 80%
+- **Branches**: 75%
+- **Functions**: 80%
+- **Lines**: 80%
+
 | Layer | Target | Notes |
 |-------|--------|-------|
 | `shared/*` | ~100% | Pure functions, easy to test exhaustively |
-| `lib/rtdb-actions.ts` | ~70% | Core game logic covered; chat/subscriptions skipped |
+| `lib/rtdb/*` | ~70% | Core game logic covered; chat/subscriptions skipped |
 | `lib/retry.ts` | ~95% | Utility with clear behavior |
 
 Run coverage: `npm test -- --coverage` or `npm run test:integration -- --coverage`

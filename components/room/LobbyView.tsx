@@ -16,7 +16,8 @@ interface LobbyViewProps {
  * Shows team selection and game settings.
  */
 export function LobbyView({ room, derived }: LobbyViewProps) {
-  const { gameState, players, currentPlayer, messages, chatInput, setChatInput, isSendingChat, chatInputRef } = room;
+  const { state, chat, actions } = room;
+  const { gameState, players, currentPlayer, messages } = state;
   const { isRoomOwner } = derived;
 
   if (!gameState) return null;
@@ -28,13 +29,13 @@ export function LobbyView({ room, derived }: LobbyViewProps) {
         currentPlayer={currentPlayer}
         isRoomOwner={isRoomOwner}
         gameState={gameState}
-        onSetRole={room.handleSetLobbyRole}
-        onRandomize={room.handleRandomizeTeams}
-        onStartGame={room.handleStartGame}
-        onTimerPresetChange={room.handleTimerPresetChange}
-        onWordPackChange={room.handleWordPackChange}
-        onCustomWordsChange={room.handleCustomWordsChange}
-        onKickPlayer={room.handleKickPlayer}
+        onSetRole={actions.setLobbyRole}
+        onRandomize={actions.randomizeTeams}
+        onStartGame={actions.startGame}
+        onTimerPresetChange={actions.timerPresetChange}
+        onWordPackChange={actions.wordPackChange}
+        onCustomWordsChange={actions.customWordsChange}
+        onKickPlayer={actions.kickPlayer}
         showControls={true}
       />
 
@@ -45,28 +46,28 @@ export function LobbyView({ room, derived }: LobbyViewProps) {
             messages={messages}
             players={players}
             currentPlayerId={currentPlayer?.id}
-            onAddReaction={room.handleAddReaction}
-            onRemoveReaction={room.handleRemoveReaction}
+            onAddReaction={chat.addReaction}
+            onRemoveReaction={chat.removeReaction}
           />
-          <form onSubmit={room.handleSendMessage} className="mt-3 pt-2 border-t border-border shrink-0">
+          <form onSubmit={chat.send} className="mt-3 pt-2 border-t border-border shrink-0">
             <div className="flex gap-2 items-center">
               <EmojiPickerButton
-                onEmojiSelect={room.handleEmojiSelect}
-                disabled={isSendingChat}
+                onEmojiSelect={chat.onEmojiSelect}
+                disabled={chat.isSending}
               />
               <input
-                ref={chatInputRef}
+                ref={chat.inputRef}
                 type="text"
-                value={chatInput}
-                onChange={(e) => setChatInput(e.target.value)}
+                value={chat.input}
+                onChange={(e) => chat.setInput(e.target.value)}
                 placeholder="Type message..."
-                disabled={isSendingChat}
+                disabled={chat.isSending}
                 className="flex-1 min-w-0 px-3 py-2.5 text-base border border-border rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent bg-surface-elevated text-foreground disabled:opacity-50"
               />
               <Button
                 type="submit"
-                disabled={!chatInput.trim()}
-                isLoading={isSendingChat}
+                disabled={!chat.input.trim()}
+                isLoading={chat.isSending}
                 variant="primary"
                 className="min-w-[60px]"
               >

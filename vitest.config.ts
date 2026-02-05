@@ -27,6 +27,12 @@ export default defineConfig({
         'lib/firebase*.ts',
         'lib/__tests__/setup/**', // Exclude test utilities
       ],
+      thresholds: {
+        statements: 80,
+        branches: 75,
+        functions: 80,
+        lines: 80,
+      },
     },
   },
 });

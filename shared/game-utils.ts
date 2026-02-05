@@ -58,30 +58,46 @@ export function getRequiredVotes(guesserCount: number): number {
 
 /**
  * Validate a clue word against the board.
- * Returns true if valid, false if invalid.
+ * Returns an error message string if invalid, or null if valid.
+ * 
+ * Checks:
+ * - Exact match with board words
+ * - Prefix/suffix relationships (blocks "farm"/"farmer", allows "war"/"dwarf")
+ * - Plural variants are caught by the prefix/suffix check (dog/dogs, bench/benches)
  */
-export function isValidClue(word: string, boardWords: string[]): boolean {
+export function getClueValidationError(word: string, boardWords: string[]): string | null {
   const normalized = word.toUpperCase();
-  const boardWordsSet = new Set(boardWords.map((w) => w.toUpperCase()));
+  const boardWordsUpper = boardWords.map((w) => w.toUpperCase());
+  const boardWordsSet = new Set(boardWordsUpper);
 
   // Exact match check
-  if (boardWordsSet.has(normalized)) return false;
+  if (boardWordsSet.has(normalized)) {
+    return `"${word}" is a word on the board`;
+  }
 
   // Check if clue is a prefix/suffix of any board word or vice versa.
   // This blocks meaningful derivations like "farm"/"farmer", but allows
   // coincidental substrings like "war" in "dwarf".
   // Note: This also handles plural variants (dog/dogs, bench/benches) since
   // adding/removing S or ES creates a prefix/suffix relationship.
-  for (const boardWord of boardWordsSet) {
+  for (const boardWord of boardWordsUpper) {
     // Clue is prefix or suffix of board word
     if (boardWord.startsWith(normalized) || boardWord.endsWith(normalized)) {
-      return false;
+      return `"${word}" is too similar to "${boardWord}"`;
     }
     // Board word is prefix or suffix of clue
     if (normalized.startsWith(boardWord) || normalized.endsWith(boardWord)) {
-      return false;
+      return `"${word}" is too similar to "${boardWord}"`;
     }
   }
 
-  return true;
+  return null;
+}
+
+/**
+ * Validate a clue word against the board.
+ * Returns true if valid, false if invalid.
+ */
+export function isValidClue(word: string, boardWords: string[]): boolean {
+  return getClueValidationError(word, boardWords) === null;
 }
