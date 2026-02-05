@@ -2,9 +2,9 @@
 
 import { createContext, useContext, useState, useEffect, useCallback, useRef, ReactNode } from "react";
 import useSound from "use-sound";
-import { Howl, Howler } from "howler";
 import { usePrefersReducedMotion } from "@/hooks/usePrefersReducedMotion";
 import { useAudioUnlock } from "@/hooks/useAudioUnlock";
+import { useMusicPlayer } from "@/hooks/useMusicPlayer";
 import { 
   LOCAL_STORAGE_SOUND_MUTED_KEY, 
   LOCAL_STORAGE_SOUND_VOLUME_KEY,
@@ -13,18 +13,6 @@ import {
 
 export type SoundName = "gameStart" | "turnChange" | "gameOver" | "gameLose" | "trapSnap" | "tick" | "tickUrgent" | "cardReveal" | "clueSubmit";
 export type MusicTrack = "lobby" | "game-30s" | "game-60s" | "game-90s" | "victory" | null;
-
-// Music plays at 30% of master volume
-const MUSIC_VOLUME_RATIO = 0.3;
-
-// Music track paths
-const MUSIC_TRACKS: Record<Exclude<MusicTrack, null>, string> = {
-  "lobby": "/sounds/music/lobby.mp3",
-  "game-30s": "/sounds/music/game-30s.mp3",
-  "game-60s": "/sounds/music/game-60s.mp3",
-  "game-90s": "/sounds/music/game-90s.mp3",
-  "victory": "/sounds/music/victory.mp3",
-};
 
 interface SoundContextValue {
   // Sound effects
@@ -111,26 +99,10 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const [isHydrated, setIsHydrated] = useState(false);
   const prefersReducedMotion = usePrefersReducedMotion();
 
-  // Music state
-  const [musicEnabled, setMusicEnabledState] = useState(false);
-  const [currentTrack, setCurrentTrackState] = useState<MusicTrack>(null);
-  const [retryTrigger, setRetryTrigger] = useState(0);
-  const howlRef = useRef<Howl | null>(null);
-  const pendingTrackRef = useRef<MusicTrack>(null);
-
-  // Computed values
-  const musicVolume = volume * MUSIC_VOLUME_RATIO;
-  const musicVolumeRef = useRef(musicVolume);
-  
-  useEffect(() => {
-    musicVolumeRef.current = musicVolume;
-  }, [musicVolume]);
-
   // Load from localStorage on mount
   useEffect(() => {
     const storedVolume = localStorage.getItem(LOCAL_STORAGE_SOUND_VOLUME_KEY);
     const storedMuted = localStorage.getItem(LOCAL_STORAGE_SOUND_MUTED_KEY);
-    const storedMusicEnabled = localStorage.getItem(LOCAL_STORAGE_MUSIC_ENABLED_KEY);
     
     if (storedVolume !== null) {
       const parsed = parseFloat(storedVolume);
@@ -142,13 +114,24 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     if (storedMuted !== null) {
       setIsMutedState(storedMuted === "true");
     }
-
-    if (storedMusicEnabled !== null) {
-      setMusicEnabledState(storedMusicEnabled === "true");
-    }
     
     setIsHydrated(true);
   }, []);
+
+  // Read initial music-enabled from localStorage (sync, safe — only runs once)
+  const [initialMusicEnabled] = useState(() => {
+    if (typeof window === "undefined") return false;
+    return localStorage.getItem(LOCAL_STORAGE_MUSIC_ENABLED_KEY) === "true";
+  });
+
+  // Background music (delegated to useMusicPlayer)
+  const music = useMusicPlayer({
+    volume,
+    isHydrated,
+    prefersReducedMotion,
+    audioUnlock,
+    initialEnabled: initialMusicEnabled,
+  });
 
   // Persist volume to localStorage
   const setVolume = useCallback((newVolume: number) => {
@@ -166,127 +149,6 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   const toggleMute = useCallback(() => {
     setIsMuted(!isMuted);
   }, [isMuted, setIsMuted]);
-
-  // Music enabled toggle
-  const setMusicEnabled = useCallback((enabled: boolean) => {
-    setMusicEnabledState(enabled);
-    localStorage.setItem(LOCAL_STORAGE_MUSIC_ENABLED_KEY, String(enabled));
-  }, []);
-
-  const toggleMusic = useCallback(() => {
-    setMusicEnabled(!musicEnabled);
-  }, [musicEnabled, setMusicEnabled]);
-
-  // Set music track - stores as pending if audio not ready
-  const setMusicTrack = useCallback((track: MusicTrack) => {
-    setCurrentTrackState(track);
-    
-    if (track && !audioUnlock.isReady) {
-      pendingTrackRef.current = track;
-      // Opportunistically try to unlock - may work if there's been recent interaction
-      audioUnlock.tryUnlock();
-    } else {
-      pendingTrackRef.current = null;
-    }
-  }, [audioUnlock]);
-
-  // Handle music playback
-  useEffect(() => {
-    // Stop current music if exists
-    if (howlRef.current) {
-      howlRef.current.fade(howlRef.current.volume(), 0, 500);
-      const oldHowl = howlRef.current;
-      setTimeout(() => {
-        oldHowl.stop();
-        oldHowl.unload();
-      }, 500);
-      howlRef.current = null;
-    }
-
-    // Don't play if conditions not met
-    if (!currentTrack || !musicEnabled || !isHydrated || prefersReducedMotion) {
-      return;
-    }
-    
-    // If audio not ready yet, store as pending - will retry when unlocked
-    if (!audioUnlock.isReady) {
-      pendingTrackRef.current = currentTrack;
-      return;
-    }
-    
-    pendingTrackRef.current = null;
-
-    // Ensure audio context is running (iOS can suspend it again)
-    const ctx = Howler.ctx;
-    if (ctx && ctx.state === "suspended") {
-      ctx.resume().catch(() => {});
-    }
-
-    // Create and play new track
-    const howl = new Howl({
-      src: [MUSIC_TRACKS[currentTrack]],
-      loop: true,
-      volume: 0,
-      html5: true,
-      onplayerror: () => {
-        // On play error, wait for Howler's unlock event (user interaction)
-        howl.once("unlock", () => howl.play());
-      },
-    });
-
-    howlRef.current = howl;
-    howl.play();
-    howl.fade(0, musicVolumeRef.current, 1000);
-
-    return () => {
-      if (howl.playing()) {
-        howl.fade(howl.volume(), 0, 300);
-        setTimeout(() => {
-          howl.stop();
-          howl.unload();
-        }, 300);
-      }
-    };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioUnlock.isReady, audioUnlock.unlockTrigger, retryTrigger]);
-
-  // Update volume without recreating howl
-  useEffect(() => {
-    if (howlRef.current && musicEnabled && isHydrated) {
-      howlRef.current.volume(musicVolume);
-    }
-  }, [musicVolume, musicEnabled, isHydrated]);
-
-  // iOS workaround: retry music on user interaction when context is suspended
-  // This handles the case where audio context gets suspended during navigation
-  // even though we already marked isReady=true previously
-  useEffect(() => {
-    if (!musicEnabled || !isHydrated || prefersReducedMotion) return;
-    
-    const handleInteraction = () => {
-      const ctx = Howler.ctx;
-      
-      // If context is suspended, try to resume it
-      if (ctx && ctx.state === "suspended") {
-        ctx.resume().then(() => {
-          if (ctx.state === "running") {
-            // Context resumed - if we have a track that should play, trigger retry
-            if (currentTrack && !howlRef.current?.playing()) {
-              setRetryTrigger(prev => prev + 1);
-            }
-          }
-        }).catch(() => {});
-      }
-    };
-    
-    document.addEventListener("touchstart", handleInteraction);
-    document.addEventListener("click", handleInteraction);
-    
-    return () => {
-      document.removeEventListener("touchstart", handleInteraction);
-      document.removeEventListener("click", handleInteraction);
-    };
-  }, [musicEnabled, isHydrated, prefersReducedMotion, currentTrack]);
 
   // Sound enabled check
   const soundEnabled = isHydrated && !isMuted && !prefersReducedMotion;
@@ -325,11 +187,11 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       soundEnabled,
       playSound,
       stopTickSounds,
-      musicEnabled,
-      setMusicEnabled,
-      toggleMusic,
-      currentTrack,
-      setMusicTrack,
+      musicEnabled: music.musicEnabled,
+      setMusicEnabled: music.setMusicEnabled,
+      toggleMusic: music.toggleMusic,
+      currentTrack: music.currentTrack,
+      setMusicTrack: music.setMusicTrack,
     }}>
       <PlayFunctionCapture volume={volume}>
         {children}

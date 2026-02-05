@@ -19,7 +19,7 @@ import type {
   PublicRoomInfo,
   FirebasePublicRoomData,
 } from "@/shared/types";
-import { DEFAULT_TIMER_PRESET, TIMER_PRESETS, DEFAULT_VISIBILITY, MAX_PLAYERS_DEFAULT } from "@/shared/constants";
+import { DEFAULT_TIMER_PRESET, DEFAULT_VISIBILITY, MAX_PLAYERS_DEFAULT } from "@/shared/constants";
 
 // Re-export Firebase types for convenience
 export type { FirebaseBoardCard, FirebasePlayerData, FirebaseMessageData, FirebaseRoomData };
@@ -51,23 +51,7 @@ export function toGameState(
     if (votes.length) cardVotes[i] = votes;
   });
 
-  // Handle backwards compatibility: old rooms may have turnDuration but not timerPreset
-  // Map old turnDuration to closest preset, or use default
-  let timerPreset: TimerPreset = roomData.timerPreset || DEFAULT_TIMER_PRESET;
-  if (!roomData.timerPreset && roomData.turnDuration) {
-    // Legacy room - map old turnDuration to closest preset
-    if (roomData.turnDuration <= 45) {
-      timerPreset = "fast";
-    } else if (roomData.turnDuration <= 75) {
-      timerPreset = "normal";
-    } else {
-      timerPreset = "relaxed";
-    }
-  }
-  
-  // For legacy turnDuration field, derive from preset if not set
-  const preset = TIMER_PRESETS[timerPreset];
-  const turnDuration = roomData.turnDuration || preset.clue;
+  const timerPreset: TimerPreset = roomData.timerPreset || DEFAULT_TIMER_PRESET;
 
   return {
     roomCode,
@@ -93,7 +77,6 @@ export function toGameState(
     timerPreset,
     redHasGivenClue: roomData.redHasGivenClue || false,
     blueHasGivenClue: roomData.blueHasGivenClue || false,
-    turnDuration, // Legacy field - kept for compatibility
     gameStarted: roomData.gameStarted || false,
     gameOver: roomData.gameOver || false,
     winner: roomData.winner || null,

@@ -276,7 +276,7 @@ Player identity uses **Firebase Anonymous Authentication**. Each browser session
 
 **iOS Navigation Workaround:**
 - iOS can suspend the audio context during client-side navigation even after it was previously unlocked
-- `SoundContext` sets up persistent click/touchstart listeners that detect a suspended context
+- `useMusicPlayer` sets up persistent click/touchstart listeners that detect a suspended context
 - On interaction, the context is resumed directly in the gesture handler (maintaining the gesture-to-audio link iOS requires)
 - A `retryTrigger` counter forces the music playback effect to re-run once the context is recovered
 - The retry only fires if music isn't already playing, avoiding unnecessary interruptions
@@ -376,6 +376,8 @@ Music auto-switches based on game state (lobby → game → victory).
 
 **Sound Architecture:**
 - `SoundContext` (`contexts/SoundContext.tsx`) — Global provider for sound/music state and playback
+- `useMusicPlayer` hook — Background music lifecycle (Howl create/fade/stop, iOS workaround, pending tracks)
+- `useAudioUnlock` hook — Browser autoplay policy compliance (gesture detection, context resume)
 - `useTimerSound` hook — Handles timer tick logic based on time remaining
 - `usePrefersReducedMotion` hook — Detects OS accessibility preference
 - `use-sound` package — Wrapper around Howler.js for sound effect playback
@@ -408,6 +410,7 @@ Music auto-switches based on game state (lobby → game → victory).
 | `useGameTimer` | `hooks/useGameTimer.ts` | Turn countdown timer; only owner (or fallback) triggers timeout |
 | `useTransitionOverlays` | `hooks/useTransitionOverlays.ts` | Game start/turn change/game over animations |
 | `useTimerSound` | `hooks/useTimerSound.ts` | Timer tick sounds based on time remaining |
+| `useMusicPlayer` | `hooks/useMusicPlayer.ts` | Background music playback via Howler.js (fade, track switching, iOS workaround) |
 | `usePrefersReducedMotion` | `hooks/usePrefersReducedMotion.ts` | Detects OS reduced motion preference |
 
 ### Components

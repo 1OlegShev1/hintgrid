@@ -116,6 +116,7 @@ Every file in the project, grouped by directory.
 | `useIdleTimeout.ts` | 1-hour idle timeout in lobby |
 | `useFirebaseConnection.ts` | Firebase `.info/connected` listener |
 | `useAudioUnlock.ts` | Browser audio context unlock on user interaction |
+| `useMusicPlayer.ts` | Background music playback via Howler.js (fade, track switching, iOS workaround) |
 | `usePrefersReducedMotion.ts` | Detects OS reduced motion preference |
 
 ### `hooks/room/` — Room-specific hooks (composed by `useRtdbRoom`)

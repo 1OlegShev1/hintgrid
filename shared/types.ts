@@ -49,8 +49,6 @@ export interface GameState {
   timerPreset: TimerPreset;
   redHasGivenClue: boolean; // True after red team gives their first clue (for first clue bonus)
   blueHasGivenClue: boolean; // True after blue team gives their first clue (for first clue bonus)
-  // @deprecated Legacy field - use timerPreset instead
-  turnDuration: number; // in seconds
   gameStarted: boolean;
   gameOver: boolean;
   winner: Team | null;
@@ -174,8 +172,6 @@ export interface FirebaseRoomData {
   timerPreset?: TimerPreset; // Optional for backwards compatibility with old rooms
   redHasGivenClue?: boolean;
   blueHasGivenClue?: boolean;
-  // @deprecated Legacy field - kept for backwards compatibility
-  turnDuration?: number;
   gameStarted: boolean;
   gameOver: boolean;
   winner: Team | null;
