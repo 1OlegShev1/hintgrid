@@ -107,9 +107,12 @@ export function useRtdbRoom(
 
   // Owner-only cleanup: demote stale disconnected players to spectators
   // Runs in all phases (lobby, active game, paused, game over) to keep player list clean
+  // Extract ownerId as a separate variable to avoid effect re-running on every gameState change
+  const ownerId = connection.gameState?.ownerId;
+  
   useEffect(() => {
-    if (!connection.uid || !roomCode || !connection.gameState) return;
-    if (connection.gameState.ownerId !== connection.uid) return;
+    if (!connection.uid || !roomCode || !ownerId) return;
+    if (ownerId !== connection.uid) return;
 
     let intervalId: NodeJS.Timeout | null = null;
 
@@ -127,7 +130,7 @@ export function useRtdbRoom(
     return () => {
       if (intervalId) clearInterval(intervalId);
     };
-  }, [connection.uid, roomCode, connection.gameState?.ownerId]);
+  }, [connection.uid, roomCode, ownerId]);
 
   return {
     // Connection state
