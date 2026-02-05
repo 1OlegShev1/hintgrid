@@ -20,7 +20,7 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
       <div className="flex items-center justify-between mb-3">
         <h3 className="text-base font-semibold text-muted">Teams</h3>
       </div>
-      <div className="grid grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
         {(["red", "blue"] as const).map((team) => {
           const clueGiver = players.find(
             (player) => player.team === team && player.role === "clueGiver"
@@ -33,7 +33,7 @@ export default function CompactTeams({ players, currentPlayerId, isRoomOwner, on
           return (
             <div
               key={team}
-              className={getTeamClasses(team, "card")}
+              className={`${getTeamClasses(team, "card")} p-2.5 sm:p-3`}
             >
               <div className={`text-sm font-bold uppercase mb-2 ${getTeamTextClass(team)}`}>
                 {team} Team

@@ -281,7 +281,7 @@ export default function GameBoard({
               data-card-team={card.revealed || isClueGiver ? card.team : undefined}
               aria-label={`${card.revealed ? `Revealed: ${card.team}` : card.word}${hasVoted ? ", you voted" : ""}${votes.length > 0 ? `, ${votes.length} votes` : ""}`}
               className={`
-                aspect-square p-1 sm:p-2 rounded-lg font-semibold w-full overflow-hidden
+                aspect-square p-1 sm:p-2 rounded-lg font-semibold w-full overflow-hidden relative
                 transition-all duration-200
                 ${getCardColor(card)}
                 ${card.revealed || !canVote
@@ -294,10 +294,15 @@ export default function GameBoard({
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2
               `}
             >
-              <div className="flex items-center justify-center h-full w-full">
-                <div className={`text-center ${!card.revealed ? getWordSizeClass(card.word) : ""}`}>
-                  {card.revealed ? renderCardBackIcon(card) : card.word}
-                </div>
+              {/* Use absolute centering for consistent cross-browser alignment */}
+              <div className="absolute inset-0 flex items-center justify-center">
+                {card.revealed ? (
+                  renderCardBackIcon(card)
+                ) : (
+                  <span className={`text-center leading-tight ${getWordSizeClass(card.word)}`}>
+                    {card.word}
+                  </span>
+                )}
               </div>
             </button>
             {votes.length > 0 && !card.revealed && (

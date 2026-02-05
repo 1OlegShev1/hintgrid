@@ -48,7 +48,7 @@ export function MessageReactions({
     setShowPicker(true);
   }, []);
 
-  // Close picker when clicking/touching outside + prevent background scroll
+  // Close picker when clicking/touching outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent | TouchEvent) {
       if (
@@ -61,21 +61,32 @@ export function MessageReactions({
       }
     }
 
-    // Prevent background scroll when touching inside the picker
-    function handleTouchMove(event: TouchEvent) {
-      if (pickerRef.current?.contains(event.target as Node)) {
-        event.preventDefault();
-      }
-    }
-
     if (showPicker) {
       document.addEventListener("mousedown", handleClickOutside);
       document.addEventListener("touchstart", handleClickOutside);
-      document.addEventListener("touchmove", handleTouchMove, { passive: false });
       return () => {
         document.removeEventListener("mousedown", handleClickOutside);
         document.removeEventListener("touchstart", handleClickOutside);
-        document.removeEventListener("touchmove", handleTouchMove);
+      };
+    }
+  }, [showPicker]);
+
+  // Lock body scroll when picker is open (iOS needs position:fixed)
+  useEffect(() => {
+    if (showPicker) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
+      document.body.style.overflow = 'hidden';
+      return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
+        document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
       };
     }
   }, [showPicker]);

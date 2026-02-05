@@ -86,14 +86,25 @@ export default function TeamLobby({
   }, [isWordPackOpen, isTimerOpen, isCustomWordsOpen]);
 
   // Lock body scroll when dropdowns are open (mobile)
+  // iOS needs position:fixed + stored scroll position to truly lock scrolling
   useEffect(() => {
-    if (isWordPackOpen || isCustomWordsOpen) {
+    if (isWordPackOpen || isCustomWordsOpen || isTimerOpen) {
+      const scrollY = window.scrollY;
+      document.body.style.position = 'fixed';
+      document.body.style.top = `-${scrollY}px`;
+      document.body.style.left = '0';
+      document.body.style.right = '0';
       document.body.style.overflow = 'hidden';
       return () => {
+        document.body.style.position = '';
+        document.body.style.top = '';
+        document.body.style.left = '';
+        document.body.style.right = '';
         document.body.style.overflow = '';
+        window.scrollTo(0, scrollY);
       };
     }
-  }, [isWordPackOpen, isCustomWordsOpen]);
+  }, [isWordPackOpen, isCustomWordsOpen, isTimerOpen]);
   
   // Custom words handlers
   const handleAddCustomWords = () => {
@@ -417,8 +428,14 @@ export default function TeamLobby({
                     </svg>
                   </button>
                   {isTimerOpen && (
-                    <div className="absolute top-full left-0 mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 min-w-[200px] max-w-[calc(100vw-2rem)]">
-                      <div className="p-2 space-y-1">
+                    <>
+                      {/* Mobile backdrop */}
+                      <div 
+                        className="fixed inset-0 z-40 sm:hidden"
+                        onClick={() => setIsTimerOpen(false)}
+                      />
+                      <div className="fixed sm:absolute left-4 right-4 sm:left-0 sm:right-auto top-1/4 sm:top-full sm:mt-1 bg-surface-elevated border border-border rounded-lg shadow-lg z-50 sm:min-w-[200px] touch-pan-y overscroll-contain">
+                        <div className="p-2 space-y-1">
                         {timerPresetOptions.map((option) => {
                           const isSelected = gameState.timerPreset === option.value;
                           const preset = TIMER_PRESETS[option.value];
@@ -457,6 +474,7 @@ export default function TeamLobby({
                         </p>
                       </div>
                     </div>
+                    </>
                   )}
                 </div>
               ) : (
