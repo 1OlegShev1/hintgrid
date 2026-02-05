@@ -117,7 +117,7 @@ export function useAudioUnlock(): AudioUnlockState {
     return success;
   }, [markReady]);
 
-  // Set up event listeners for first user interaction
+  // Set up event listeners for user interaction
   useEffect(() => {
     isMountedRef.current = true;
     
@@ -142,9 +142,11 @@ export function useAudioUnlock(): AudioUnlockState {
       }
       
       // Remove listeners after first successful interaction
-      events.forEach(event => {
-        document.removeEventListener(event, handleInteraction);
-      });
+      if (success) {
+        events.forEach(event => {
+          document.removeEventListener(event, handleInteraction);
+        });
+      }
     };
     
     events.forEach(event => {

@@ -114,6 +114,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
   // Music state
   const [musicEnabled, setMusicEnabledState] = useState(false);
   const [currentTrack, setCurrentTrackState] = useState<MusicTrack>(null);
+  const [retryTrigger, setRetryTrigger] = useState(0);
   const howlRef = useRef<Howl | null>(null);
   const pendingTrackRef = useRef<MusicTrack>(null);
 
@@ -203,13 +204,19 @@ export function SoundProvider({ children }: { children: ReactNode }) {
     }
 
     // Don't play if conditions not met
-    if (!currentTrack || !musicEnabled || !isHydrated || prefersReducedMotion || !audioUnlock.isReady) {
+    if (!currentTrack || !musicEnabled || !isHydrated || prefersReducedMotion) {
+      return;
+    }
+    
+    // If audio not ready yet, store as pending - will retry when unlocked
+    if (!audioUnlock.isReady) {
+      pendingTrackRef.current = currentTrack;
       return;
     }
     
     pendingTrackRef.current = null;
 
-    // Ensure audio context is running
+    // Ensure audio context is running (iOS can suspend it again)
     const ctx = Howler.ctx;
     if (ctx && ctx.state === "suspended") {
       ctx.resume().catch(() => {});
@@ -222,6 +229,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       volume: 0,
       html5: true,
       onplayerror: () => {
+        // On play error, wait for Howler's unlock event (user interaction)
         howl.once("unlock", () => howl.play());
       },
     });
@@ -240,7 +248,7 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       }
     };
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioUnlock.isReady, audioUnlock.unlockTrigger]);
+  }, [currentTrack, musicEnabled, isHydrated, prefersReducedMotion, audioUnlock.isReady, audioUnlock.unlockTrigger, retryTrigger]);
 
   // Update volume without recreating howl
   useEffect(() => {
@@ -248,6 +256,37 @@ export function SoundProvider({ children }: { children: ReactNode }) {
       howlRef.current.volume(musicVolume);
     }
   }, [musicVolume, musicEnabled, isHydrated]);
+
+  // iOS workaround: retry music on user interaction when context is suspended
+  // This handles the case where audio context gets suspended during navigation
+  // even though we already marked isReady=true previously
+  useEffect(() => {
+    if (!musicEnabled || !isHydrated || prefersReducedMotion) return;
+    
+    const handleInteraction = () => {
+      const ctx = Howler.ctx;
+      
+      // If context is suspended, try to resume it
+      if (ctx && ctx.state === "suspended") {
+        ctx.resume().then(() => {
+          if (ctx.state === "running") {
+            // Context resumed - if we have a track that should play, trigger retry
+            if (currentTrack && !howlRef.current?.playing()) {
+              setRetryTrigger(prev => prev + 1);
+            }
+          }
+        }).catch(() => {});
+      }
+    };
+    
+    document.addEventListener("touchstart", handleInteraction);
+    document.addEventListener("click", handleInteraction);
+    
+    return () => {
+      document.removeEventListener("touchstart", handleInteraction);
+      document.removeEventListener("click", handleInteraction);
+    };
+  }, [musicEnabled, isHydrated, prefersReducedMotion, currentTrack]);
 
   // Sound enabled check
   const soundEnabled = isHydrated && !isMuted && !prefersReducedMotion;
