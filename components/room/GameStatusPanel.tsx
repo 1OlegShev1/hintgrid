@@ -92,7 +92,11 @@ export default function GameStatusPanel({
             </span>
           </div>
           {timeRemaining !== null && (
-            <div className={`
+            <div
+              role="timer"
+              aria-live={!gameState.paused && timeRemaining <= 10 && timeRemaining > 0 ? "assertive" : "off"}
+              aria-label={`${Math.floor(timeRemaining / 60)} minutes ${timeRemaining % 60} seconds remaining`}
+              className={`
               text-xl font-mono flex items-center gap-2
               ${gameState.paused ? "text-amber-600 dark:text-amber-400" : ""}
               ${!gameState.paused && timeRemaining <= 10 && timeRemaining > 0 ? "timer-urgent text-red-600 font-bold" : ""}

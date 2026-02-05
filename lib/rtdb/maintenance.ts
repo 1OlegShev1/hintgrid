@@ -6,7 +6,7 @@ import {
   ref, get, update, push,
   serverTimestamp,
 } from "firebase/database";
-import { getDb, votesToArray, arrayToVotes, type RoomData, type PlayerData } from "./helpers";
+import { getDb, getServerTime, votesToArray, arrayToVotes, type RoomData, type PlayerData } from "./helpers";
 
 export async function pruneStalePlayers(
   roomCode: string,
@@ -24,7 +24,8 @@ export async function pruneStalePlayers(
   if (roomData.ownerId !== requesterId) throw new Error("Not room owner");
 
   const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
-  const now = Date.now();
+  // Use server-adjusted time to prevent stale player checks from being skewed by client clocks
+  const now = await getServerTime();
 
   // Find stale players who are disconnected beyond grace period AND have a team/role
   const stalePlayers: { id: string; name: string }[] = [];

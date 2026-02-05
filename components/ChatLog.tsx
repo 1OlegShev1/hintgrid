@@ -61,7 +61,7 @@ export default function ChatLog({
           {autoScroll ? "⬇ Auto" : "⬇ Manual"}
         </button>
       </div>
-      <div ref={scrollRef} className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-3 space-y-2 font-mono text-sm">
+      <div ref={scrollRef} aria-live="polite" aria-relevant="additions" className="flex-1 min-h-0 overflow-y-auto scrollbar-thin p-3 space-y-2 font-mono text-sm">
         {chatMessages.length === 0 ? (
           <p className="text-muted text-sm font-sans px-1">No messages yet</p>
         ) : (

@@ -5,12 +5,14 @@
  */
 
 import { useEffect, useState, useRef } from "react";
-import { ref, onValue, query, orderByChild, limitToLast, DatabaseReference, update, serverTimestamp } from "firebase/database";
+import { ref, onValue, query, orderByChild, limitToLast, DatabaseReference } from "firebase/database";
 import { getDatabase } from "@/lib/firebase";
 import { useAuth } from "@/contexts/AuthContext";
 import * as actions from "@/lib/rtdb";
 import { toGameState, toPlayers, toMessages, PlayerData, GameState, Player, ChatMessage, RoomClosedReason, FirebaseRoomData } from "./types";
-import { DISCONNECT_BEHAVIOR_DEBOUNCE_MS, LEAVE_ROOM_DELAY_MS, OWNER_REASSIGN_RETRY_BUFFER_MS } from "./constants";
+import { DISCONNECT_BEHAVIOR_DEBOUNCE_MS, LEAVE_ROOM_DELAY_MS } from "./constants";
+import { usePresenceRestore } from "./usePresenceRestore";
+import { useOwnerReassignment } from "./useOwnerReassignment";
 
 export interface UseRoomConnectionReturn {
   gameState: GameState | null;
@@ -42,19 +44,32 @@ export function useRoomConnection(
   const [connectedPlayerCount, setConnectedPlayerCount] = useState(0);
   const [roomClosedReason, setRoomClosedReason] = useState<RoomClosedReason | null>(null);
 
+  // Shared refs for sub-hooks
   const roomDataRef = useRef<FirebaseRoomData | null>(null);
   const playersDataRef = useRef<Record<string, PlayerData> | null>(null);
   const disconnectRefRef = useRef<DatabaseReference | null>(null);
-  const wasConnectedRef = useRef<boolean | null>(null);
   const leaveTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const ownerReassignTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Track raw players data as state so sub-hooks can react to changes
+  const [rawPlayersData, setRawPlayersData] = useState<Record<string, PlayerData> | null>(null);
+
+  const db = getDatabase();
+
+  // Delegate presence restoration to sub-hook
+  usePresenceRestore(db, roomCode, uid, {
+    disconnectRef: disconnectRefRef,
+    roomData: roomDataRef,
+    playersData: playersDataRef,
+  });
+
+  // Delegate owner reassignment to sub-hook
+  useOwnerReassignment(roomCode, uid, rawPlayersData);
 
   // Main effect: join room and set up listeners
   useEffect(() => {
     // Wait for auth to be ready and all required params
     if (authLoading || !uid || !playerName || !roomCode || !playerAvatar) return;
 
-    const db = getDatabase();
     if (!db) {
       setConnectionError("Database not initialized");
       setIsConnecting(false);
@@ -78,7 +93,6 @@ export function useRoomConnection(
     const roomRef = ref(db, `rooms/${roomCode}`);
     const playersRef = ref(db, `rooms/${roomCode}/players`);
     const messagesRef = ref(db, `rooms/${roomCode}/messages`);
-    const connectedRef = ref(db, ".info/connected");
 
     let roomExists = false;
 
@@ -121,12 +135,12 @@ export function useRoomConnection(
       if (isCleanedUp) return;
       const data = snap.val() as Record<string, PlayerData> | null;
       playersDataRef.current = data;
+      setRawPlayersData(data); // Expose to sub-hooks (useOwnerReassignment)
       
       // Detect if player was kicked: they were in the room before, but now they're not
       // (and the room still exists - checked by roomExists flag)
       const isPlayerInRoom = data ? playerId in data : false;
       if (wasInRoom && !isPlayerInRoom && roomExists) {
-        // Player was removed from the room while it still exists = kicked
         setRoomClosedReason("kicked");
         return;
       }
@@ -138,7 +152,7 @@ export function useRoomConnection(
       const connected = data
         ? Object.values(data).filter((p) => p.connected !== false).length
         : 0;
-      latestConnectedCount = connected; // Always update the latest value
+      latestConnectedCount = connected;
       setConnectedPlayerCount(connected);
       rebuild();
       
@@ -147,7 +161,6 @@ export function useRoomConnection(
       if (connected !== lastConnectedCount && playerId) {
         lastConnectedCount = connected;
         
-        // Cancel any pending call - only the latest count matters
         if (disconnectBehaviorTimeout) {
           clearTimeout(disconnectBehaviorTimeout);
         }
@@ -156,51 +169,10 @@ export function useRoomConnection(
         // so the timeout uses the most recent value, not the stale value from schedule time
         disconnectBehaviorTimeout = setTimeout(() => {
           disconnectBehaviorTimeout = null;
-          // Use latestConnectedCount which has the value from the most recent callback
           actions.updateDisconnectBehavior(roomCode, playerId, latestConnectedCount).catch((err) => {
-            // Log but don't show to user - this is a background operation
             console.warn("[Room] Failed to update disconnect behavior:", err.message);
           });
         }, DISCONNECT_BEHAVIOR_DEBOUNCE_MS);
-        
-        // Fix race condition: Only try to reassign owner if this player could become owner
-        // (i.e., they are the first connected player alphabetically by ID)
-        if (data) {
-          const connectedPlayerIds = Object.entries(data)
-            .filter(([, p]) => p.connected !== false)
-            .map(([id]) => id)
-            .sort();
-          
-          // Only the first connected player (by ID order) should attempt reassignment
-          if (connectedPlayerIds[0] === playerId) {
-            // Cancel any pending reassign timeout since we're checking now
-            if (ownerReassignTimeoutRef.current) {
-              clearTimeout(ownerReassignTimeoutRef.current);
-              ownerReassignTimeoutRef.current = null;
-            }
-            
-            actions.reassignOwnerIfNeeded(roomCode).then((result) => {
-              if (isCleanedUp) return;
-              
-              // If owner is disconnected but within grace period, schedule a re-check
-              if (result.withinGracePeriod && result.gracePeriodRemainingMs > 0) {
-                // Add a small buffer to ensure we're past the grace period
-                const delay = result.gracePeriodRemainingMs + OWNER_REASSIGN_RETRY_BUFFER_MS;
-                ownerReassignTimeoutRef.current = setTimeout(() => {
-                  if (isCleanedUp) return;
-                  ownerReassignTimeoutRef.current = null;
-                  // Re-check - this time it should transfer if owner is still disconnected
-                  actions.reassignOwnerIfNeeded(roomCode).catch((err) => {
-                    console.warn("[Room] Failed to reassign owner after grace period:", err.message);
-                  });
-                }, delay);
-              }
-            }).catch((err) => {
-              // Log but don't show to user - this is a background operation
-              console.warn("[Room] Failed to reassign owner:", err.message);
-            });
-          }
-        }
       }
     });
 
@@ -209,47 +181,6 @@ export function useRoomConnection(
     const unsubMessages = onValue(messagesQuery, (snap) => {
       if (isCleanedUp) return;
       setMessages(toMessages(snap.val()));
-    });
-
-    // Connection listener - restore presence after reconnection
-    // When Firebase connection drops, onDisconnect marks us as disconnected.
-    // When it reconnects, we need to re-mark ourselves as connected.
-    const unsubConnected = onValue(connectedRef, (snap) => {
-      if (isCleanedUp) return;
-      const isConnected = snap.val() === true;
-      
-      // Detect actual reconnection: we must have successfully joined before,
-      // then disconnected, and now reconnected.
-      // Skip initial connection sequence (false → true before join completes)
-      const hasJoined = disconnectRefRef.current !== null;
-      const isReconnection = hasJoined && wasConnectedRef.current === false && isConnected;
-      
-      if (isReconnection) {
-        // Verify room and player still exist (might have been cleaned up while disconnected)
-        const roomExists = roomDataRef.current !== null;
-        const playerExists = playersDataRef.current?.[playerId] !== undefined;
-        
-        if (roomExists && playerExists) {
-          const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
-          update(playerRef, {
-            connected: true,
-            lastSeen: serverTimestamp(),
-          }).catch((err) => {
-            console.warn("[Room] Failed to restore presence after reconnection:", err.message);
-          });
-          
-          // Re-establish onDisconnect handler after reconnection
-          const currentConnected = playersDataRef.current
-            ? Object.values(playersDataRef.current).filter((p) => p.connected !== false).length + 1
-            : 1;
-          actions.updateDisconnectBehavior(roomCode, playerId, currentConnected).catch((err) => {
-            console.warn("[Room] Failed to update disconnect behavior after reconnection:", err.message);
-          });
-        }
-        // If room/player gone, silently skip - user will see "room closed" UI anyway
-      }
-      
-      wasConnectedRef.current = isConnected;
     });
 
     // Join room and set up onDisconnect
@@ -266,35 +197,17 @@ export function useRoomConnection(
       });
 
     return () => {
-      // Mark as cleaned up to prevent any further state updates
       isCleanedUp = true;
       
-      // Use unsubscribe functions instead of off() to avoid removing
-      // other listeners on the same paths (e.g., useFirebaseConnection
-      // also listens to .info/connected for the global offline indicator)
       unsubRoom();
       unsubPlayers();
       unsubMessages();
-      unsubConnected();
       
-      // Reset connection tracking ref
-      wasConnectedRef.current = null;
-      
-      // Cancel any pending disconnect behavior update
       if (disconnectBehaviorTimeout) {
         clearTimeout(disconnectBehaviorTimeout);
       }
       
-      // Cancel any pending owner reassignment timeout
-      if (ownerReassignTimeoutRef.current) {
-        clearTimeout(ownerReassignTimeoutRef.current);
-        ownerReassignTimeoutRef.current = null;
-      }
-      
       // Delay leaveRoom to prevent false disconnections from component remounts
-      // (e.g., parent context changes causing tree recreation).
-      // If the component remounts quickly, the new effect will cancel this timeout.
-      // The onDisconnect handler will still mark the player disconnected if they truly leave.
       leaveTimeoutRef.current = setTimeout(() => {
         if (playerId) {
           actions.leaveRoom(roomCode, playerId).catch((err) => {
@@ -304,7 +217,7 @@ export function useRoomConnection(
         leaveTimeoutRef.current = null;
       }, LEAVE_ROOM_DELAY_MS);
     };
-  }, [roomCode, playerName, playerAvatar, uid, authLoading]);
+  }, [roomCode, playerName, playerAvatar, uid, authLoading, db]);
 
   return {
     gameState,

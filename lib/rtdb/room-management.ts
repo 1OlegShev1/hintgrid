@@ -7,7 +7,7 @@ import {
   serverTimestamp, onDisconnect,
   DatabaseReference,
 } from "firebase/database";
-import { getDb, pushSystemMessage, type RoomData, type PlayerData } from "./helpers";
+import { getDb, getServerTime, pushSystemMessage, type RoomData, type PlayerData } from "./helpers";
 import { updatePublicRoomIndex, removeFromPublicRoomIndex } from "./public-rooms";
 import type { Team } from "@/shared/types";
 import {
@@ -91,10 +91,14 @@ export async function joinRoom(
     const players = (playersSnap.val() || {}) as Record<string, PlayerData>;
     
     // Check if player is banned (temporary ban with expiry)
+    // Use server-adjusted time to prevent bypass via client clock manipulation
     const banExpiry = roomData.bannedPlayers?.[playerId];
-    if (banExpiry && banExpiry > Date.now()) {
-      const remainingSecs = Math.ceil((banExpiry - Date.now()) / 1000);
-      throw new Error(`You are temporarily banned from this room (${remainingSecs}s remaining)`);
+    if (banExpiry) {
+      const serverNow = await getServerTime();
+      if (banExpiry > serverNow) {
+        const remainingSecs = Math.ceil((banExpiry - serverNow) / 1000);
+        throw new Error(`You are temporarily banned from this room (${remainingSecs}s remaining)`);
+      }
     }
     
     // Check if room is locked (existing players can still rejoin)
@@ -158,7 +162,7 @@ export async function joinRoom(
     const updatedRoomData = updatedRoomSnap.val() as RoomData;
     const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
     // Fire and forget - don't block join on index update
-    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
+    updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch((e) => console.warn("[PublicRoomIndex] Update failed:", e));
   }
 
   return { disconnectRef: playerRef };
@@ -245,8 +249,10 @@ export async function reassignOwnerIfNeeded(
   
   // Check grace period - only transfer if owner has been disconnected long enough
   // This prevents accidental transfers during page refreshes or network switches
+  // Use server-adjusted time to prevent premature transfers from client clock skew
   if (!skipGracePeriod && currentOwner?.lastSeen) {
-    const disconnectedFor = Date.now() - currentOwner.lastSeen;
+    const serverNow = await getServerTime();
+    const disconnectedFor = serverNow - currentOwner.lastSeen;
     if (disconnectedFor < OWNER_DISCONNECT_GRACE_PERIOD_MS) {
       const remaining = OWNER_DISCONNECT_GRACE_PERIOD_MS - disconnectedFor;
       return { newOwnerName: null, withinGracePeriod: true, gracePeriodRemainingMs: remaining };
@@ -328,7 +334,7 @@ export async function leaveRoom(roomCode: string, playerId: string): Promise<voi
     if (updatedRoomSnap.exists()) {
       const updatedRoomData = updatedRoomSnap.val() as RoomData;
       const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
-      updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch(() => {});
+      updatePublicRoomIndex(roomCode, updatedRoomData, updatedPlayers).catch((e) => console.warn("[PublicRoomIndex] Update failed:", e));
     }
   }
 }

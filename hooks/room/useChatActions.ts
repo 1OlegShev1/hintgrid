@@ -21,7 +21,8 @@ export interface UseChatActionsReturn {
 
 export function useChatActions(
   roomCode: string,
-  uid: string | null
+  uid: string | null,
+  messageCount?: number
 ): UseChatActionsReturn {
   const [chatInput, setChatInput] = useState("");
   const [isSending, setIsSending] = useState(false);
@@ -42,7 +43,7 @@ export function useChatActions(
     setChatInput("");
     
     withRetry(
-      () => actions.sendMessage(roomCode, uid, messageToSend, "chat"),
+      () => actions.sendMessage(roomCode, uid, messageToSend, "chat", messageCount),
       { 
         maxAttempts: 2, 
         initialDelayMs: 500,

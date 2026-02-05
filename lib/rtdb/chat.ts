@@ -46,7 +46,9 @@ export async function sendMessage(
   roomCode: string,
   playerId: string,
   message: string,
-  type: "clue" | "chat"
+  type: "clue" | "chat",
+  /** Optional known message count — when provided, pruning triggers deterministically */
+  knownMessageCount?: number
 ): Promise<void> {
   const sanitized = sanitizeChatMessage(message);
   if (!sanitized) throw new Error("Message cannot be empty");
@@ -66,9 +68,13 @@ export async function sendMessage(
     type,
   });
   
-  // Prune old messages in background (don't block the send)
-  // Only check occasionally to avoid extra reads on every message
-  if (Math.random() < 0.1) { // ~10% of messages trigger a prune check
+  // Prune old messages in background (don't block the send).
+  // Trigger when count approaches the prune threshold to keep growth bounded.
+  const shouldPrune = knownMessageCount !== undefined
+    ? knownMessageCount >= MESSAGE_PRUNE_THRESHOLD - 10 // deterministic: prune when near threshold
+    : Math.random() < 0.1; // fallback: ~10% random check if count unknown
+  
+  if (shouldPrune) {
     pruneOldMessages(roomCode).catch((err) => {
       console.warn("[Chat] Failed to prune old messages:", err.message);
     });

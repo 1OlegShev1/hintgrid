@@ -123,6 +123,8 @@ Every file in the project, grouped by directory.
 | File | Purpose |
 |------|---------|
 | `useRoomConnection.ts` | Firebase listeners, presence management, player state |
+| `usePresenceRestore.ts` | Restores player presence after Firebase reconnection |
+| `useOwnerReassignment.ts` | Owner transfer with grace period retry scheduling |
 | `useGameActions.ts` | Game action handlers (vote, reveal, clue, start, pause, etc.) |
 | `useChatActions.ts` | Chat send, emoji picker, reactions |
 | `constants.ts` | Timeout constants (`DISCONNECT_BEHAVIOR_DEBOUNCE_MS`, `LEAVE_ROOM_DELAY_MS`, etc.) |
@@ -146,7 +148,7 @@ All functions are re-exported through `lib/rtdb/index.ts`. Import via `@/lib/rtd
 | File | Exports | Purpose |
 |------|---------|---------|
 | `index.ts` | *(barrel)* | Re-exports everything from sub-modules |
-| `helpers.ts` | `getDb`, `checkPause`, `votesToArray`, `arrayToVotes`, `clearGameMessages`, `pushSystemMessage`, `roomRef` | Internal shared helpers (not exported from barrel) |
+| `helpers.ts` | `getDb`, `getServerTime`, `checkPause`, `votesToArray`, `arrayToVotes`, `clearGameMessages`, `pushSystemMessage`, `roomRef` | Internal shared helpers (not exported from barrel) |
 | `room-management.ts` | `joinRoom`, `leaveRoom`, `deleteRoom`, `reassignOwnerIfNeeded`, `updateDisconnectBehavior`, `OWNER_DISCONNECT_GRACE_PERIOD_MS` | Room creation, joining, leaving, owner transfer |
 | `game-lifecycle.ts` | `startGame`, `endGame`, `pauseGame`, `resumeGame`, `rematch` | Game phase transitions |
 | `lobby-actions.ts` | `setLobbyRole`, `randomizeTeams`, `kickPlayer`, `setTimerPreset`, `setWordPack`, `setCustomWords`, `setRoomLocked`, `setRoomName` | Lobby settings and player management |

@@ -7,8 +7,11 @@ import {
   get,
   remove,
   push,
+  onValue,
+  off,
   serverTimestamp,
   DatabaseReference,
+  type DataSnapshot,
 } from "firebase/database";
 import { getDatabase } from "../firebase";
 import type {
@@ -30,6 +33,33 @@ export function getDb() {
   const db = getDatabase();
   if (!db) throw new Error("Database not initialized");
   return db;
+}
+
+/**
+ * Get server-adjusted current time using Firebase's .info/serverTimeOffset.
+ * This accounts for clock skew between client and server, making time-based
+ * checks (like ban expiry) resistant to clients with incorrect clocks.
+ * Uses a one-shot onValue listener since .info/ paths are client-local
+ * and don't support get().
+ */
+export function getServerTime(): Promise<number> {
+  try {
+    const db = getDb();
+    const offsetRef = ref(db, ".info/serverTimeOffset");
+    return new Promise((resolve) => {
+      // Use off() to detach instead of the unsubscribe return value,
+      // because onValue can fire synchronously before the return value is assigned.
+      const callback = (snap: DataSnapshot) => {
+        off(offsetRef, "value", callback);
+        const offset = (snap.val() as number) || 0;
+        resolve(Date.now() + offset);
+      };
+      onValue(offsetRef, callback);
+    });
+  } catch {
+    // Fallback if .info paths are unavailable (e.g., some test environments)
+    return Promise.resolve(Date.now());
+  }
 }
 
 /**

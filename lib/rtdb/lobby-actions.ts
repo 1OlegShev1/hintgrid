@@ -6,7 +6,7 @@ import {
   ref, get, update, remove, push,
   serverTimestamp,
 } from "firebase/database";
-import { getDb, type RoomData, type PlayerData } from "./helpers";
+import { getDb, getServerTime, type RoomData, type PlayerData } from "./helpers";
 import { updatePublicRoomIndex, removeFromPublicRoomIndex } from "./public-rooms";
 import { reassignOwnerIfNeeded } from "./room-management";
 import { shufflePlayers } from "@/shared/game-utils";
@@ -145,8 +145,9 @@ export async function kickPlayer(
   const targetPlayer = playersData[targetPlayerId];
   if (!targetPlayer) throw new Error("Player not found");
 
-  // Calculate ban expiry (2 minutes from now)
-  const banExpiry = Date.now() + BAN_DURATION_MS;
+  // Calculate ban expiry using server-adjusted time (resistant to client clock skew)
+  const serverNow = await getServerTime();
+  const banExpiry = serverNow + BAN_DURATION_MS;
 
   // Clear votes from board
   const board = roomData.board || [];
@@ -181,7 +182,7 @@ export async function kickPlayer(
   const updatedPlayers = (updatedPlayersSnap.val() || {}) as Record<string, PlayerData>;
   const updatedRoomSnap = await get(roomRef);
   if (updatedRoomSnap.exists()) {
-    updatePublicRoomIndex(roomCode, updatedRoomSnap.val() as RoomData, updatedPlayers).catch(() => {});
+    updatePublicRoomIndex(roomCode, updatedRoomSnap.val() as RoomData, updatedPlayers).catch((e) => console.warn("[PublicRoomIndex] Update failed:", e));
   }
 }
 

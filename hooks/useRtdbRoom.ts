@@ -78,8 +78,8 @@ export function useRtdbRoom(
   // Game actions (uses ErrorContext internally)
   const gameActions = useGameActions(roomCode, conn.uid);
 
-  // Chat actions
-  const chatActions = useChatActions(roomCode, conn.uid);
+  // Chat actions (pass message count for deterministic pruning)
+  const chatActions = useChatActions(roomCode, conn.uid, conn.messages.length);
 
   // Update GameContext with room state
   const isLast = conn.connectedPlayerCount === 1 && 

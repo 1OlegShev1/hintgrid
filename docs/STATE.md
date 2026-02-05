@@ -235,7 +235,7 @@ const isTeamManagementAllowed = !isActiveGame;
 **Message Limits:**
 - Query limit: 300 messages (enough for spectator-heavy rooms)
 - Auto-prune threshold: 400 messages (deletes oldest, keeps 300)
-- Pruning happens in background on ~10% of chat sends to avoid unbounded growth
+- Pruning triggers deterministically when message count approaches the threshold (390+), with a random 10% fallback if count is unknown
 
 ## Client-Side State
 
@@ -400,7 +400,9 @@ Music auto-switches based on game state (lobby → game → victory).
 |------|----------|---------|
 | `useRtdbRoom` | `hooks/useRtdbRoom.ts` | Main room hook, composes connection + actions; returns grouped API (`state`, `connection`, `chat`, `actions`) |
 | `useRoomConnection` | `hooks/room/useRoomConnection.ts` | Firebase listeners, presence, player state |
-| `useGameActions` | `hooks/room/useGameActions.ts` | Game action handlers (vote, reveal, clue) |
+| `usePresenceRestore` | `hooks/room/usePresenceRestore.ts` | Restores player presence after Firebase reconnection |
+| `useOwnerReassignment` | `hooks/room/useOwnerReassignment.ts` | Owner transfer with grace period retry scheduling |
+| `useGameActions` | `hooks/room/useGameActions.ts` | Game action handlers (vote, reveal, clue) with retry |
 | `useChatActions` | `hooks/room/useChatActions.ts` | Chat messages, emoji picker, and reactions |
 | `useRoomDerivedState` | `hooks/useRoomDerivedState.ts` | Computed state (isMyTurn, canVote, etc.) |
 | `useGameTimer` | `hooks/useGameTimer.ts` | Turn countdown timer; only owner (or fallback) triggers timeout |

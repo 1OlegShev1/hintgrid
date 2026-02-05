@@ -5,8 +5,12 @@
 
 import { useCallback } from "react";
 import * as actions from "@/lib/rtdb";
+import { withRetry } from "@/lib/retry";
 import { useError } from "@/contexts/ErrorContext";
 import type { WordPack, TimerPreset } from "./types";
+
+// Short retry config for time-sensitive gameplay actions
+const GAMEPLAY_RETRY = { maxAttempts: 3, initialDelayMs: 300, maxDelayMs: 2000 } as const;
 
 export interface UseGameActionsReturn {
   handleStartGame: () => void;
@@ -70,19 +74,19 @@ export function useGameActions(
   }, [roomCode, uid, showError]);
 
   const handleVoteCard = useCallback((i: number) => {
-    if (uid) actions.voteCard(roomCode, uid, i).catch((e) => showError(e.message));
+    if (uid) withRetry(() => actions.voteCard(roomCode, uid, i), GAMEPLAY_RETRY).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
   const handleConfirmReveal = useCallback((i: number) => {
-    if (uid) actions.confirmReveal(roomCode, uid, i).catch((e) => showError(e.message));
+    if (uid) withRetry(() => actions.confirmReveal(roomCode, uid, i), GAMEPLAY_RETRY).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
   const handleEndTurn = useCallback(() => {
-    actions.endTurn(roomCode).catch((e) => showError(e.message));
+    withRetry(() => actions.endTurn(roomCode), GAMEPLAY_RETRY).catch((e) => showError(e.message));
   }, [roomCode, showError]);
 
   const handleGiveClue = useCallback((w: string, c: number) => {
-    if (uid) actions.giveClue(roomCode, uid, w, c).catch((e) => showError(e.message));
+    if (uid) withRetry(() => actions.giveClue(roomCode, uid, w, c), GAMEPLAY_RETRY).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
   const handleTimerPresetChange = useCallback((preset: TimerPreset) => {

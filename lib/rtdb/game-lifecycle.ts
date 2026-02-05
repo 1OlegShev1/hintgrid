@@ -108,7 +108,7 @@ async function _initializeGame(
 
   // Update public room index (status changed to "playing")
   const updatedRoomData = { ...roomData, gameStarted: true, gameOver: false, paused: false };
-  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch((e) => console.warn("[PublicRoomIndex] Update failed:", e));
 }
 
 export async function startGame(roomCode: string, playerId: string): Promise<void> {
@@ -165,7 +165,7 @@ export async function endGame(roomCode: string, playerId: string): Promise<void>
   
   // Update public room index (status changed to "lobby")
   const updatedRoomData = { ...roomData, gameStarted: false, gameOver: false, paused: false };
-  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch((e) => console.warn("[PublicRoomIndex] Update failed:", e));
 }
 
 export async function pauseGame(roomCode: string, playerId: string): Promise<void> {
@@ -200,7 +200,7 @@ export async function pauseGame(roomCode: string, playerId: string): Promise<voi
   const playersSnap = await get(ref(db, `rooms/${roomCode}/players`));
   const playersData = (playersSnap.val() || {}) as Record<string, PlayerData>;
   const updatedRoomData = { ...roomData, paused: true };
-  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch((e) => console.warn("[PublicRoomIndex] Update failed:", e));
 }
 
 export async function resumeGame(roomCode: string, playerId: string): Promise<void> {
@@ -243,5 +243,5 @@ export async function resumeGame(roomCode: string, playerId: string): Promise<vo
   
   // Update public room index (status changed to "playing")
   const updatedRoomData = { ...roomData, paused: false, pauseReason: null };
-  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch(() => {});
+  updatePublicRoomIndex(roomCode, updatedRoomData as RoomData, playersData).catch((e) => console.warn("[PublicRoomIndex] Update failed:", e));
 }
