@@ -50,20 +50,18 @@ export default function Home() {
   const handleCreateRoom = () => {
     if (!playerName.trim()) return;
     const code = Math.random().toString(36).substring(2, 8).toUpperCase();
-    // Use full page navigation for static export compatibility
     const visibility = isPrivateRoom ? "private" : "public";
-    window.location.href = `/room/${code}?name=${encodeURIComponent(playerName)}&create=true&visibility=${visibility}`;
+    router.push(`/room/${code}?name=${encodeURIComponent(playerName)}&create=true&visibility=${visibility}`);
   };
 
   const handleJoinRoom = () => {
     if (!playerName.trim() || !roomCode.trim()) return;
-    // Use full page navigation for static export compatibility
-    window.location.href = `/room/${roomCode.toUpperCase()}?name=${encodeURIComponent(playerName)}`;
+    router.push(`/room/${roomCode.toUpperCase()}?name=${encodeURIComponent(playerName)}`);
   };
 
   const handleJoinPublicRoom = (code: string) => {
     if (!playerName.trim()) return;
-    window.location.href = `/room/${code}?name=${encodeURIComponent(playerName)}`;
+    router.push(`/room/${code}?name=${encodeURIComponent(playerName)}`);
   };
 
   const getStatusBadge = (status: PublicRoomData["status"]) => {
@@ -135,9 +133,9 @@ export default function Home() {
                         <Button
                           onClick={() => {
                             if (playerName.trim()) {
-                              window.location.href = `/room/${room.roomCode}?name=${encodeURIComponent(playerName)}`;
+                              router.push(`/room/${room.roomCode}?name=${encodeURIComponent(playerName)}`);
                             } else {
-                              window.location.href = `/room/${room.roomCode}`;
+                              router.push(`/room/${room.roomCode}`);
                             }
                           }}
                           data-testid={`public-room-join-${room.roomCode}`}
