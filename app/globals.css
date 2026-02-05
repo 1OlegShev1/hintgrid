@@ -441,6 +441,52 @@ html::-webkit-scrollbar-thumb:hover {
 }
 
 /* ============================================
+   CLASSIC THEME - Background Texture
+   ============================================ */
+
+/* Classic background container */
+.theme-classic .classic-bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* Classic light: dot grid + soft blue/indigo color washes */
+.light.theme-classic .classic-bg {
+  background-color: var(--color-background);
+  background-image:
+    /* Soft ambient color washes for depth */
+    radial-gradient(ellipse at 10% 20%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(79, 70, 229, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(59, 130, 246, 0.06) 0%, transparent 40%),
+    /* Dot grid texture */
+    radial-gradient(circle, #c5c9d0 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    22px 22px;
+}
+
+/* Classic dark: dot grid + deep purple/blue color washes */
+.dark.theme-classic .classic-bg {
+  background-color: var(--color-background);
+  background-image:
+    /* Soft ambient color washes for depth */
+    radial-gradient(ellipse at 10% 20%, rgba(96, 165, 250, 0.12) 0%, transparent 50%),
+    radial-gradient(ellipse at 90% 80%, rgba(99, 102, 241, 0.10) 0%, transparent 50%),
+    radial-gradient(ellipse at 50% 100%, rgba(96, 165, 250, 0.06) 0%, transparent 40%),
+    /* Dot grid texture */
+    radial-gradient(circle, #303035 1px, transparent 1px);
+  background-size:
+    100% 100%,
+    100% 100%,
+    100% 100%,
+    22px 22px;
+}
+
+/* ============================================
    SYNTHWAVE THEME - DARK (Neon Night)
    ============================================ */
 

@@ -18,7 +18,7 @@ interface ThemeBackgroundProps {
  * ThemeBackground - Renders the appropriate background based on theme style.
  * 
  * For synthwave: Animated grid with sun and mountains
- * For classic: Simple gradient background
+ * For classic: Dot grid texture with soft color washes
  * 
  * This component should be placed at the root of pages that need a themed background.
  */
@@ -34,8 +34,8 @@ export function ThemeBackground({ sunPosition = "center" }: ThemeBackgroundProps
     );
   }
 
-  // Classic theme - no special background needed
-  return null;
+  // Classic theme - dot grid texture with soft color washes
+  return <div className="classic-bg" />;
 }
 
 /**
