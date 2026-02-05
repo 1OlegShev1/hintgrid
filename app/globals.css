@@ -573,6 +573,14 @@ html.light.theme-synthwave {
   left: 0;
   right: 0;
   height: 40vh;
+  transform: perspective(500px) rotateX(60deg);
+  transform-origin: 50% 0%;
+}
+
+.dark.theme-synthwave .synthwave-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 -60px;
   background-image: 
     repeating-linear-gradient(
       90deg,
@@ -589,8 +597,7 @@ html.light.theme-synthwave {
       transparent 60px
     );
   background-size: 60px 60px;
-  transform: perspective(500px) rotateX(60deg);
-  transform-origin: 50% 0%;
+  will-change: transform;
   animation: grid-scroll 10s linear infinite;
 }
 
@@ -625,6 +632,14 @@ html.light.theme-synthwave {
   left: 0;
   right: 0;
   height: 40vh;
+  transform: perspective(500px) rotateX(60deg);
+  transform-origin: 50% 0%;
+}
+
+.light.theme-synthwave .synthwave-grid::before {
+  content: '';
+  position: absolute;
+  inset: 0 0 0 -60px;
   background-image: 
     repeating-linear-gradient(
       90deg,
@@ -641,14 +656,13 @@ html.light.theme-synthwave {
       transparent 60px
     );
   background-size: 60px 60px;
-  transform: perspective(500px) rotateX(60deg);
-  transform-origin: 50% 0%;
+  will-change: transform;
   animation: grid-scroll 10s linear infinite;
 }
 
 @keyframes grid-scroll {
-  0% { background-position: 0 0; }
-  100% { background-position: 60px 0; }
+  from { transform: translateX(0); }
+  to { transform: translateX(60px); }
 }
 
 /* Sun position variants - easter egg effect */
