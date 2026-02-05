@@ -368,26 +368,25 @@ html::-webkit-scrollbar-thumb:hover {
   background-color: var(--color-muted);
 }
 
-/* Custom scrollbar - thin and always visible (for inner scrollable elements) */
+/* Custom scrollbar - thin with transparent track (for inner scrollable elements) */
 .scrollbar-thin {
   scrollbar-width: thin;
-  scrollbar-color: var(--color-muted) var(--color-surface);
+  scrollbar-color: var(--color-border) transparent;
 }
 
 .scrollbar-thin::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 6px;
+  height: 6px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-track {
-  background: var(--color-surface);
-  border-radius: 4px;
+  background: transparent;
+  border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb {
   background-color: var(--color-border);
-  border-radius: 4px;
-  border: 2px solid var(--color-surface);
+  border-radius: 3px;
 }
 
 .scrollbar-thin::-webkit-scrollbar-thumb:hover {

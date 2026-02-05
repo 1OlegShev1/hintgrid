@@ -138,7 +138,7 @@ export function TeamCard({
           <span className="font-semibold text-foreground">Seekers</span>
         </div>
         <p className="text-sm text-muted mb-2 ml-6">Find words based on hints</p>
-        <div className="space-y-2 max-h-32 overflow-y-auto scrollbar-thin">
+        <div className="space-y-2 max-h-32 overflow-y-auto pr-1 scrollbar-thin">
           {guessers.map((player) => (
             <div
               key={player.id}

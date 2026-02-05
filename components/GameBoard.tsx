@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, useCallback, useMemo, memo, KeyboardEvent } from "react";
+import { useEffect, useRef, useState, useCallback, KeyboardEvent } from "react";
 import type { Card, Player } from "@/shared/types";
 import { MaskIcon, TrapIcon, DustCloudIcon } from "@/components/icons/CardBackIcons";
 import { useSoundContextOptional } from "@/contexts/SoundContext";
@@ -32,14 +32,12 @@ export default function GameBoard({
   const isClueGiver = currentPlayer?.role === "clueGiver";
   const soundContext = useSoundContextOptional();
   
-  // Track which cards are animating (for the flip effect)
-  const [animatingCards, setAnimatingCards] = useState<Set<number>>(new Set());
+  // Track previous revealed state for sound effects
   const prevRevealedRef = useRef<boolean[]>([]);
   
   // Track vote counts for badge animation
   const prevVotesRef = useRef<Record<number, number>>({});
   const [animatingBadges, setAnimatingBadges] = useState<Set<number>>(new Set());
-  const revealTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const badgeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Keyboard navigation state
@@ -96,48 +94,17 @@ export default function GameBoard({
     }
   }, [focusedIndex, canVote, board, onVoteCard]);
 
-  // Detect newly revealed cards and trigger flip animation
+  // Detect newly revealed cards and play sound
   useEffect(() => {
     const prevRevealed = prevRevealedRef.current;
-    const newlyRevealed: number[] = [];
     
     board.forEach((card, index) => {
       if (card.revealed && prevRevealed[index] === false) {
-        newlyRevealed.push(index);
+        soundContext?.playSound("cardReveal");
       }
     });
     
-    if (newlyRevealed.length > 0) {
-      newlyRevealed.forEach(() => soundContext?.playSound("cardReveal"));
-
-      // Add to animating set
-      setAnimatingCards(prev => {
-        const next = new Set(prev);
-        newlyRevealed.forEach(i => next.add(i));
-        return next;
-      });
-      
-      // Remove after animation completes
-      if (revealTimeoutRef.current) {
-        clearTimeout(revealTimeoutRef.current);
-      }
-      revealTimeoutRef.current = setTimeout(() => {
-        setAnimatingCards(prev => {
-          const next = new Set(prev);
-          newlyRevealed.forEach(i => next.delete(i));
-          return next;
-        });
-      }, 500);
-    }
-    
     prevRevealedRef.current = board.map(c => c.revealed);
-
-    return () => {
-      if (revealTimeoutRef.current) {
-        clearTimeout(revealTimeoutRef.current);
-        revealTimeoutRef.current = null;
-      }
-    };
   }, [board, soundContext]);
 
   // Detect vote changes for badge animation
@@ -185,26 +152,14 @@ export default function GameBoard({
     };
   }, [cardVotes]);
 
-  // Memoize card color function based on isClueGiver
-  const getCardColor = useCallback((card: Card) => {
-    if (!card.revealed && !isClueGiver) {
-      return "bg-gray-200 dark:bg-gray-700 hover:bg-gray-300 dark:hover:bg-gray-600 text-gray-800 dark:text-gray-100";
+  // Front face color (unrevealed card - what guessers/clue givers see)
+  const getFrontFaceColor = useCallback((card: Card) => {
+    if (!isClueGiver) {
+      // Guesser view - neutral gray
+      return "bg-gray-200 dark:bg-gray-700 text-gray-800 dark:text-gray-100";
     }
 
-    if (card.revealed) {
-      switch (card.team) {
-        case "red":
-          return "card-texture-red";
-        case "blue":
-          return "card-texture-blue";
-        case "trap":
-          return "card-texture-trap";
-        default:
-          return "card-texture-neutral";
-      }
-    }
-
-    // Clue giver view (unrevealed)
+    // Clue giver view - colored hints
     switch (card.team) {
       case "red":
         return "bg-red-100 dark:bg-red-900 border-2 border-red-500 text-red-900 dark:text-red-100";
@@ -216,6 +171,20 @@ export default function GameBoard({
         return "bg-yellow-50 dark:bg-yellow-900 border-2 border-yellow-400 text-yellow-900 dark:text-yellow-100";
     }
   }, [isClueGiver]);
+
+  // Back face color (revealed card)
+  const getBackFaceColor = useCallback((card: Card) => {
+    switch (card.team) {
+      case "red":
+        return "card-texture-red";
+      case "blue":
+        return "card-texture-blue";
+      case "trap":
+        return "card-texture-trap";
+      default:
+        return "card-texture-neutral";
+    }
+  }, []);
 
   // Memoize icon color (static function, no dependencies)
   const getCardBackIconColor = useCallback((card: Card) => {
@@ -264,7 +233,6 @@ export default function GameBoard({
         const votes = cardVotes[index] ?? [];
         const hasVoted = currentPlayerId ? votes.includes(currentPlayerId) : false;
         const canConfirm = canVote && requiredVotes > 0 && votes.length >= requiredVotes && hasVoted;
-        const isAnimating = animatingCards.has(index);
         const isBadgeAnimating = animatingBadges.has(index);
         const isFocused = focusedIndex === index;
 
@@ -281,33 +249,33 @@ export default function GameBoard({
               data-card-team={card.revealed || isClueGiver ? card.team : undefined}
               aria-label={`${card.revealed ? `Revealed: ${card.team}` : card.word}${hasVoted ? ", you voted" : ""}${votes.length > 0 ? `, ${votes.length} votes` : ""}`}
               className={`
-                aspect-square p-1 sm:p-2 rounded-lg font-semibold w-full overflow-hidden relative
-                transition-all duration-200
-                ${getCardColor(card)}
+                card-flip-container aspect-square rounded-lg font-semibold w-full
                 ${card.revealed || !canVote
                   ? "cursor-default"
                   : "cursor-pointer hover:scale-105 active:scale-95"
                 }
                 ${hasVoted ? "ring-2 ring-blue-500" : ""}
                 ${isFocused && !card.revealed ? "ring-2 ring-yellow-400 ring-offset-2" : ""}
-                ${isAnimating ? "card-flip" : ""}
                 focus:outline-none focus-visible:ring-2 focus-visible:ring-yellow-400 focus-visible:ring-offset-2
+                transition-transform duration-200
               `}
             >
-              {/* Use absolute centering for consistent cross-browser alignment */}
-              <div className="absolute inset-0 flex items-center justify-center">
-                {card.revealed ? (
-                  renderCardBackIcon(card)
-                ) : (
+              <div className={`card-flip-inner ${card.revealed ? "flipped" : ""}`}>
+                {/* Front face - the word */}
+                <div className={`card-flip-front p-1 sm:p-2 ${getFrontFaceColor(card)}`}>
                   <span className={`text-center leading-tight ${getWordSizeClass(card.word)}`}>
                     {card.word}
                   </span>
-                )}
+                </div>
+                {/* Back face - revealed card */}
+                <div className={`card-flip-back ${getBackFaceColor(card)}`}>
+                  {renderCardBackIcon(card)}
+                </div>
               </div>
             </button>
             {votes.length > 0 && !card.revealed && (
               <div 
-                className={`absolute top-1 left-1 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-semibold ${isBadgeAnimating ? "badge-pop" : ""}`}
+                className={`absolute top-1 left-1 z-10 bg-blue-600 text-white text-xs px-2 py-0.5 rounded-full font-semibold ${isBadgeAnimating ? "badge-pop" : ""}`}
                 title={`Votes: ${votes.length}`}
                 aria-hidden="true"
               >
@@ -315,7 +283,7 @@ export default function GameBoard({
               </div>
             )}
             {hasVoted && !card.revealed && (
-              <div className="absolute top-1 right-1 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded" title="You voted" aria-hidden="true">
+              <div className="absolute top-1 right-1 z-10 bg-blue-500 text-white text-xs px-1.5 py-0.5 rounded" title="You voted" aria-hidden="true">
                 ✓
               </div>
             )}
@@ -323,7 +291,7 @@ export default function GameBoard({
               <button
                 onClick={() => onConfirmReveal(index)}
                 data-testid={`board-reveal-${index}`}
-                className="absolute bottom-1 right-1 bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700 font-semibold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
+                className="absolute bottom-1 right-1 z-10 bg-green-600 text-white text-xs px-2 py-1 rounded hover:bg-green-700 font-semibold shadow-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-white"
                 title="Click to reveal this card"
                 aria-label={`Reveal ${card.word}`}
               >
