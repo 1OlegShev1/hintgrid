@@ -39,10 +39,20 @@ export default function Navbar() {
         const isMobile = window.matchMedia("(hover: none)").matches;
         
         if (isMobile) {
-          // Hide when scrolling down past 50px, show when scrolling up
+          // Detect if we're near the bottom of the page (within 20px).
+          // Mobile overscroll bounce at the bottom produces small negative
+          // deltas that would incorrectly re-show the navbar.
+          const nearBottom =
+            window.innerHeight + currentScrollY >=
+            document.documentElement.scrollHeight - 20;
+
+          // Hide when scrolling down past 50px, show when intentionally scrolling up.
+          // Use a higher threshold (-15) for showing, and ignore bounces at the bottom.
           if (scrollDelta > 5 && currentScrollY > 50) {
             setIsVisible(false);
-          } else if (scrollDelta < -5 || currentScrollY <= 50) {
+          } else if (currentScrollY <= 50) {
+            setIsVisible(true);
+          } else if (scrollDelta < -15 && !nearBottom) {
             setIsVisible(true);
           }
         } else {
