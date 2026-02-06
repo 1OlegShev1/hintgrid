@@ -13,7 +13,7 @@
     "rewrites": [
       {
         "source": "/room/**",
-        "destination": "/room/index.html"
+        "destination": "/room.html"
       },
       {
         "source": "**",
