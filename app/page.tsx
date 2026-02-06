@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, LOCAL_STORAGE_PLAYER_NAME_KEY, LOCAL_STORAGE_LAST_ROOM_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
@@ -8,6 +8,9 @@ import { subscribeToPublicRooms, type PublicRoomData } from "@/lib/rtdb";
 import { Badge, Card, CardContent, CardHeader, CardTitle, Button, Input } from "@/components/ui";
 import { ThemeBackground } from "@/components/ThemeBackground";
 import { useTheme } from "@/components/ThemeProvider";
+
+// Lazy-load demo mode so it doesn't bloat the initial home page bundle
+const DemoView = lazy(() => import("@/components/demo/DemoView"));
 
 export default function Home() {
   const [playerName, setPlayerName] = useState("");
@@ -17,6 +20,7 @@ export default function Home() {
   const [isPrivateRoom, setIsPrivateRoom] = useState(false);
   const [publicRooms, setPublicRooms] = useState<PublicRoomData[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
+  const [showDemo, setShowDemo] = useState(false);
   const router = useRouter();
 
   // Initialize avatar and player name from localStorage on mount
@@ -90,7 +94,7 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-[calc(100vh-3.5rem-1px)] flex items-center justify-center px-5 sm:px-6 py-6 relative bg-transparent">
+    <main className={`min-h-[calc(100vh-3.5rem-1px)] flex justify-center px-5 sm:px-6 py-6 relative bg-transparent ${showDemo ? "items-start" : "items-center"}`}>
       {/* Theme-aware Background */}
       <ThemeBackground />
 
@@ -103,8 +107,36 @@ export default function Home() {
           <p className="text-muted">
             A word guessing party game
           </p>
+          {!showDemo && (
+            <button
+              type="button"
+              onClick={() => setShowDemo(true)}
+              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
+            >
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              See How It Works
+            </button>
+          )}
         </div>
 
+        {/* Demo mode (replaces grid when active) */}
+        {showDemo ? (
+          <Suspense
+            fallback={
+              <div className="flex items-center justify-center py-20">
+                <div className="animate-pulse text-muted">Loading demo...</div>
+              </div>
+            }
+          >
+            <DemoView
+              onClose={() => setShowDemo(false)}
+              onCreateRoom={handleCreateRoom}
+            />
+          </Suspense>
+        ) : (
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left: Public Rooms */}
           <Card variant="elevated" padding="lg">
@@ -266,6 +298,7 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+        )}
       </div>
     </main>
   );

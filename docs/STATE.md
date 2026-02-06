@@ -420,6 +420,7 @@ Music auto-switches based on game state (lobby → game → victory).
 | `useTimerSound` | `hooks/useTimerSound.ts` | Timer tick sounds based on time remaining |
 | `useMusicPlayer` | `hooks/useMusicPlayer.ts` | Background music playback via Howler.js (fade, track switching, iOS workaround) |
 | `usePrefersReducedMotion` | `hooks/usePrefersReducedMotion.ts` | Detects OS reduced motion preference |
+| `useDemoPlayback` | `hooks/useDemoPlayback.ts` | Demo mode state machine — drives a scripted game walkthrough using local React state (no Firebase) |
 
 ### Components
 

@@ -11,6 +11,7 @@ A multiplayer word guessing party game built with Next.js, TypeScript, and Fireb
 - Clue Giver and Guesser roles
 - Turn-based gameplay with timer
 - Sound effects and background music with separate volume controls
+- Interactive demo mode on the home page — a scripted game walkthrough with perspective switching and educational annotations (fully client-side, no Firebase)
 
 ## How It Works
 

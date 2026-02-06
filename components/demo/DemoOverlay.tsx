@@ -1,0 +1,136 @@
+"use client";
+
+/**
+ * Educational overlay for demo mode.
+ * Shows thought bubbles from bot players and annotation callouts
+ * with smooth fade transitions.
+ */
+
+import { useEffect, useState } from "react";
+import type { DemoThought, DemoPhase } from "@/hooks/useDemoPlayback";
+
+interface DemoOverlayProps {
+  phase: DemoPhase;
+  annotation: string | null;
+  thought: DemoThought | null;
+  perspective: "hinter" | "seeker";
+}
+
+// Phase labels shown at the top
+const PHASE_LABELS: Partial<Record<DemoPhase, string>> = {
+  hinterThinking: "Hinter is thinking...",
+  clueGiven: "Clue given!",
+  seekerVoting: "Seekers are guessing",
+  cardReveal: "Card revealed!",
+  turnEnd: "Turn over",
+  gameOver: "Game over!",
+};
+
+export default function DemoOverlay({
+  phase,
+  annotation,
+  thought,
+  perspective,
+}: DemoOverlayProps) {
+  // Fade-in/out state for smooth transitions
+  const [visibleAnnotation, setVisibleAnnotation] = useState(annotation);
+  const [visibleThought, setVisibleThought] = useState(thought);
+  const [annotationFade, setAnnotationFade] = useState(false);
+  const [thoughtFade, setThoughtFade] = useState(false);
+
+  // Transition annotation
+  useEffect(() => {
+    if (annotation !== visibleAnnotation) {
+      // Fade out, swap, fade in
+      setAnnotationFade(false);
+      const timeout = setTimeout(() => {
+        setVisibleAnnotation(annotation);
+        // Small delay then fade in
+        requestAnimationFrame(() => setAnnotationFade(true));
+      }, 150);
+      return () => clearTimeout(timeout);
+    } else {
+      setAnnotationFade(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [annotation]);
+
+  // Transition thought
+  useEffect(() => {
+    if (thought !== visibleThought) {
+      setThoughtFade(false);
+      const timeout = setTimeout(() => {
+        setVisibleThought(thought);
+        requestAnimationFrame(() => setThoughtFade(true));
+      }, 150);
+      return () => clearTimeout(timeout);
+    } else {
+      setThoughtFade(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [thought]);
+
+  const phaseLabel = PHASE_LABELS[phase];
+
+  return (
+    <div className="space-y-3">
+      {/* Phase label + perspective indicator */}
+      <div className="flex items-center justify-between">
+        {phaseLabel && phase !== "intro" && (
+          <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+            {phaseLabel}
+          </span>
+        )}
+        <span
+          className={`text-xs font-medium px-2 py-0.5 rounded-full ${
+            perspective === "hinter"
+              ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
+              : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
+          }`}
+        >
+          Viewing as {perspective === "hinter" ? "Hinter" : "Seeker"}
+        </span>
+      </div>
+
+      {/* Thought bubble */}
+      {visibleThought && (
+        <div
+          className={`
+            transition-all duration-300 ease-out
+            ${thoughtFade ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
+          `}
+        >
+          <div className="flex items-start gap-3 bg-surface border border-border rounded-xl px-4 py-3 shadow-sm">
+            <span className="text-2xl shrink-0 mt-0.5" role="img" aria-label={visibleThought.playerName}>
+              {visibleThought.avatar}
+            </span>
+            <div className="min-w-0">
+              <span className="text-xs font-semibold text-muted block mb-0.5">
+                {visibleThought.playerName} thinks...
+              </span>
+              <p className="text-sm text-foreground leading-relaxed italic">
+                &ldquo;{visibleThought.text}&rdquo;
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Annotation callout */}
+      {visibleAnnotation && (
+        <div
+          className={`
+            transition-all duration-300 ease-out
+            ${annotationFade ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
+          `}
+        >
+          <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
+            <p className="text-sm text-foreground leading-relaxed">
+              {visibleAnnotation}
+            </p>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}

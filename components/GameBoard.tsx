@@ -196,7 +196,7 @@ export default function GameBoard({
       case "trap":
         return "text-gray-400/50";
       default:
-        return "text-yellow-700/60 dark:text-yellow-900/60";
+        return "text-yellow-700/60 dark:text-yellow-200/40";
     }
   }, []);
 

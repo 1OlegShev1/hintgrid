@@ -54,6 +54,14 @@ Every file in the project, grouped by directory.
 | `TransitionOverlay.tsx` | Game start / turn change / game over animations |
 | `icons/CardBackIcons.tsx` | SVG icons for card backs |
 
+### `components/demo/` — Demo mode components (client-side only, no Firebase)
+
+| File | Purpose |
+|------|---------|
+| `DemoView.tsx` | Main demo container — wires playback hook to GameBoard + GameStatusPanel |
+| `DemoOverlay.tsx` | Thought bubbles and educational annotation callouts with transitions |
+| `DemoControls.tsx` | Play/pause, next step, speed, progress bar, perspective toggle |
+
 ### `components/ui/` — Design system primitives
 
 | File | Purpose |
@@ -121,6 +129,7 @@ Every file in the project, grouped by directory.
 | `useAudioUnlock.ts` | Browser audio context unlock on user interaction |
 | `useMusicPlayer.ts` | Background music playback via Howler.js (fade, track switching, iOS workaround) |
 | `usePrefersReducedMotion.ts` | Detects OS reduced motion preference |
+| `useDemoPlayback.ts` | Demo mode state machine — walks through scripted game producing GameState for existing components (no Firebase) |
 
 ### `hooks/room/` — Room-specific hooks (composed by `useRtdbRoom`)
 
@@ -171,6 +180,7 @@ All functions are re-exported through `lib/rtdb/index.ts`. Import via `@/lib/rtd
 | `profanity.ts` | Profanity detection (`containsProfanity`) and censoring (`censorProfanity`) |
 | `words.ts` | Word lists per pack and board generation (`generateBoard`) |
 | `constants.ts` | All game config: timer presets, word packs, limits, localStorage keys, avatars |
+| `demo-script.ts` | Demo mode script data — pre-defined board, bot players, turn sequence with clues, thought bubbles, and annotations |
 
 ### `tests/` — E2E tests (Playwright)
 
@@ -206,6 +216,7 @@ All functions are re-exported through `lib/rtdb/index.ts`. Import via `@/lib/rtd
 | `profanity.test.ts` | Profanity detection and censoring |
 | `validation.test.ts` | Input sanitization and validation |
 | `words.test.ts` | Word list integrity and board generation |
+| `demo-script.test.ts` | Demo script validation (board structure, player config, turn integrity, win condition) |
 
 ### Root config files
 
