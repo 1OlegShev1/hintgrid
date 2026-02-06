@@ -8,6 +8,7 @@ Start here to understand the project documentation.
 |------|----------------|
 | [`RULES.md`](RULES.md) | Game rules, clue validation, turn mechanics, pause/disconnect handling |
 | [`STATE.md`](STATE.md) | Firebase data model, room lifecycle, turn flow, client-side state, sound system, architecture, **testing strategy & conventions** |
+| [`DEPLOYMENT.md`](DEPLOYMENT.md) | Hosting architecture, Static Export details, and routing workarounds (e.g. room code parsing) |
 
 ## Future Plans
 
@@ -229,7 +230,7 @@ All functions are re-exported through `lib/rtdb/index.ts`. Import via `@/lib/rtd
 | `vitest.config.ts` | Unit test config (with coverage thresholds) |
 | `vitest.integration.config.ts` | Integration test config (with coverage thresholds) |
 | `playwright.config.ts` | E2E test config |
-| `firebase.json` | Firebase hosting + emulator config |
+| `firebase.json` | Firebase hosting + emulator config (see [`docs/DEPLOYMENT.md`](docs/DEPLOYMENT.md) for rewrite rules) |
 | `.firebaserc` | Firebase project alias |
 | `database.rules.json` | Firebase RTDB security rules |
 | `.lintstagedrc.js` | Lint-staged config (pre-commit) |

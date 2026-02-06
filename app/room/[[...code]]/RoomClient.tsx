@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams, useRouter, useParams } from "next/navigation";
+import { useSearchParams, useRouter, useParams, usePathname } from "next/navigation";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { ref, get } from "firebase/database";
 import TransitionOverlay from "@/components/TransitionOverlay";
@@ -34,12 +34,15 @@ const IDLE_TIMEOUT_MS = 60 * 60 * 1000;
 
 export default function RoomPage() {
   const params = useParams<{ code?: string[] }>();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const router = useRouter();
   const { uid } = useAuth();
   
-  // Extract room code from route params: /room/[[...code]]
-  const roomCode = params.code?.[0] || "";
+  // Extract room code from route params, falling back to pathname parsing.
+  // useParams() can return empty in static exports served via CDN rewrites
+  // (e.g. Firebase Hosting rewrites /room/ABC123 → /room.html).
+  const roomCode = params.code?.[0] || pathname.replace(/^\/room\/?/, "").split("/")[0] || "";
   const playerName = searchParams.get("name") || "";
   const visibilityParam = searchParams.get("visibility");
   const visibility = visibilityParam === "private" ? "private" : undefined; // undefined = default (public)
