@@ -29,8 +29,6 @@ export default function Home() {
     setAvatar(storedAvatar || getRandomAvatar());
     const storedName = localStorage.getItem(LOCAL_STORAGE_PLAYER_NAME_KEY);
     if (storedName) setPlayerName(storedName);
-    const storedRoom = localStorage.getItem(LOCAL_STORAGE_LAST_ROOM_KEY);
-    if (storedRoom) setRoomCode(storedRoom);
   }, []);
 
   // Subscribe to public rooms in real-time

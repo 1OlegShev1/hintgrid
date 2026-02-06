@@ -34,7 +34,9 @@ const themeScript = `
     // Handle light/dark mode
     const storedMode = localStorage.getItem('hintgrid-theme');
     let mode = storedMode;
-    if (!mode || mode === 'system') {
+    if (!mode) {
+      mode = 'dark';
+    } else if (mode === 'system') {
       mode = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     document.documentElement.classList.add(mode);

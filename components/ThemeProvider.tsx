@@ -35,7 +35,7 @@ function getSystemTheme(): "light" | "dark" {
 }
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setModeState] = useState<ThemeMode>("system");
+  const [mode, setModeState] = useState<ThemeMode>("dark");
   const [resolvedMode, setResolvedMode] = useState<"light" | "dark">("dark");
   const [style, setStyleState] = useState<ThemeStyle>("synthwave");
   const [mounted, setMounted] = useState(false);
