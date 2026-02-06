@@ -47,6 +47,8 @@ export interface DemoTurn {
   clue: { word: string; count: number };
   /** Hinter's internal reasoning shown as a thought bubble */
   hinterThought: string;
+  /** Seekers react to the clue before voting (shown after clue appears) */
+  seekerReaction?: { playerId: string; text: string };
   /** Reveal steps for this turn */
   reveals: DemoRevealStep[];
   /** Annotation shown when the turn ends (e.g. wrong guess explanation) */
@@ -135,37 +137,44 @@ const DEMO_TURNS: DemoTurn[] = [
     team: "red",
     clue: { word: "DEEP", count: 3 },
     hinterThought:
-      "WHALE, REEF, and OCEAN are all related to the deep sea... I'll say DEEP 3!",
+      "I can see the whole board... WHALE, REEF, and OCEAN are all Red and relate to the deep sea. I'll say DEEP 3!",
+    seekerReaction: {
+      playerId: "demo-red-seeker-1",
+      text: "DEEP 3 — that's three words to find! I'm thinking water... WHALE, OCEAN, REEF all feel right. Let's start with the safest one.",
+    },
     reveals: [
       {
         cardIndex: 0, // WHALE
         voterIds: ["demo-red-seeker-1", "demo-red-seeker-2"],
         thought: {
-          playerId: "demo-red-seeker-1",
-          text: "WHALE is definitely deep sea. Let's go!",
+          playerId: "demo-red-seeker-2",
+          text: "WHALE lives in the deep ocean — I agree with Bob, this is our best bet!",
         },
-        annotation: "Seekers vote together and reveal WHALE — correct! It's a Red card.",
+        annotation:
+          "Both seekers vote on WHALE and it's revealed — correct! It's a Red card. Seekers must vote before a card is revealed.",
       },
       {
         cardIndex: 6, // REEF
         voterIds: ["demo-red-seeker-2", "demo-red-seeker-1"],
         thought: {
-          playerId: "demo-red-seeker-2",
-          text: "REEF is found deep underwater too. I'm confident.",
+          playerId: "demo-red-seeker-1",
+          text: "A REEF is found deep underwater. Two down, one to go!",
         },
-        annotation: "Another correct guess! Two down, one to go.",
+        annotation: "REEF is Red! Another correct guess. Red is on a roll.",
       },
       {
         cardIndex: 23, // OCEAN
         voterIds: ["demo-red-seeker-1", "demo-red-seeker-2"],
         thought: {
-          playerId: "demo-red-seeker-1",
-          text: "OCEAN has to be the third one — it's the deepest of all!",
+          playerId: "demo-red-seeker-2",
+          text: "OCEAN is the deepest of all — this has to be the third one. Let's go!",
         },
         annotation:
-          "Three for three! A perfect turn. The clue number (3) means up to 3+1 guesses, but Red is happy to stop here.",
+          "OCEAN is Red! Three for three — a perfect turn. The clue number (3) means up to 4 guesses, but Red plays it safe and ends their turn.",
       },
     ],
+    turnEndAnnotation:
+      "Great turn for Red! Seekers can always end their turn early to avoid risky guesses. Now it's Blue team's turn.",
   },
 
   // ── Turn 2: Blue ─────────────────────────────────────────────
@@ -173,30 +182,34 @@ const DEMO_TURNS: DemoTurn[] = [
     team: "blue",
     clue: { word: "NIGHT", count: 2 },
     hinterThought:
-      "STAR and MOON both shine at night. Hopefully they don't pick SHADOW...",
+      "STAR and MOON both shine at night — that's a solid connection. I just hope they don't go for SHADOW...",
+    seekerReaction: {
+      playerId: "demo-blue-seeker-1",
+      text: "NIGHT 2... Stars come out at night, and the Moon shines at night. But SHADOW could also be a night thing — tricky!",
+    },
     reveals: [
       {
         cardIndex: 4, // STAR
         voterIds: ["demo-blue-seeker-1", "demo-blue-seeker-2"],
         thought: {
-          playerId: "demo-blue-seeker-1",
-          text: "Stars come out at night — easy pick!",
+          playerId: "demo-blue-seeker-2",
+          text: "STAR is a classic night sky word — I'm confident on this one.",
         },
-        annotation: "STAR is Blue — nice start!",
+        annotation: "STAR is Blue — great start! Now for the second word...",
       },
       {
         cardIndex: 19, // BELL (neutral)
         voterIds: ["demo-blue-seeker-2"],
         thought: {
           playerId: "demo-blue-seeker-2",
-          text: "A bell ringing at night? Maybe like a midnight bell?",
+          text: "Hmm, a midnight BELL ringing at night? It could work... I'll vote even though Max isn't sure.",
         },
         annotation:
-          "BELL is Neutral! When you reveal a neutral card, your turn ends immediately. The correct pick was MOON.",
+          "BELL is Neutral! Only one seeker voted — with fewer votes, risky picks can slip through. The right answer was MOON.",
       },
     ],
     turnEndAnnotation:
-      "Wrong guess! Blue's turn is over. A wrong guess (neutral or opponent card) ends your turn right away.",
+      "Wrong guess ends the turn immediately! Hitting a neutral card isn't as bad as an opponent's card, but it still costs you the turn. Blue only found 1 of their 2 targets.",
   },
 
   // ── Turn 3: Red ──────────────────────────────────────────────
@@ -204,37 +217,43 @@ const DEMO_TURNS: DemoTurn[] = [
     team: "red",
     clue: { word: "MEDIEVAL", count: 3 },
     hinterThought:
-      "CASTLE, KNIGHT, and DRAGON are all medieval. SHADOW is close to the trap — I hope they avoid it!",
+      "CASTLE, KNIGHT, and DRAGON are all medieval-themed and all Red. But SHADOW sits right next to DRAGON on the board — that's the Trap card. I hope they don't confuse them!",
+    seekerReaction: {
+      playerId: "demo-red-seeker-2",
+      text: "MEDIEVAL 3 — a bold clue! CASTLE and KNIGHT are obvious. DRAGON feels medieval too... but what about SHADOW? Could be a dark medieval theme. We need to be careful.",
+    },
     reveals: [
       {
         cardIndex: 14, // CASTLE
         voterIds: ["demo-red-seeker-1", "demo-red-seeker-2"],
         thought: {
-          playerId: "demo-red-seeker-2",
-          text: "A medieval CASTLE — that's an obvious one!",
+          playerId: "demo-red-seeker-1",
+          text: "A medieval CASTLE — can't get more medieval than that. Easy first pick!",
         },
-        annotation: "CASTLE is Red! Great start to the turn.",
+        annotation: "CASTLE is Red! The safest pick pays off.",
       },
       {
         cardIndex: 18, // KNIGHT
         voterIds: ["demo-red-seeker-2", "demo-red-seeker-1"],
         thought: {
-          playerId: "demo-red-seeker-1",
-          text: "KNIGHT fits perfectly. Medieval knights in shining armor!",
+          playerId: "demo-red-seeker-2",
+          text: "Medieval KNIGHT in shining armor — Bob and I are thinking the same thing.",
         },
-        annotation: "KNIGHT is Red too! Two for two.",
+        annotation: "KNIGHT is Red! Two for two. Now for the risky third guess...",
       },
       {
         cardIndex: 11, // DRAGON
         voterIds: ["demo-red-seeker-1", "demo-red-seeker-2"],
         thought: {
-          playerId: "demo-red-seeker-2",
-          text: "DRAGON or SHADOW? Dragons are definitely medieval... SHADOW feels risky. Let's go DRAGON.",
+          playerId: "demo-red-seeker-1",
+          text: "DRAGON or SHADOW? Dragons guard medieval castles... but SHADOW feels dark and dangerous. I'll go DRAGON — Clara agrees!",
         },
         annotation:
-          "DRAGON is Red! Smart choice — SHADOW is actually the Trap card. Revealing the trap means instant loss!",
+          "DRAGON is Red! Smart choice — SHADOW is actually the Trap card. Revealing the Trap means instant loss for your team!",
       },
     ],
+    turnEndAnnotation:
+      "Another perfect turn! Red wisely avoided the Trap card. The Trap is the most dangerous card on the board — a single wrong click and you lose the entire game.",
   },
 
   // ── Turn 4: Blue ─────────────────────────────────────────────
@@ -242,37 +261,43 @@ const DEMO_TURNS: DemoTurn[] = [
     team: "blue",
     clue: { word: "FLIGHT", count: 3 },
     hinterThought:
-      "ROCKET, PILOT, and MOON are all related to flight. Three big picks to catch up!",
+      "Blue needs to catch up! ROCKET, PILOT, and MOON all connect to flight. Three correct guesses would even the score.",
+    seekerReaction: {
+      playerId: "demo-blue-seeker-1",
+      text: "FLIGHT 3 — we need a big turn! ROCKET and PILOT are obvious flight words. MOON could work too — astronauts flew to the moon. Let's nail all three!",
+    },
     reveals: [
       {
         cardIndex: 1, // ROCKET
         voterIds: ["demo-blue-seeker-1", "demo-blue-seeker-2"],
         thought: {
-          playerId: "demo-blue-seeker-1",
-          text: "A ROCKET is the ultimate flying machine!",
+          playerId: "demo-blue-seeker-2",
+          text: "A ROCKET takes flight — this is our safest pick. Let's build momentum!",
         },
-        annotation: "ROCKET is Blue! Blue team is catching up.",
+        annotation: "ROCKET is Blue! Blue team starts their comeback.",
       },
       {
         cardIndex: 13, // PILOT
         voterIds: ["demo-blue-seeker-2", "demo-blue-seeker-1"],
         thought: {
-          playerId: "demo-blue-seeker-2",
-          text: "A PILOT flies planes — great match for FLIGHT.",
+          playerId: "demo-blue-seeker-1",
+          text: "A PILOT flies planes — perfect match. We're in sync on this one!",
         },
-        annotation: "PILOT is Blue! Two in a row.",
+        annotation: "PILOT is Blue! Two in a row — the comeback is real.",
       },
       {
         cardIndex: 9, // MOON
         voterIds: ["demo-blue-seeker-1", "demo-blue-seeker-2"],
         thought: {
-          playerId: "demo-blue-seeker-1",
-          text: "Astronauts flew to the MOON — flight to the moon!",
+          playerId: "demo-blue-seeker-2",
+          text: "Astronauts flew to the MOON — the most famous flight in history! This has to be it.",
         },
         annotation:
-          "MOON is Blue! Perfect turn — Blue now has 4 cards revealed.",
+          "MOON is Blue! A perfect turn — Blue now has 4 cards revealed.",
       },
     ],
+    turnEndAnnotation:
+      "Blue fights back with a perfect turn! Score check: Red has 6 cards found (3 left), Blue has 4 (4 left). It's anyone's game — but Red goes next.",
   },
 
   // ── Turn 5: Red (winning turn) ──────────────────────────────
@@ -280,14 +305,18 @@ const DEMO_TURNS: DemoTurn[] = [
     team: "red",
     clue: { word: "OLYMPIC", count: 2 },
     hinterThought:
-      "The Olympic TORCH and Olympic FIRE — that covers two. They might even spot CROWN as the last one!",
+      "We only need 3 more cards. The Olympic TORCH and Olympic FIRE cover two. If they use the bonus guess on CROWN, we win!",
+    seekerReaction: {
+      playerId: "demo-red-seeker-2",
+      text: "OLYMPIC 2 — the Olympic torch and the Olympic fire? That gives us two plus a bonus guess. If we get them right, we might be able to find the last card and win!",
+    },
     reveals: [
       {
         cardIndex: 8, // TORCH
         voterIds: ["demo-red-seeker-2", "demo-red-seeker-1"],
         thought: {
           playerId: "demo-red-seeker-1",
-          text: "The Olympic TORCH — the symbol of the games!",
+          text: "The Olympic TORCH — the symbol of the games! This is definitely one of Ada's words.",
         },
         annotation: "TORCH is Red! One more from the clue.",
       },
@@ -296,19 +325,19 @@ const DEMO_TURNS: DemoTurn[] = [
         voterIds: ["demo-red-seeker-1", "demo-red-seeker-2"],
         thought: {
           playerId: "demo-red-seeker-2",
-          text: "Olympic FIRE — the flame that never goes out!",
+          text: "The Olympic FIRE — the eternal flame! That's both clue words. Now we have a bonus guess...",
         },
         annotation:
-          "FIRE is Red! That's both words from the clue, but Red still has a bonus guess...",
+          "FIRE is Red! That's both words from the clue. But with 'count + 1' guessing, Red has one bonus guess left...",
       },
       {
         cardIndex: 20, // CROWN
         voterIds: ["demo-red-seeker-1", "demo-red-seeker-2"],
         thought: {
           playerId: "demo-red-seeker-1",
-          text: "CROWN must be the last Red card. We can win right now!",
+          text: "CROWN is the only Red card left on the board — this is our chance to win it all! Let's go!",
         },
-        annotation: "CROWN is Red — that's all 9! Red team wins the game!",
+        annotation: "CROWN is Red — that's all 9 cards! Red team wins the game!",
       },
     ],
   },

@@ -20,6 +20,7 @@ interface DemoOverlayProps {
 const PHASE_LABELS: Partial<Record<DemoPhase, string>> = {
   hinterThinking: "Hinter is thinking...",
   clueGiven: "Clue given!",
+  seekerReacting: "Seekers discuss the clue...",
   seekerVoting: "Seekers are guessing",
   cardReveal: "Card revealed!",
   turnEnd: "Turn over",
@@ -30,7 +31,6 @@ export default function DemoOverlay({
   phase,
   annotation,
   thought,
-  perspective,
 }: DemoOverlayProps) {
   // Fade-in/out state for smooth transitions
   const [visibleAnnotation, setVisibleAnnotation] = useState(annotation);
@@ -41,11 +41,9 @@ export default function DemoOverlay({
   // Transition annotation
   useEffect(() => {
     if (annotation !== visibleAnnotation) {
-      // Fade out, swap, fade in
       setAnnotationFade(false);
       const timeout = setTimeout(() => {
         setVisibleAnnotation(annotation);
-        // Small delay then fade in
         requestAnimationFrame(() => setAnnotationFade(true));
       }, 150);
       return () => clearTimeout(timeout);
@@ -74,23 +72,12 @@ export default function DemoOverlay({
 
   return (
     <div className="space-y-3">
-      {/* Phase label + perspective indicator */}
-      <div className="flex items-center justify-between">
-        {phaseLabel && phase !== "intro" && (
-          <span className="text-xs font-semibold uppercase tracking-wider text-muted">
-            {phaseLabel}
-          </span>
-        )}
-        <span
-          className={`text-xs font-medium px-2 py-0.5 rounded-full ${
-            perspective === "hinter"
-              ? "bg-amber-100 dark:bg-amber-900/40 text-amber-700 dark:text-amber-300"
-              : "bg-emerald-100 dark:bg-emerald-900/40 text-emerald-700 dark:text-emerald-300"
-          }`}
-        >
-          Viewing as {perspective === "hinter" ? "Hinter" : "Seeker"}
+      {/* Phase label */}
+      {phaseLabel && phase !== "intro" && (
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted">
+          {phaseLabel}
         </span>
-      </div>
+      )}
 
       {/* Thought bubble */}
       {visibleThought && (
@@ -105,10 +92,10 @@ export default function DemoOverlay({
               {visibleThought.avatar}
             </span>
             <div className="min-w-0">
-              <span className="text-xs font-semibold text-muted block mb-0.5">
+              <span className="text-sm font-semibold text-muted block mb-0.5">
                 {visibleThought.playerName} thinks...
               </span>
-              <p className="text-sm text-foreground leading-relaxed italic">
+              <p className="text-base text-foreground leading-relaxed italic">
                 &ldquo;{visibleThought.text}&rdquo;
               </p>
             </div>
@@ -125,7 +112,7 @@ export default function DemoOverlay({
           `}
         >
           <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
-            <p className="text-sm text-foreground leading-relaxed">
+            <p className="text-base text-foreground leading-relaxed">
               {visibleAnnotation}
             </p>
           </div>

@@ -1,16 +1,18 @@
 "use client";
 
 /**
- * Main demo mode container.
+ * Main demo mode container — full-viewport, no-scroll layout.
  *
- * Wires `useDemoPlayback` to the existing GameBoard + GameStatusPanel
- * components, plus the demo-specific overlay and controls.
- * No Firebase / auth dependencies.
+ * Desktop (md+): two-column — board left, commentary right.
+ * Mobile: stacked — controls top, board middle, commentary bottom.
+ *
+ * Wires `useDemoPlayback` to the existing GameBoard component
+ * plus compact inline status, overlay and controls.
+ * Zero Firebase / auth dependencies.
  */
 
 import GameBoard from "@/components/GameBoard";
-import { GameStatusPanel } from "@/components/room";
-import { Card, Button, getTeamClasses, getTeamTextClass } from "@/components/ui";
+import { Button, getTeamClasses, getTeamTextClass } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { useDemoPlayback } from "@/hooks/useDemoPlayback";
 import DemoOverlay from "./DemoOverlay";
@@ -21,125 +23,137 @@ interface DemoViewProps {
   onCreateRoom: () => void;
 }
 
-// No-op handlers for GameStatusPanel / GameBoard (demo is read-only)
+// No-op handlers for GameBoard (demo is read-only)
 const noop = () => {};
 
 export default function DemoView({ onClose, onCreateRoom }: DemoViewProps) {
   const [state, controls] = useDemoPlayback();
-  const { gameState, currentPlayer, players, phase, perspective, isComplete } = state;
+  const { gameState, currentPlayer, phase, perspective, isComplete } = state;
 
-  // Determine turn glow class matching the real game
+  // ---- Computed values for mini status ----
+  const redTotal = gameState.board.filter((c) => c.team === "red").length;
+  const blueTotal = gameState.board.filter((c) => c.team === "blue").length;
+  const redRevealed = gameState.board.filter((c) => c.team === "red" && c.revealed).length;
+  const blueRevealed = gameState.board.filter((c) => c.team === "blue" && c.revealed).length;
+
   const turnGlowClass =
     gameState.currentTeam === "red"
-      ? "shadow-[0_0_0_1px_rgba(239,68,68,0.25)]"
-      : "shadow-[0_0_0_1px_rgba(59,130,246,0.25)]";
+      ? "shadow-[0_0_0_2px_rgba(239,68,68,0.3)]"
+      : "shadow-[0_0_0_2px_rgba(59,130,246,0.3)]";
 
   return (
-    <div className="space-y-4 w-full max-w-4xl mx-auto">
-      {/* Demo badge */}
-      <div className="flex items-center justify-center">
-        <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary/10 border border-primary/20 text-sm font-medium text-primary">
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-            <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          Demo Mode
-        </span>
-      </div>
+    <div className="h-full flex flex-col relative z-10">
+      {/* ── Top bar: controls ──────────────────────────────────── */}
+      <DemoControls state={state} controls={controls} onClose={onClose} />
 
-      {/* Status panel (read-only: isMyTurn=false, isRoomOwner=false, canGiveClue=false) */}
-      {phase !== "intro" && (
-        <GameStatusPanel
-          gameState={gameState}
-          timeRemaining={null}
-          isMyTurn={false}
-          isRoomOwner={false}
-          canGiveClue={false}
-          clueAnimating={phase === "clueGiven"}
-          players={players}
-          showGameOverOverlay={false}
-          onEndTurn={noop}
-          onEndGame={noop}
-          onPauseGame={noop}
-          onResumeGame={noop}
-          onRematch={noop}
-          onGiveClue={noop}
-        />
-      )}
+      {/* ── Main content: two columns on md+, stacked on mobile ── */}
+      <div className="flex-1 flex flex-col md:flex-row gap-3 md:gap-6 px-4 md:px-6 py-3 min-h-0">
 
-      {/* Overlay: thought bubbles + annotations */}
-      <DemoOverlay
-        phase={phase}
-        annotation={state.annotation}
-        thought={state.thought}
-        perspective={perspective}
-      />
+        {/* ── LEFT / TOP: Game Board ─────────────────────────── */}
+        <div className="flex-1 flex flex-col items-center justify-center min-h-0 min-w-0">
+          <div className={cn(
+            "w-full max-w-2xl rounded-xl border bg-surface/50 p-2 sm:p-4",
+            turnGlowClass,
+          )}>
+            <GameBoard
+              board={gameState.board}
+              currentPlayer={currentPlayer}
+              cardVotes={gameState.cardVotes}
+              currentPlayerId={currentPlayer.id}
+              requiredVotes={1}
+              canVote={false}
+              onVoteCard={noop}
+              onConfirmReveal={noop}
+            />
+          </div>
 
-      {/* Game board */}
-      <div className="-mx-5 sm:mx-0">
-        <Card variant="elevated" padding="lg" className={cn("p-1.5! sm:p-6!", turnGlowClass)}>
-          <GameBoard
-            board={gameState.board}
-            currentPlayer={currentPlayer}
-            cardVotes={gameState.cardVotes}
-            currentPlayerId={currentPlayer.id}
-            requiredVotes={1}
-            canVote={false}
-            onVoteCard={noop}
-            onConfirmReveal={noop}
-          />
-
-          {/* Perspective indicator below board */}
+          {/* Perspective chip below board */}
           {currentPlayer.team && currentPlayer.role && (
-            <div className="mt-3 sm:mt-4 flex justify-center">
+            <div className="mt-2 flex justify-center">
               <div
                 className={cn(
-                  "inline-flex items-center gap-2 sm:gap-3 px-3 sm:px-5 py-2 sm:py-3 rounded-xl border-2 shadow-sm",
+                  "inline-flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-bold",
                   getTeamClasses(currentPlayer.team, "card"),
                 )}
               >
-                <span
-                  className={cn(
-                    "text-xs font-medium uppercase tracking-wide hidden sm:inline",
-                    getTeamTextClass(currentPlayer.team),
-                  )}
-                >
-                  Viewing as
-                </span>
-                <span
-                  className={cn(
-                    "font-bold text-base sm:text-lg",
-                    getTeamTextClass(currentPlayer.team),
-                  )}
-                >
+                <span className={getTeamTextClass(currentPlayer.team)}>
                   {currentPlayer.team.toUpperCase()}{" "}
                   {currentPlayer.role === "clueGiver" ? "Hinter" : "Seeker"}
                 </span>
               </div>
             </div>
           )}
-        </Card>
-      </div>
-
-      {/* Controls bar */}
-      <DemoControls state={state} controls={controls} onClose={onClose} />
-
-      {/* End-of-demo CTA */}
-      {isComplete && (
-        <div className="text-center space-y-3 py-2">
-          <p className="text-muted text-sm">
-            Ready to play for real?
-          </p>
-          <div className="flex items-center justify-center gap-3">
-            <Button variant="primary" size="lg" onClick={onCreateRoom}>
-              Create a Room
-            </Button>
-            <Button variant="secondary" size="lg" onClick={controls.reset}>
-              Watch Again
-            </Button>
-          </div>
         </div>
-      )}
+
+        {/* ── RIGHT / BOTTOM: Status + Commentary ────────────── */}
+        <div className="w-full md:w-80 lg:w-96 xl:w-[26rem] flex flex-col gap-3 min-h-0 shrink-0">
+
+          {/* Mini status strip */}
+          {phase !== "intro" && (
+            <div className={cn(
+              "rounded-xl border-2 px-4 py-3 space-y-2",
+              gameState.currentTeam === "red"
+                ? "border-red-300 dark:border-red-800 bg-red-50/50 dark:bg-red-950/30"
+                : "border-blue-300 dark:border-blue-800 bg-blue-50/50 dark:bg-blue-950/30",
+            )}>
+              {/* Scores — two balanced columns */}
+              <div className="flex items-center gap-4">
+                <div className={cn(
+                  "flex-1 text-center rounded-lg py-1.5 font-bold text-base",
+                  gameState.currentTeam === "red" ? "bg-red-500/15 dark:bg-red-500/20" : "bg-transparent",
+                  redRevealed === redTotal ? "line-through opacity-50" : "text-red-600 dark:text-red-400",
+                )}>
+                  Red {redRevealed}/{redTotal}
+                </div>
+                <div className={cn(
+                  "flex-1 text-center rounded-lg py-1.5 font-bold text-base",
+                  gameState.currentTeam === "blue" ? "bg-blue-500/15 dark:bg-blue-500/20" : "bg-transparent",
+                  blueRevealed === blueTotal ? "line-through opacity-50" : "text-blue-600 dark:text-blue-400",
+                )}>
+                  Blue {blueRevealed}/{blueTotal}
+                </div>
+              </div>
+              {/* Clue */}
+              {gameState.currentClue && (
+                <div className="flex items-center justify-center gap-2 text-base font-mono">
+                  <span className="font-bold text-foreground uppercase tracking-wide">{gameState.currentClue.word}</span>
+                  <span className="bg-foreground/10 text-foreground font-bold px-2.5 py-0.5 rounded-md text-lg">
+                    {gameState.currentClue.count}
+                  </span>
+                  {gameState.remainingGuesses != null && (
+                    <span className="text-sm text-muted">({gameState.remainingGuesses} left)</span>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Overlay: phase label + thoughts + annotations */}
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <DemoOverlay
+              phase={phase}
+              annotation={state.annotation}
+              thought={state.thought}
+              perspective={perspective}
+            />
+          </div>
+
+          {/* End-of-demo CTA */}
+          {isComplete && (
+            <div className="text-center space-y-3 py-3 border-t border-border">
+              <p className="text-muted text-sm">Ready to play for real?</p>
+              <div className="flex items-center justify-center gap-3">
+                <Button variant="primary" onClick={onCreateRoom}>
+                  Create a Room
+                </Button>
+                <Button variant="secondary" onClick={controls.reset}>
+                  Watch Again
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

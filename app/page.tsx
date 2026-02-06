@@ -94,10 +94,25 @@ export default function Home() {
   };
 
   return (
-    <main className={`min-h-[calc(100vh-3.5rem-1px)] flex justify-center px-5 sm:px-6 py-6 relative bg-transparent ${showDemo ? "items-start" : "items-center"}`}>
+    <main className={`relative bg-transparent ${showDemo ? "h-[calc(100vh-3.5rem-1px)] overflow-hidden" : "min-h-[calc(100vh-3.5rem-1px)] flex items-center justify-center px-5 sm:px-6 py-6"}`}>
       {/* Theme-aware Background */}
       <ThemeBackground />
 
+      {showDemo ? (
+        /* Demo mode — takes over the full viewport below the header */
+        <Suspense
+          fallback={
+            <div className="flex items-center justify-center h-full">
+              <div className="animate-pulse text-muted">Loading demo...</div>
+            </div>
+          }
+        >
+          <DemoView
+            onClose={() => setShowDemo(false)}
+            onCreateRoom={handleCreateRoom}
+          />
+        </Suspense>
+      ) : (
       <div className="w-full max-w-4xl relative z-10">
         {/* Header */}
         <div className="text-center mb-8">
@@ -107,36 +122,19 @@ export default function Home() {
           <p className="text-muted">
             A word guessing party game
           </p>
-          {!showDemo && (
-            <button
-              type="button"
-              onClick={() => setShowDemo(true)}
-              className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              See How It Works
-            </button>
-          )}
-        </div>
-
-        {/* Demo mode (replaces grid when active) */}
-        {showDemo ? (
-          <Suspense
-            fallback={
-              <div className="flex items-center justify-center py-20">
-                <div className="animate-pulse text-muted">Loading demo...</div>
-              </div>
-            }
+          <button
+            type="button"
+            onClick={() => setShowDemo(true)}
+            className="mt-3 inline-flex items-center gap-1.5 text-sm font-medium text-primary hover:text-primary/80 transition-colors"
           >
-            <DemoView
-              onClose={() => setShowDemo(false)}
-              onCreateRoom={handleCreateRoom}
-            />
-          </Suspense>
-        ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            See How It Works
+          </button>
+        </div>
+        {/* Main content grid */}
         <div className="grid md:grid-cols-2 gap-6">
           {/* Left: Public Rooms */}
           <Card variant="elevated" padding="lg">
@@ -298,8 +296,8 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
-        )}
       </div>
+      )}
     </main>
   );
 }

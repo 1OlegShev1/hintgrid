@@ -27,6 +27,7 @@ export type DemoPhase =
   | "intro"
   | "hinterThinking"
   | "clueGiven"
+  | "seekerReacting"
   | "seekerVoting"
   | "cardReveal"
   | "turnEnd"
@@ -76,12 +77,13 @@ export interface DemoPlaybackControls {
 // ---------------------------------------------------------------------------
 
 const PHASE_DELAYS: Record<DemoPhase, number> = {
-  intro: 12000,
-  hinterThinking: 10000,
-  clueGiven: 7000,
-  seekerVoting: 8000,
-  cardReveal: 7000,
-  turnEnd: 8000,
+  intro: 18000,
+  hinterThinking: 15000,
+  clueGiven: 10500,
+  seekerReacting: 15000,
+  seekerVoting: 12000,
+  cardReveal: 10500,
+  turnEnd: 12000,
   gameOver: 0, // doesn't auto-advance
 };
 
@@ -223,17 +225,44 @@ export function useDemoPlayback(): [DemoPlaybackState, DemoPlaybackControls] {
         break;
       }
 
-      // ── CLUE GIVEN → seekerVoting ─────────────────────────────
+      // ── CLUE GIVEN → seekerReacting (or seekerVoting if no reaction) ──
       case "clueGiven": {
+        if (!turn) return;
+        if (turn.seekerReaction) {
+          // Show seeker reacting to the clue before any votes
+          setThought(resolveThought(turn.seekerReaction));
+          setAnnotation(null);
+          setPerspective("seeker");
+          setPhase("seekerReacting");
+          scheduleNext(PHASE_DELAYS.seekerReacting);
+        } else {
+          // No reaction — go straight to first vote
+          const reveal = turn.reveals[revealIndex];
+          if (!reveal) {
+            setPhase("turnEnd");
+            scheduleNext(PHASE_DELAYS.turnEnd);
+            break;
+          }
+          setCardVotes({ [reveal.cardIndex]: reveal.voterIds });
+          setThought(resolveThought(reveal.thought));
+          setAnnotation(null);
+          setPerspective("seeker");
+          setPhase("seekerVoting");
+          scheduleNext(PHASE_DELAYS.seekerVoting);
+        }
+        break;
+      }
+
+      // ── SEEKER REACTING → seekerVoting ───────────────────────
+      case "seekerReacting": {
         if (!turn) return;
         const reveal = turn.reveals[revealIndex];
         if (!reveal) {
-          // No reveals (shouldn't happen), end turn
           setPhase("turnEnd");
           scheduleNext(PHASE_DELAYS.turnEnd);
           break;
         }
-        // Show votes + thought
+        // Now show the first vote with per-card deliberation thought
         setCardVotes({ [reveal.cardIndex]: reveal.voterIds });
         setThought(resolveThought(reveal.thought));
         setAnnotation(null);
