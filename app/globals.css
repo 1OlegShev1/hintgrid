@@ -414,7 +414,7 @@ html::-webkit-scrollbar-thumb:hover {
 
 /* Normal words (up to 7 chars) */
 .card-text {
-  font-size: clamp(0.5rem, 3.5cqw, 0.875rem);
+  font-size: clamp(0.5rem, 3.5cqw, 1.125rem);
   line-height: 1;
   word-break: break-word;
   hyphens: auto;
@@ -422,7 +422,7 @@ html::-webkit-scrollbar-thumb:hover {
 
 /* Long words (8-9 chars like SMUGGLER) */
 .card-text-sm {
-  font-size: clamp(0.45rem, 3cqw, 0.75rem);
+  font-size: clamp(0.45rem, 3cqw, 1rem);
   line-height: 1;
   word-break: break-word;
   hyphens: auto;
@@ -430,7 +430,7 @@ html::-webkit-scrollbar-thumb:hover {
 
 /* Extra long words (10+ chars like LEPRECHAUN, ANTARCTICA) */
 .card-text-xs {
-  font-size: clamp(0.4rem, 2.5cqw, 0.675rem);
+  font-size: clamp(0.4rem, 2.5cqw, 0.875rem);
   line-height: 1;
   word-break: break-word;
   hyphens: auto;

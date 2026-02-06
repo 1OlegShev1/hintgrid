@@ -24,6 +24,7 @@ const PHASE_LABELS: Partial<Record<DemoPhase, string>> = {
   seekerVoting: "Seekers are guessing",
   cardReveal: "Card revealed!",
   turnEnd: "Turn over",
+  gameOverReveal: "Full board revealed!",
   gameOver: "Game over!",
 };
 
@@ -71,7 +72,7 @@ export default function DemoOverlay({
   const phaseLabel = PHASE_LABELS[phase];
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-2 md:space-y-3">
       {/* Phase label */}
       {phaseLabel && phase !== "intro" && (
         <span className="text-xs font-semibold uppercase tracking-wider text-muted">
@@ -87,15 +88,15 @@ export default function DemoOverlay({
             ${thoughtFade ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
           `}
         >
-          <div className="flex items-start gap-3 bg-surface border border-border rounded-xl px-4 py-3 shadow-sm">
-            <span className="text-2xl shrink-0 mt-0.5" role="img" aria-label={visibleThought.playerName}>
+          <div className="flex items-start gap-2 md:gap-3 bg-surface border border-border rounded-xl px-3 py-2 md:px-4 md:py-3 shadow-sm">
+            <span className="text-xl md:text-2xl shrink-0 mt-0.5" role="img" aria-label={visibleThought.playerName}>
               {visibleThought.avatar}
             </span>
             <div className="min-w-0">
-              <span className="text-sm font-semibold text-muted block mb-0.5">
+              <span className="text-xs md:text-sm font-semibold text-muted block mb-0.5">
                 {visibleThought.playerName} thinks...
               </span>
-              <p className="text-base text-foreground leading-relaxed italic">
+              <p className="text-sm md:text-base 2xl:text-lg text-foreground leading-snug md:leading-relaxed italic">
                 &ldquo;{visibleThought.text}&rdquo;
               </p>
             </div>
@@ -111,8 +112,8 @@ export default function DemoOverlay({
             ${annotationFade ? "opacity-100 translate-y-0" : "opacity-0 translate-y-1"}
           `}
         >
-          <div className="bg-primary/5 border border-primary/20 rounded-xl px-4 py-3">
-            <p className="text-base text-foreground leading-relaxed">
+          <div className="bg-primary/5 border border-primary/20 rounded-xl px-3 py-2 md:px-4 md:py-3">
+            <p className="text-sm md:text-base 2xl:text-lg text-foreground leading-snug md:leading-relaxed">
               {visibleAnnotation}
             </p>
           </div>

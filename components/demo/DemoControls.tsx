@@ -22,9 +22,9 @@ export default function DemoControls({ state, controls, onClose }: DemoControlsP
   return (
     <div className="shrink-0 border-b border-border bg-surface/80 backdrop-blur-sm">
       {/* Main controls row */}
-      <div className="flex items-center gap-3 sm:gap-4 px-4 md:px-6 py-2">
+      <div className="flex items-center gap-1.5 sm:gap-3 md:gap-4 px-2 sm:px-4 md:px-6 py-1.5 sm:py-2">
         {/* Left: Demo badge + playback */}
-        <div className="flex items-center gap-2.5">
+        <div className="flex items-center gap-1.5 sm:gap-2.5">
           {/* Demo badge */}
           <span className="hidden sm:inline-flex items-center gap-1.5 text-sm font-semibold text-primary">
             <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
@@ -42,15 +42,15 @@ export default function DemoControls({ state, controls, onClose }: DemoControlsP
               <button
                 type="button"
                 onClick={isPlaying ? controls.pause : controls.play}
-                className="p-2 rounded-lg hover:bg-muted/20 transition-colors text-foreground"
+                className="p-1.5 sm:p-2 rounded-lg hover:bg-muted/20 transition-colors text-foreground"
                 aria-label={isPlaying ? "Pause" : "Play"}
               >
                 {isPlaying ? (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M5 4h3v12H5V4zm7 0h3v12h-3V4z" />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                  <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                     <path d="M6.3 2.84A1.5 1.5 0 004 4.11v11.78a1.5 1.5 0 002.3 1.27l9.344-5.891a1.5 1.5 0 000-2.538L6.3 2.84z" />
                   </svg>
                 )}
@@ -58,10 +58,10 @@ export default function DemoControls({ state, controls, onClose }: DemoControlsP
               <button
                 type="button"
                 onClick={controls.nextStep}
-                className="p-2 rounded-lg hover:bg-muted/20 transition-colors text-foreground"
+                className="p-1.5 sm:p-2 rounded-lg hover:bg-muted/20 transition-colors text-foreground"
                 aria-label="Next step"
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
+                <svg className="w-4 h-4 sm:w-5 sm:h-5" fill="currentColor" viewBox="0 0 20 20">
                   <path d="M4.3 2.84A1.5 1.5 0 002 4.11v11.78a1.5 1.5 0 002.3 1.27l7-4.411V16.5a1.5 1.5 0 001.5 1.5h1.5a1.5 1.5 0 001.5-1.5v-13A1.5 1.5 0 0014.3 2h-1.5a1.5 1.5 0 00-1.5 1.5v3.75L4.3 2.84z" />
                 </svg>
               </button>
@@ -70,7 +70,7 @@ export default function DemoControls({ state, controls, onClose }: DemoControlsP
                 type="button"
                 onClick={() => controls.setSpeed(speed === 1 ? 2 : 1)}
                 className={`
-                  text-xs font-bold px-2 py-1 rounded-md transition-colors
+                  text-xs font-bold px-1.5 sm:px-2 py-0.5 sm:py-1 rounded-md transition-colors
                   ${speed === 2
                     ? "bg-primary text-white"
                     : "bg-muted/20 text-muted hover:bg-muted/30"
@@ -93,17 +93,17 @@ export default function DemoControls({ state, controls, onClose }: DemoControlsP
         </div>
 
         {/* Center: Progress */}
-        <div className="flex-1 flex items-center justify-center">
+        <div className="flex-1 flex items-center justify-center min-w-0">
           {phase === "intro" ? (
-            <span className="text-sm text-muted">Introduction</span>
-          ) : phase === "gameOver" ? (
-            <span className="text-sm font-semibold text-foreground">Game Over!</span>
+            <span className="text-xs sm:text-sm text-muted truncate">Introduction</span>
+          ) : phase === "gameOver" || phase === "gameOverReveal" ? (
+            <span className="text-xs sm:text-sm font-semibold text-foreground">Game Over!</span>
           ) : (
-            <div className="flex items-center gap-2">
-              <span className="text-sm text-muted">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <span className="text-xs sm:text-sm text-muted whitespace-nowrap">
                 Turn {turnIndex + 1}/{totalTurns}
               </span>
-              <div className="flex gap-1">
+              <div className="hidden sm:flex gap-1">
                 {Array.from({ length: totalTurns }).map((_, i) => (
                   <div
                     key={i}
@@ -121,13 +121,13 @@ export default function DemoControls({ state, controls, onClose }: DemoControlsP
           )}
         </div>
 
-        {/* Right: Perspective toggle + close */}
-        <div className="flex items-center gap-2">
+        {/* Right: Perspective toggle (desktop only) + close */}
+        <div className="flex items-center gap-1.5 sm:gap-2 shrink-0">
           {!isComplete && phase !== "intro" && (
             <button
               type="button"
               onClick={controls.togglePerspective}
-              className="flex items-center text-xs font-medium rounded-full overflow-hidden border border-border"
+              className="hidden sm:flex items-center text-xs font-medium rounded-full overflow-hidden border border-border"
               aria-label={`Switch to ${perspective === "hinter" ? "Seeker" : "Hinter"} view`}
             >
               <span
@@ -151,7 +151,10 @@ export default function DemoControls({ state, controls, onClose }: DemoControlsP
             </button>
           )}
           <Button variant="secondary" size="sm" onClick={onClose}>
-            Close
+            <span className="hidden sm:inline">Close</span>
+            <svg className="w-4 h-4 sm:hidden" fill="none" stroke="currentColor" strokeWidth={2} viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+            </svg>
           </Button>
         </div>
       </div>

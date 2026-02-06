@@ -31,6 +31,7 @@ export type DemoPhase =
   | "seekerVoting"
   | "cardReveal"
   | "turnEnd"
+  | "gameOverReveal"
   | "gameOver";
 
 export interface DemoThought {
@@ -77,13 +78,14 @@ export interface DemoPlaybackControls {
 // ---------------------------------------------------------------------------
 
 const PHASE_DELAYS: Record<DemoPhase, number> = {
-  intro: 18000,
-  hinterThinking: 15000,
-  clueGiven: 10500,
-  seekerReacting: 15000,
-  seekerVoting: 12000,
-  cardReveal: 10500,
-  turnEnd: 12000,
+  intro: 11000,
+  hinterThinking: 9000,
+  clueGiven: 5000,
+  seekerReacting: 10000,
+  seekerVoting: 7000,
+  cardReveal: 8000,
+  turnEnd: 9000,
+  gameOverReveal: 10000,
   gameOver: 0, // doesn't auto-advance
 };
 
@@ -314,18 +316,24 @@ export function useDemoPlayback(): [DemoPlaybackState, DemoPlaybackControls] {
         break;
       }
 
-      // ── CARD REVEAL → next reveal / turnEnd / gameOver ────────
+      // ── CARD REVEAL → next reveal / turnEnd / gameOverReveal ──
       case "cardReveal": {
         if (!turn) return;
 
-        // Check if game is over
+        // Check if game is over → reveal full board
         if (gameOver) {
-          setAnnotation(script.outroAnnotation);
+          // Flip all remaining cards so the player can see the full board
+          setBoard((prev) => prev.map((c) => ({ ...c, revealed: true })));
           setThought(null);
           setCurrentClue(null);
-          setIsComplete(true);
-          setPhase("gameOver");
-          // Don't schedule — gameOver is the end
+          setAnnotation(
+            "Here's the full board! See where all the words were hiding — " +
+            "and notice that SHADOW was the Trap card all along.",
+          );
+          setPerspective("hinter");
+          setPerspectiveOverride("hinter");
+          setPhase("gameOverReveal");
+          scheduleNext(PHASE_DELAYS.gameOverReveal);
           break;
         }
 
@@ -356,6 +364,16 @@ export function useDemoPlayback(): [DemoPlaybackState, DemoPlaybackControls] {
           setPhase("turnEnd");
           scheduleNext(PHASE_DELAYS.turnEnd);
         }
+        break;
+      }
+
+      // ── GAME OVER REVEAL → gameOver ───────────────────────────
+      case "gameOverReveal": {
+        setAnnotation(script.outroAnnotation);
+        setThought(null);
+        setIsComplete(true);
+        setPhase("gameOver");
+        // Don't schedule — gameOver is the end
         break;
       }
 

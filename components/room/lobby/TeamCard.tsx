@@ -45,11 +45,14 @@ export function TeamCard({
       }`}
     >
       <h3
-        className={`text-lg font-pixel mb-3 tracking-wide ${
+        className={`text-lg font-pixel mb-3 tracking-wide flex items-baseline gap-2 ${
           team === "red" ? "text-red-team" : "text-blue-team"
         }`}
       >
         {team.toUpperCase()} TEAM
+        <span className="text-xs font-sans font-medium text-muted tracking-normal">
+          {(clueGiver ? 1 : 0) + guessers.length} player{(clueGiver ? 1 : 0) + guessers.length !== 1 ? "s" : ""}
+        </span>
       </h3>
 
       {/* Hinter section */}

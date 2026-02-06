@@ -232,7 +232,7 @@ export default function GameBoard({
 
   return (
     <div 
-      className="game-board-grid grid grid-cols-5 gap-1 sm:gap-2 sm:max-w-2xl mx-auto"
+      className="game-board-grid grid grid-cols-5 gap-1 sm:gap-2 sm:max-w-2xl xl:max-w-3xl 2xl:max-w-4xl mx-auto"
       onKeyDown={handleKeyDown}
       role="grid"
       aria-label="Game board"
