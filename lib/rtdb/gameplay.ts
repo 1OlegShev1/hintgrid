@@ -178,9 +178,21 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
     [`board/${cardIndex}/votes`]: {},
   };
 
+  // Build reveal-all update for game over (reveal every unrevealed card)
+  const revealAllCards = (excludeIndex: number) => {
+    const reveals: Record<string, true> = {};
+    board.forEach((c, i) => {
+      if (!c.revealed && i !== excludeIndex) {
+        reveals[`board/${i}/revealed`] = true;
+      }
+    });
+    return reveals;
+  };
+
   if (isTrap) {
     await update(roomRef, {
       ...cardUpdate,
+      ...revealAllCards(cardIndex),
       gameOver: true,
       winner: roomData.currentTeam === "red" ? "blue" : "red",
       currentClue: null,
@@ -211,6 +223,7 @@ export async function confirmReveal(roomCode: string, playerId: string, cardInde
   } else if (remainingTeamCards === 0) {
     await update(roomRef, {
       ...cardUpdate,
+      ...revealAllCards(cardIndex),
       gameOver: true,
       winner: roomData.currentTeam,
       currentClue: null,

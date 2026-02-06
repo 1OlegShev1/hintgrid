@@ -95,14 +95,22 @@ export default function GameBoard({
   }, [focusedIndex, canVote, board, onVoteCard]);
 
   // Detect newly revealed cards and play sound
+  // Skip sound on batch reveals (game over) - only play for 1-2 card reveals
   useEffect(() => {
     const prevRevealed = prevRevealedRef.current;
     
+    let newlyRevealedCount = 0;
     board.forEach((card, index) => {
       if (card.revealed && prevRevealed[index] === false) {
-        soundContext?.playSound("cardReveal");
+        newlyRevealedCount++;
       }
     });
+    
+    // Only play individual card reveal sounds for 1-2 cards (normal gameplay)
+    // Skip sound for batch reveals (game over reveals all remaining cards)
+    if (newlyRevealedCount > 0 && newlyRevealedCount <= 2) {
+      soundContext?.playSound("cardReveal");
+    }
     
     prevRevealedRef.current = board.map(c => c.revealed);
   }, [board, soundContext]);

@@ -49,7 +49,8 @@ export function usePresenceRestore(
 
       if (isReconnection) {
         const roomExists = refs.roomData.current !== null;
-        const playerExists = refs.playersData.current?.[playerId] !== undefined;
+        const playerData = refs.playersData.current?.[playerId];
+        const playerExists = playerData !== undefined;
 
         if (roomExists && playerExists) {
           const playerRef = ref(db, `rooms/${roomCode}/players/${playerId}`);
@@ -59,6 +60,16 @@ export function usePresenceRestore(
           }).catch((err) => {
             console.warn("[Room] Failed to restore presence after reconnection:", err.message);
           });
+
+          // Send "back online" message if this player was demoted to spectator
+          // (team/role cleared by stale player cleanup). Pairs with the
+          // "moved to spectators (disconnected)" message.
+          const wasDemoted = playerData.team == null && playerData.role == null;
+          if (wasDemoted && playerData.name) {
+            actions.pushSystemMessage(roomCode, `${playerData.name} is back online`).catch((err) => {
+              console.warn("[Room] Failed to send back-online message:", err.message);
+            });
+          }
 
           // Re-establish onDisconnect handler after reconnection
           const currentConnected = refs.playersData.current

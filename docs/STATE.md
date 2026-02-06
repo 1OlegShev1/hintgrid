@@ -92,6 +92,7 @@ This is **reliable** because it's server-side — no client cooperation needed.
 - Players disconnected for 2+ minutes are demoted to spectators (team/role cleared)
 - Their votes are also removed from the board
 - A system message notifies the room: "PlayerName moved to spectators (disconnected)"
+- When a demoted player reconnects, a "PlayerName is back online" message is sent
 - This keeps role slots available and prevents ghost players from blocking the game
 
 **Owner transfer**:
@@ -163,8 +164,8 @@ Rooms can be public or private, controlled by the `visibility` field (default: `
 2. Hinter gives clue → `currentClue` and `remainingGuesses` set
 3. Seekers vote and confirm reveals
 4. Wrong guess or out of guesses → switch teams
-5. Trap → game over, other team wins
-6. All team cards revealed → team wins
+5. Trap → game over, other team wins; all remaining cards revealed
+6. All team cards revealed → team wins; all remaining cards revealed
 
 ### Pause Mechanism
 
@@ -225,7 +226,7 @@ const isTeamManagementAllowed = !isActiveGame;
 - `reveal` — Card reveal (shown in Game Log)
 - `game-system` — Game paused/resumed/ended (shown in Game Log)
 - `chat` — User chat messages (shown in Chat)
-- `system` — User-related system messages like player joined, owner changed (shown in Chat)
+- `system` — User-related system messages like player disconnected/reconnected, owner changed, kicked (shown in Chat)
 
 **Clearing Behavior:**
 - **New game (lobby→start, rematch):** Clears game messages (`clue`, `reveal`, `game-system`), keeps chat messages

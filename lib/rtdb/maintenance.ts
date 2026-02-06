@@ -34,7 +34,8 @@ export async function pruneStalePlayers(
     if (p.connected === true) return;
     if (!p.lastSeen || now - p.lastSeen >= graceMs) {
       // Only count as stale if they have a team or role to clear
-      if (p.team !== null || p.role !== null) {
+      // Use != null (loose) to also match undefined (Firebase deletes fields set to null)
+      if (p.team != null || p.role != null) {
         stalePlayers.push({ id, name: p.name });
       }
     }
@@ -48,8 +49,8 @@ export async function pruneStalePlayers(
   stalePlayers.forEach(({ id }) => {
     const player = players[id];
     if (!player) return;
-    if (player.team !== null) updates[`players/${id}/team`] = null;
-    if (player.role !== null) updates[`players/${id}/role`] = null;
+    if (player.team != null) updates[`players/${id}/team`] = null;
+    if (player.role != null) updates[`players/${id}/role`] = null;
   });
 
   // Remove stale votes from board (if any)
@@ -73,12 +74,10 @@ export async function pruneStalePlayers(
     await update(roomRef, updates);
   }
 
-  // Add system message for each demoted player (batch them to avoid spam)
+  // Add system message for demoted players (batched to avoid spam)
   if (stalePlayers.length > 0) {
     const names = stalePlayers.map((p) => p.name).join(", ");
-    const message = stalePlayers.length === 1
-      ? `${names} moved to spectators (disconnected)`
-      : `${names} moved to spectators (disconnected)`;
+    const message = `${names} moved to spectators (disconnected)`;
     await push(ref(db, `rooms/${roomCode}/messages`), {
       playerId: null,
       playerName: "System",

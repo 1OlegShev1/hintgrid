@@ -131,13 +131,19 @@ export function useRtdbRoom(
     if (ownerId !== conn.uid) return;
 
     let intervalId: NodeJS.Timeout | null = null;
+    let isRunning = false; // Guard against concurrent calls (StrictMode, rapid re-renders)
 
-    const runCleanup = () => {
-      actions
-        .pruneStalePlayers(roomCode, conn.uid!, STALE_PLAYER_GRACE_MS)
-        .catch((err) => {
-          console.warn("[Room] Failed to prune stale players:", err.message);
-        });
+    const runCleanup = async () => {
+      if (isRunning) return;
+      isRunning = true;
+      try {
+        await actions.pruneStalePlayers(roomCode, conn.uid!, STALE_PLAYER_GRACE_MS);
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : String(err);
+        console.warn("[Room] Failed to prune stale players:", message);
+      } finally {
+        isRunning = false;
+      }
     };
 
     runCleanup();

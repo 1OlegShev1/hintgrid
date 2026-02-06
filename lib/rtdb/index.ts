@@ -64,3 +64,8 @@ export {
 export {
   pruneStalePlayers,
 } from "./maintenance";
+
+// Helpers (exposed for hooks that need direct system messages)
+export {
+  pushSystemMessage,
+} from "./helpers";

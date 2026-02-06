@@ -8,6 +8,7 @@
 - Turn ends immediately on guessing the opposing team or a neutral card.
 - Guessing the trap ends the game immediately (instant loss).
 - A team wins by revealing all of its cards.
+- When the game ends, all remaining unrevealed cards are automatically revealed.
 
 ## Implementation Notes
 
