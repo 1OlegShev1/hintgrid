@@ -2,6 +2,7 @@
 
 import { useState, useEffect, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import AvatarPicker from "@/components/AvatarPicker";
 import { LOCAL_STORAGE_AVATAR_KEY, LOCAL_STORAGE_PLAYER_NAME_KEY, LOCAL_STORAGE_LAST_ROOM_KEY, getRandomAvatar, PUBLIC_ROOMS_DISPLAY_LIMIT, TIMER_PRESETS } from "@/shared/constants";
 import { subscribeToPublicRooms, type PublicRoomData } from "@/lib/rtdb";
@@ -294,6 +295,20 @@ export default function Home() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Footer */}
+        <footer className="mt-10 text-center text-sm text-muted/70 space-y-2">
+          <div className="flex items-center justify-center gap-3">
+            <Link href="/privacy" className="hover:text-muted transition-colors">
+              Privacy Policy
+            </Link>
+            <span>&middot;</span>
+            <Link href="/terms" className="hover:text-muted transition-colors">
+              Terms of Service
+            </Link>
+          </div>
+          <p>&copy; {new Date().getFullYear()} HintGrid. All rights reserved.</p>
+        </footer>
       </div>
       )}
     </main>

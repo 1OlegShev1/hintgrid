@@ -25,8 +25,45 @@ const vt323 = VT323({
 });
 
 export const metadata: Metadata = {
-  title: "HintGrid",
-  description: "A multiplayer word guessing party game",
+  title: {
+    default: "HintGrid - Free Multiplayer Word Guessing Game",
+    template: "%s | HintGrid",
+  },
+  description:
+    "Play HintGrid free in your browser — no download, no login. Give one-word clues, guess the words, and outsmart the other team. Great for parties, game nights, and remote hangouts.",
+  metadataBase: new URL("https://hintgrid.com"),
+  openGraph: {
+    title: "HintGrid - Free Multiplayer Word Guessing Game",
+    description:
+      "Give one-word clues, guess the words, avoid the trap. Free browser party game — no download, no login. Play with friends instantly.",
+    url: "https://hintgrid.com",
+    siteName: "HintGrid",
+    type: "website",
+    locale: "en_US",
+  },
+  twitter: {
+    card: "summary",
+    title: "HintGrid - Free Multiplayer Word Guessing Game",
+    description:
+      "Give one-word clues, guess the words, avoid the trap. Free browser party game — no download, no login.",
+  },
+  keywords: [
+    "word game",
+    "party game",
+    "multiplayer",
+    "browser game",
+    "free",
+    "online",
+    "word guessing",
+    "team game",
+    "game night",
+  ],
+  authors: [{ name: "HintGrid" }],
+  creator: "HintGrid",
+  robots: {
+    index: true,
+    follow: true,
+  },
 };
 
 // Inline script to prevent flash of wrong theme
