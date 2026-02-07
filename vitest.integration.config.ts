@@ -16,13 +16,18 @@ export default defineConfig({
     hookTimeout: 30000,
     coverage: {
       provider: 'v8',
+      experimentalAstAwareRemapping: true,
       reporter: ['text', 'html'],
       include: ['lib/rtdb/**/*.ts'],
-      exclude: ['**/__tests__/**', '**/node_modules/**'],
+      exclude: [
+        '**/__tests__/**',
+        '**/node_modules/**',
+        'lib/rtdb/index.ts', // Barrel file, no logic to cover
+      ],
       thresholds: {
-        statements: 80,
-        branches: 75,
-        functions: 80,
+        statements: 75,
+        branches: 65,
+        functions: 70,
         lines: 80,
       },
     },

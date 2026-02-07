@@ -19,6 +19,7 @@ export default defineConfig({
     ],
     coverage: {
       provider: 'v8',
+      experimentalAstAwareRemapping: true,
       reporter: ['text', 'html'],
       include: ['shared/**/*.ts', 'lib/**/*.ts'],
       exclude: [
@@ -26,6 +27,8 @@ export default defineConfig({
         '**/node_modules/**',
         'lib/firebase*.ts',
         'lib/__tests__/setup/**', // Exclude test utilities
+        'lib/rtdb/**', // Covered by integration tests (vitest.integration.config.ts)
+        'shared/types.ts', // Type-only file, no runtime code
       ],
       thresholds: {
         statements: 80,
