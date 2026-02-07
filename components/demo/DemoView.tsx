@@ -12,10 +12,12 @@
  * Zero Firebase / auth dependencies.
  */
 
+import { useEffect } from "react";
 import GameBoard from "@/components/GameBoard";
 import { Button, getTeamClasses, getTeamTextClass } from "@/components/ui";
 import { cn } from "@/lib/utils";
 import { useDemoPlayback } from "@/hooks/useDemoPlayback";
+import { useSoundContextOptional } from "@/contexts/SoundContext";
 import DemoOverlay from "./DemoOverlay";
 import DemoControls from "./DemoControls";
 
@@ -30,6 +32,21 @@ const noop = () => {};
 export default function DemoView({ onClose, onCreateRoom }: DemoViewProps) {
   const [state, controls] = useDemoPlayback();
   const { gameState, currentPlayer, phase, perspective, isComplete } = state;
+  const sound = useSoundContextOptional();
+
+  // Set background music track based on demo phase
+  useEffect(() => {
+    if (!sound) return;
+    if (phase === "gameOver" || phase === "gameOverReveal") {
+      sound.setMusicTrack("victory");
+    } else {
+      sound.setMusicTrack("game-60s");
+    }
+    return () => {
+      sound.setMusicTrack(null);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase === "gameOver" || phase === "gameOverReveal"]);
 
   // ---- Computed values for mini status ----
   const redTotal = gameState.board.filter((c) => c.team === "red").length;

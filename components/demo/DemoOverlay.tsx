@@ -19,7 +19,6 @@ interface DemoOverlayProps {
 // Phase labels shown at the top
 const PHASE_LABELS: Partial<Record<DemoPhase, string>> = {
   hinterThinking: "Hinter is thinking...",
-  clueGiven: "Clue given!",
   seekerReacting: "Seekers discuss the clue...",
   seekerVoting: "Seekers are guessing",
   cardReveal: "Card revealed!",

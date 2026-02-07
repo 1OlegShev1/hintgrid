@@ -26,7 +26,6 @@ import type { DemoScript } from "@/shared/demo-script";
 export type DemoPhase =
   | "intro"
   | "hinterThinking"
-  | "clueGiven"
   | "seekerReacting"
   | "seekerVoting"
   | "cardReveal"
@@ -80,7 +79,6 @@ export interface DemoPlaybackControls {
 const PHASE_DELAYS: Record<DemoPhase, number> = {
   intro: 11000,
   hinterThinking: 9000,
-  clueGiven: 5000,
   seekerReacting: 10000,
   seekerVoting: 7000,
   cardReveal: 8000,
@@ -210,45 +208,35 @@ export function useDemoPlayback(): [DemoPlaybackState, DemoPlaybackControls] {
         break;
       }
 
-      // ── HINTER THINKING → clueGiven ──────────────────────────
+      // ── HINTER THINKING → seekerReacting (or seekerVoting if no reaction) ──
       case "hinterThinking": {
         if (!turn) return;
+        // Set the clue (was previously a separate "clueGiven" phase)
         setCurrentClue(turn.clue);
         setRemainingGuesses(turn.clue.count + 1);
-        setThought(null);
         setAnnotation(null);
 
         if (turn.team === "red") setRedHasGivenClue(true);
         else setBlueHasGivenClue(true);
 
         setPerspective("seeker");
-        setPhase("clueGiven");
-        scheduleNext(PHASE_DELAYS.clueGiven);
-        break;
-      }
 
-      // ── CLUE GIVEN → seekerReacting (or seekerVoting if no reaction) ──
-      case "clueGiven": {
-        if (!turn) return;
         if (turn.seekerReaction) {
           // Show seeker reacting to the clue before any votes
           setThought(resolveThought(turn.seekerReaction));
-          setAnnotation(null);
-          setPerspective("seeker");
           setPhase("seekerReacting");
           scheduleNext(PHASE_DELAYS.seekerReacting);
         } else {
           // No reaction — go straight to first vote
           const reveal = turn.reveals[revealIndex];
           if (!reveal) {
+            setThought(null);
             setPhase("turnEnd");
             scheduleNext(PHASE_DELAYS.turnEnd);
             break;
           }
           setCardVotes({ [reveal.cardIndex]: reveal.voterIds });
           setThought(resolveThought(reveal.thought));
-          setAnnotation(null);
-          setPerspective("seeker");
           setPhase("seekerVoting");
           scheduleNext(PHASE_DELAYS.seekerVoting);
         }
