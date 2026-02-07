@@ -392,15 +392,81 @@ Music auto-switches based on game state (lobby → game → victory).
 - `use-sound` package — Wrapper around Howler.js for sound effect playback
 - `howler` package — Direct use for looping background music
 
+## Observability
+
+### Sentry Error Tracking
+
+Sentry captures client-side errors and provides context for debugging production issues.
+
+**Setup:**
+- Add `NEXT_PUBLIC_SENTRY_DSN` to `.env.local` (leave blank to disable)
+- Uses `@sentry/react` (v10) with browser SDK
+- Initialized in `SentryInit` component (top of component tree, before providers)
+
+**What's tracked:**
+| Source | What | How |
+|--------|------|-----|
+| `ErrorBoundary` | Uncaught React errors | `captureException()` with component stack |
+| `AuthContext` | User identity (anonymous UID only) | `setUser()` after auth |
+| `useRtdbRoom` | Room context (room code as tag) | `setRoomContext()` on join, cleared on leave |
+| `useRtdbRoom` | Navigation breadcrumbs | `addBreadcrumb()` on room join |
+
+**Configuration** (`lib/sentry.ts`):
+- `sampleRate: 1.0` — captures 100% of errors (suitable for low-traffic apps)
+- `tracesSampleRate: 0` — no performance traces (errors only)
+- `sendDefaultPii: false` — no personal data sent
+- `release` — set to git short hash at build time for source map matching
+- Safe to call from anywhere — silently no-ops if not initialized
+
+**Noise filters** (`beforeSend` + `ignoreErrors`):
+| Filter | Why |
+|--------|-----|
+| `ResizeObserver` errors | Browser noise, not actionable |
+| `ChunkLoadError` / "Loading chunk" | User on stale tab after deploy |
+| "Failed to fetch" / `NetworkError` / "Load failed" | Transient network drops |
+| `PERMISSION_DENIED` | Firebase race conditions during disconnect/reconnect |
+| "client is offline" | Firebase disconnection noise |
+| Non-app stack frames only | Browser extension errors |
+| `AbortError` / "signal is aborted" | Cancelled fetches during navigation |
+| "play() failed" / "play method is not allowed" | Browser autoplay policy (handled gracefully) |
+| "Non-Error promise rejection captured" | Generic non-errors |
+
+**Source maps**: Uploaded to Sentry during deploy (see [`DEPLOYMENT.md`](DEPLOYMENT.md#source-maps--sentry) for pipeline details).
+
+### Firebase Analytics
+
+Lightweight event tracking via Firebase Analytics. All helpers silently no-op if Analytics is unavailable (SSR, missing config, ad blockers).
+
+**Setup:**
+- Add `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` to `.env.local`
+- Initialized in `SentryInit` component alongside Sentry
+
+**Events tracked:**
+| Event | Source | Payload |
+|-------|--------|---------|
+| `room_created` | (not yet wired) | `room_code`, `visibility` |
+| `room_joined` | `useRtdbRoom` | `room_code` |
+| `game_started` | `useGameActions` | `room_code`, `player_count` |
+| `game_completed` | `useRtdbRoom` / `useGameActions` | `room_code`, `result` (win/trap/abandoned), `winning_team`, `turn_count` |
+| `rematch` | `useGameActions` | `room_code` |
+| `player_left` | (not yet wired) | `room_code`, `reason` |
+| `public_room_listed` | (not yet wired) | `room_code` |
+
+**Architecture** (`lib/analytics.ts`):
+- Uses `firebase/analytics` with `isSupported()` check
+- Async initialization — doesn't block rendering
+- Gracefully handles ad blockers that block analytics scripts
+
 ## Application Architecture
 
-### Context Providers (in `app/layout.tsx` order)
+### Initialization & Context Providers (in `app/layout.tsx` order)
 
-| Provider | Location | Purpose |
-|----------|----------|---------|
+| Component/Provider | Location | Purpose |
+|--------------------|----------|---------|
+| `SentryInit` | `components/SentryInit.tsx` | Initializes Sentry error tracking + Firebase Analytics (renders nothing) |
 | `ThemeProvider` | `components/ThemeProvider.tsx` | Theme mode (light/dark/system) and style (classic/synthwave) |
 | `ThemeBackground` | `components/ThemeBackground.tsx` | Theme-specific background effects (synthwave sun/grid) |
-| `AuthProvider` | `contexts/AuthContext.tsx` | Firebase Anonymous Auth, provides `uid` |
+| `AuthProvider` | `contexts/AuthContext.tsx` | Firebase Anonymous Auth, provides `uid`; sets Sentry user context |
 | `ErrorProvider` | `contexts/ErrorContext.tsx` | Global error toast notifications |
 | `SoundProvider` | `contexts/SoundContext.tsx` | Sound effects and volume control |
 | `GameProvider` | `components/GameContext.tsx` | Room-level state flags for Navbar warnings |
@@ -445,7 +511,7 @@ Team color helpers in `TeamIndicator`:
 - `getTeamTextClass()`, `getTeamBgClass()`, `getTeamBorderClass()` — Individual utilities
 
 **Error Handling:**
-- `ErrorBoundary` (`components/ErrorBoundary.tsx`) — Catches React errors, prevents full app crash
+- `ErrorBoundary` (`components/ErrorBoundary.tsx`) — Catches React errors, prevents full app crash, reports to Sentry
 
 **Room Views:**
 - `GameView` (`components/room/GameView.tsx`) — Active game UI (board, chat, status)
@@ -471,8 +537,10 @@ Team color helpers in `TeamIndicator`:
 
 | File | Purpose |
 |------|---------|
-| `lib/firebase.ts` | Firebase app/auth/database initialization |
+| `lib/firebase.ts` | Firebase app/auth/database initialization (includes `measurementId` for Analytics) |
 | `lib/firebase-auth.ts` | Anonymous sign-in helper |
+| `lib/sentry.ts` | Sentry error tracking — init, `captureException`, user/room context, breadcrumbs |
+| `lib/analytics.ts` | Firebase Analytics wrapper — event tracking helpers |
 | `lib/rtdb/index.ts` | Barrel re-export for all database operations (import via `@/lib/rtdb`) |
 | `lib/rtdb/room-management.ts` | Room creation, joining, leaving, owner transfer |
 | `lib/rtdb/game-lifecycle.ts` | `startGame`, `endGame`, `pauseGame`, `resumeGame`, `rematch` |

@@ -7,6 +7,7 @@ import { useCallback } from "react";
 import * as actions from "@/lib/rtdb";
 import { withRetry } from "@/lib/retry";
 import { useError } from "@/contexts/ErrorContext";
+import { trackGameStarted, trackRematch, trackGameCompleted } from "@/lib/analytics";
 import type { WordPack, TimerPreset } from "./types";
 
 // Short retry config for time-sensitive gameplay actions
@@ -39,7 +40,9 @@ export function useGameActions(
   const { showError } = useError();
 
   const handleStartGame = useCallback(() => {
-    if (uid) actions.startGame(roomCode, uid).catch((e) => showError(e.message));
+    if (uid) actions.startGame(roomCode, uid).then(() => {
+      trackGameStarted(roomCode, 0); // player count filled by analytics context
+    }).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
   const handleSetLobbyRole = useCallback((
@@ -58,11 +61,15 @@ export function useGameActions(
   }, [roomCode, uid, showError]);
 
   const handleRematch = useCallback(() => {
-    if (uid) actions.rematch(roomCode, uid).catch((e) => showError(e.message));
+    if (uid) actions.rematch(roomCode, uid).then(() => {
+      trackRematch(roomCode);
+    }).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
   const handleEndGame = useCallback(() => {
-    if (uid) actions.endGame(roomCode, uid).catch((e) => showError(e.message));
+    if (uid) actions.endGame(roomCode, uid).then(() => {
+      trackGameCompleted(roomCode, "abandoned");
+    }).catch((e) => showError(e.message));
   }, [roomCode, uid, showError]);
 
   const handlePauseGame = useCallback(() => {

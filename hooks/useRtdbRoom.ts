@@ -10,6 +10,8 @@ import { useGameActions } from "./room/useGameActions";
 import { useChatActions } from "./room/useChatActions";
 import * as actions from "@/lib/rtdb";
 import { STALE_PLAYER_CHECK_INTERVAL_MS, STALE_PLAYER_GRACE_MS } from "@/shared/constants";
+import { trackRoomJoined, trackGameCompleted } from "@/lib/analytics";
+import { setRoomContext, addBreadcrumb } from "@/lib/sentry";
 import type { GameState, Player, ChatMessage, RoomClosedReason, WordPack, TimerPreset } from "@/shared/types";
 
 export interface RoomState {
@@ -95,6 +97,38 @@ export function useRtdbRoom(
       setIsActiveGame(false);
     };
   }, [isLast, isActive, setIsLastPlayer, setIsActiveGame]);
+
+  // Track room join and set Sentry room context
+  useEffect(() => {
+    if (!conn.isConnecting && !conn.connectionError && conn.gameState) {
+      trackRoomJoined(roomCode);
+      setRoomContext(roomCode);
+      addBreadcrumb(`Joined room ${roomCode}`, "navigation");
+    }
+    return () => { setRoomContext(null); };
+  // Only run once when connection completes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [conn.isConnecting]);
+
+  // Track game completion (win or trap — not abandoned, that's tracked in useGameActions)
+  const prevGameOverRef = useRef(false);
+  useEffect(() => {
+    const gs = conn.gameState;
+    if (!gs) return;
+    const wasOver = prevGameOverRef.current;
+    prevGameOverRef.current = gs.gameOver;
+
+    if (gs.gameOver && !wasOver && gs.winner) {
+      // Detect trap vs normal win by checking if trap card was revealed
+      const trapRevealed = gs.board?.some((c) => c.team === "trap" && c.revealed);
+      trackGameCompleted(
+        roomCode,
+        trapRevealed ? "trap" : "win",
+        gs.winner,
+        undefined
+      );
+    }
+  }, [conn.gameState, roomCode]);
 
   // Use refs for leaveRoom to avoid stale closures and empty callbacks during re-renders
   const uidRef = useRef<string | null>(conn.uid);

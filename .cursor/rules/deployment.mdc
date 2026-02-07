@@ -12,13 +12,13 @@ When deploying HintGrid, ALWAYS use the npm scripts:
 ```bash
 npm run deploy
 ```
-This runs: `npm run build && firebase deploy`
+This runs: `npm run build && npm run sentry:sourcemaps && firebase deploy`
 
 ## Hosting Only
 ```bash
 npm run deploy:hosting
 ```
-This runs: `npm run build && firebase deploy --only hosting`
+This runs: `npm run build && npm run sentry:sourcemaps && firebase deploy --only hosting`
 
 ## Database Rules Only
 ```bash
@@ -27,3 +27,7 @@ npm run deploy:rules
 This runs: `firebase deploy --only firestore:rules`
 
 **NEVER** run `firebase deploy` or `npm run build` separately. Always use the combined scripts.
+
+## Source Maps
+
+The deploy scripts automatically upload source maps to Sentry (if `SENTRY_AUTH_TOKEN` is set) and remove `.map` files from `out/` before deploying to Firebase Hosting. This gives readable stack traces in Sentry without exposing source maps to users.

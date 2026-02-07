@@ -50,3 +50,35 @@ const roomCode = params.code?.[0] || pathname.replace(/^\/room\/?/, "").split("/
 ```
 
 **Why this is necessary**: This ensures that even if the framework hydration is out of sync with the browser URL (common in SSG + client-side routing), the application effectively "forces" the correct state based on the source of truth (the address bar).
+
+## Source Maps & Sentry
+
+Production builds generate source maps so Sentry can display readable stack traces.
+
+### Pipeline
+
+```
+next build                     →  out/ with .js + .map files
+scripts/upload-sourcemaps.sh   →  uploads .map to Sentry, then deletes them
+firebase deploy                →  deploys out/ (JS only, no maps)
+```
+
+The `npm run deploy` and `npm run deploy:hosting` scripts run all three steps in order.
+
+### How it works
+
+1. `next.config.js` sets `productionBrowserSourceMaps: true` to generate `.map` files
+2. The git short hash is injected as `NEXT_PUBLIC_SENTRY_RELEASE` at build time (via `next.config.js`)
+3. `Sentry.init({ release })` tags every error with this version
+4. `scripts/upload-sourcemaps.sh` uploads maps to Sentry tagged with the same version, then deletes them from `out/`
+5. Firebase Hosting only receives the minified JS — source maps are never exposed to users
+
+### Required environment
+
+| Variable | Where | Purpose |
+|----------|-------|---------|
+| `SENTRY_AUTH_TOKEN` | `.env.local` (gitignored) | Authenticates `sentry-cli` for source map upload |
+| `SENTRY_ORG` | Script default: `oleg-shevchenko` | Sentry organization slug |
+| `SENTRY_PROJECT` | Script default: `hintgrid-react` | Sentry project slug |
+
+If `SENTRY_AUTH_TOKEN` is not set, the upload step is skipped gracefully (warning printed, deploy continues).

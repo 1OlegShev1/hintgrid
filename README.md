@@ -12,6 +12,8 @@ A multiplayer word guessing party game built with Next.js, TypeScript, and Fireb
 - Turn-based gameplay with timer
 - Sound effects and background music with separate volume controls
 - Interactive demo mode on the home page — a scripted game walkthrough with perspective switching and educational annotations (fully client-side, no Firebase)
+- Sentry error tracking (optional) for production debugging
+- Firebase Analytics for gameplay event tracking (optional)
 
 ## How It Works
 
@@ -26,6 +28,15 @@ npm run dev                   # Start at http://localhost:3000
 ```
 
 See `.env.example` for required Firebase configuration.
+
+### Optional: Error Tracking & Analytics
+
+| Variable | Service | Required |
+|----------|---------|----------|
+| `NEXT_PUBLIC_SENTRY_DSN` | [Sentry](https://sentry.io) error tracking | No — leave blank to disable |
+| `NEXT_PUBLIC_FIREBASE_MEASUREMENT_ID` | Firebase Analytics | No — auto-detected if omitted |
+
+Both are initialized lazily on the client and silently no-op when unconfigured.
 
 ## Documentation
 

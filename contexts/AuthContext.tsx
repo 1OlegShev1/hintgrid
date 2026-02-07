@@ -4,6 +4,7 @@ import { createContext, useContext, useState, useEffect, useRef, ReactNode } fro
 import { User, onAuthStateChanged } from "firebase/auth";
 import { getFirebaseAuth } from "@/lib/firebase";
 import { signInAnonymous } from "@/lib/firebase-auth";
+import { setUser as setSentryUser } from "@/lib/sentry";
 
 interface AuthContextValue {
   user: User | null;
@@ -40,6 +41,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
           setUser(firebaseUser);
           setIsLoading(false);
           setError(null);
+          setSentryUser(firebaseUser.uid);
         } else {
           // No user - sign in anonymously (but only once)
           if (signingInRef.current) {

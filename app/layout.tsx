@@ -7,6 +7,7 @@ import { ErrorProvider } from "@/contexts/ErrorContext";
 import { GameProvider } from "@/components/GameContext";
 import { SoundProvider } from "@/contexts/SoundContext";
 import Navbar from "@/components/Navbar";
+import { SentryInit } from "@/components/SentryInit";
 
 // Pixel fonts for synthwave aesthetic
 const pressStart = Press_Start_2P({
@@ -59,6 +60,7 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="font-sans">
+        <SentryInit />
         <ThemeProvider>
           <AuthProvider>
             <ErrorProvider>

@@ -24,14 +24,16 @@
     "prepare": "husky",
     "firebase:emulators": "firebase emulators:start",
     "predeploy": "npm run test:with-emulator",
-    "deploy": "npm run build && firebase deploy",
+    "sentry:sourcemaps": "bash scripts/upload-sourcemaps.sh",
+    "deploy": "npm run build && npm run sentry:sourcemaps && firebase deploy",
     "test:with-emulator": "firebase emulators:exec --only auth,database \"npm run test:all\"",
-    "deploy:hosting": "npm run build && firebase deploy --only hosting",
+    "deploy:hosting": "npm run build && npm run sentry:sourcemaps && firebase deploy --only hosting",
     "deploy:rules": "firebase deploy --only database",
     "cleanup:rooms": "node scripts/cleanup-rooms.js",
     "cleanup:orphaned-public-rooms": "node scripts/cleanup-orphaned-public-rooms.js"
   },
   "dependencies": {
+    "@sentry/react": "^10.38.0",
     "bad-words-next": "^3.2.0",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
@@ -47,6 +49,7 @@
   },
   "devDependencies": {
     "@playwright/test": "^1.58.1",
+    "@sentry/cli": "^3.1.0",
     "@tailwindcss/postcss": "^4.1.18",
     "@types/howler": "^2.2.12",
     "@types/node": "^25.2.0",
