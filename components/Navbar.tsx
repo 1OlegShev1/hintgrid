@@ -120,11 +120,11 @@ export default function Navbar() {
   const getThemeIcon = () => {
     switch (theme) {
       case "light":
-        return <Sun className="w-5 h-5" />;
+        return <Sun className="w-5 h-5 md:w-6 md:h-6" />;
       case "dark":
-        return <Moon className="w-5 h-5" />;
+        return <Moon className="w-5 h-5 md:w-6 md:h-6" />;
       case "system":
-        return <Monitor className="w-5 h-5" />;
+        return <Monitor className="w-5 h-5 md:w-6 md:h-6" />;
     }
   };
 
@@ -158,16 +158,16 @@ export default function Navbar() {
             onClick={handleHomeClick}
             className="group flex items-center gap-2 hover:opacity-90 transition-opacity"
           >
-            <span className="font-bold text-lg sm:text-xl tracking-wide">
+            <span className="font-bold text-xl md:text-2xl tracking-wide">
               <span className="text-primary">Hint</span>
               <span className="text-accent">Grid</span>
             </span>
-            <span className="text-xs px-2 py-0.5 rounded bg-surface-elevated text-primary border border-primary/50">
+            <span className="text-xs md:text-sm px-2 py-0.5 rounded bg-surface-elevated text-primary border border-primary/50">
               BETA
             </span>
           </Link>
 
-          <div className="flex items-center gap-1">
+          <div className="flex items-center gap-1 md:gap-2">
             <ConnectionIndicator />
             <SoundToggle />
             {/* Help button */}
@@ -176,8 +176,8 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:text-accent hover:bg-surface-elevated transition-colors"
               title="How to Play"
             >
-              <QuestionMarkIcon className="w-5 h-5" />
-              <span className="text-sm hidden sm:inline">Help</span>
+              <QuestionMarkIcon className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="text-sm md:text-base hidden sm:inline">Help</span>
             </button>
             {/* Style switcher (classic/synthwave) */}
             <button
@@ -185,8 +185,8 @@ export default function Navbar() {
               className="flex items-center gap-2 px-3 py-2 rounded-lg text-muted hover:text-accent hover:bg-surface-elevated transition-colors"
               title={`Style: ${getStyleLabel()}. Click to toggle.`}
             >
-              <Palette className="w-5 h-5" />
-              <span className="text-sm hidden sm:inline">{getStyleLabel()}</span>
+              <Palette className="w-5 h-5 md:w-6 md:h-6" />
+              <span className="text-sm md:text-base hidden sm:inline">{getStyleLabel()}</span>
             </button>
             {/* Theme mode switcher (light/dark/system) */}
             <button
@@ -195,7 +195,7 @@ export default function Navbar() {
               title={`Mode: ${getThemeLabel()}. Click to cycle.`}
             >
               {getThemeIcon()}
-              <span className="text-sm hidden sm:inline">{getThemeLabel()}</span>
+              <span className="text-sm md:text-base hidden sm:inline">{getThemeLabel()}</span>
             </button>
           </div>
         </div>

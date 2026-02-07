@@ -49,20 +49,20 @@ export default function SoundToggle() {
   // Speaker icon based on mute/volume state
   const getSpeakerIcon = () => {
     if (isMuted || volume === 0) {
-      return <VolumeX className="w-5 h-5" />;
+      return <VolumeX className="w-5 h-5 md:w-6 md:h-6" />;
     }
     if (volume < 0.5) {
-      return <Volume1 className="w-5 h-5" />;
+      return <Volume1 className="w-5 h-5 md:w-6 md:h-6" />;
     }
-    return <Volume2 className="w-5 h-5" />;
+    return <Volume2 className="w-5 h-5 md:w-6 md:h-6" />;
   };
 
   // Music note icon
   const getMusicIcon = () => {
     if (!musicEnabled) {
-      return <Music className="w-5 h-5 opacity-40" />;
+      return <Music className="w-5 h-5 md:w-6 md:h-6 opacity-40" />;
     }
-    return <Music className="w-5 h-5" />;
+    return <Music className="w-5 h-5 md:w-6 md:h-6" />;
   };
 
   const handleMouseEnter = () => {
