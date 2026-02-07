@@ -40,12 +40,21 @@ export const metadata: Metadata = {
     siteName: "HintGrid",
     type: "website",
     locale: "en_US",
+    images: [
+      {
+        url: "/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "HintGrid — Free multiplayer word guessing game",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
+    card: "summary_large_image",
     title: "HintGrid - Free Multiplayer Word Guessing Game",
     description:
       "Give one-word clues, guess the words, avoid the trap. Free browser party game — no download, no login.",
+    images: ["/og-image.jpg"],
   },
   keywords: [
     "word game",
