@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, lazy, Suspense } from "react";
+import { useState, useEffect, useRef, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import AvatarPicker from "@/components/AvatarPicker";
@@ -22,6 +22,8 @@ export default function Home() {
   const [publicRooms, setPublicRooms] = useState<PublicRoomData[]>([]);
   const [loadingRooms, setLoadingRooms] = useState(true);
   const [showDemo, setShowDemo] = useState(false);
+  const [showSupport, setShowSupport] = useState(false);
+  const supportRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
 
   // Initialize avatar and player name from localStorage on mount
@@ -48,6 +50,18 @@ export default function Home() {
     
     return unsubscribe;
   }, []);
+
+  // Close support panel on click outside
+  useEffect(() => {
+    if (!showSupport) return;
+    const handleClick = (e: MouseEvent) => {
+      if (supportRef.current && !supportRef.current.contains(e.target as Node)) {
+        setShowSupport(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClick);
+    return () => document.removeEventListener("mousedown", handleClick);
+  }, [showSupport]);
 
   const handleAvatarSelect = (newAvatar: string) => {
     setAvatar(newAvatar);
@@ -297,7 +311,39 @@ export default function Home() {
         </div>
 
         {/* Footer */}
-        <footer className="mt-10 text-center text-sm text-muted/70 space-y-2">
+        <footer className="mt-10 text-center text-sm text-muted/70 space-y-3">
+          <div ref={supportRef} className="relative inline-block">
+            <button
+              type="button"
+              onClick={() => setShowSupport(!showSupport)}
+              className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-surface-elevated border border-border text-muted hover:text-primary hover:border-primary/50 transition-colors cursor-pointer"
+            >
+              <span>&#9749;</span>
+              <span>Support HintGrid</span>
+            </button>
+            {showSupport && (
+              <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-3 z-50">
+                <div className="bg-surface-elevated rounded-xl border border-border shadow-xl overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2 border-b border-border">
+                    <span className="text-xs text-muted">Powered by Ko-fi</span>
+                    <button
+                      type="button"
+                      onClick={() => setShowSupport(false)}
+                      className="text-muted hover:text-foreground text-lg leading-none cursor-pointer"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                  <iframe
+                    id="kofiframe"
+                    src="https://ko-fi.com/hintgrid/?hidefeed=true&widget=true&embed=true"
+                    className="border-0 w-[400px] h-[680px]"
+                    title="Support HintGrid on Ko-fi"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
           <div className="flex items-center justify-center gap-3">
             <Link href="/privacy" className="hover:text-muted transition-colors">
               Privacy Policy
@@ -305,6 +351,10 @@ export default function Home() {
             <span>&middot;</span>
             <Link href="/terms" className="hover:text-muted transition-colors">
               Terms of Service
+            </Link>
+            <span>&middot;</span>
+            <Link href="/credits" className="hover:text-muted transition-colors">
+              Credits
             </Link>
           </div>
           <p>&copy; {new Date().getFullYear()} HintGrid. All rights reserved.</p>
